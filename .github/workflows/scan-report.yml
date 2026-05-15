@@ -17,7 +17,17 @@ jobs:
 
       - name: Install Trivy
         run: |
-          curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sh -s -- -b /usr/local/bin
+          set -euo pipefail
+          TRIVY_VERSION="0.51.2"
+          TRIVY_ARCHIVE="trivy_${TRIVY_VERSION}_Linux-64bit.tar.gz"
+          BASE_URL="https://github.com/aquasecurity/trivy/releases/download/v${TRIVY_VERSION}"
+
+          curl -fsSLO "${BASE_URL}/${TRIVY_ARCHIVE}"
+          curl -fsSLO "${BASE_URL}/trivy_${TRIVY_VERSION}_checksums.txt"
+          grep " ${TRIVY_ARCHIVE}$" "trivy_${TRIVY_VERSION}_checksums.txt" | sha256sum -c -
+
+          tar -xzf "${TRIVY_ARCHIVE}" trivy
+          sudo install -m 0755 trivy /usr/local/bin/trivy
 
       - name: Set up Go
         uses: actions/setup-go@v5
