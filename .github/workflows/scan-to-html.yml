@@ -1,0 +1,122 @@
+name: Convert Scan Report to HTML
+
+on:
+  push:
+    paths:
+      - 'reports/scan-*.md'
+  workflow_dispatch:
+    inputs:
+      scan_file:
+        description: >
+          Path to the scan-*.md file inside the reports/ directory
+          (e.g. reports/scan-20260515-2.md).  Glob patterns such as
+          reports/scan-*.md are also accepted; when multiple files match the
+          most recently modified one is used.
+        required: true
+        type: string
+        default: 'reports/scan-*.md'
+
+permissions:
+  contents: write
+
+jobs:
+  convert:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Resolve scan file
+        id: resolve
+        run: |
+          if [ "${{ github.event_name }}" = "push" ]; then
+            BEFORE="${{ github.event.before }}"
+            SHA="${{ github.sha }}"
+            # Detect scan-*.md files added/modified in this push
+            if [ "$BEFORE" = "0000000000000000000000000000000000000000" ]; then
+              # Initial push — list all scan-*.md files by recency
+              FILE=$(ls -t reports/scan-*.md 2>/dev/null | head -n 1)
+            else
+              FILE=$(git diff --name-only --diff-filter=AM "$BEFORE" "$SHA" -- 'reports/scan-*.md' 2>/dev/null | head -n 1)
+            fi
+            if [ -z "$FILE" ]; then
+              # Fallback to most recently modified
+              FILE=$(ls -t reports/scan-*.md 2>/dev/null | head -n 1)
+            fi
+          else
+            INPUT="${{ inputs.scan_file }}"
+            # Expand glob if needed
+            if echo "$INPUT" | grep -q '[*?[]'; then
+              # Pick the most-recently modified matching file
+              FILE=$(ls -t $INPUT 2>/dev/null | head -n 1)
+              if [ -z "$FILE" ]; then
+                echo "::error::No files match the pattern: $INPUT"
+                exit 1
+              fi
+            else
+              FILE="$INPUT"
+            fi
+          fi
+
+          if [ ! -f "$FILE" ]; then
+            echo "::error::File not found: $FILE"
+            exit 1
+          fi
+
+          echo "scan_file=$FILE" >> "$GITHUB_OUTPUT"
+          echo "Resolved scan file: $FILE"
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+
+      - name: Convert Markdown report to HTML
+        id: convert
+        run: |
+          INPUT="${{ steps.resolve.outputs.scan_file }}"
+          BASENAME=$(basename "${INPUT%.md}")
+          mkdir -p reports/html
+          OUTPUT="reports/html/${BASENAME}.html"
+          python3 .github/scripts/scan_to_html.py "$INPUT" "$OUTPUT"
+          echo "html_file=$OUTPUT" >> "$GITHUB_OUTPUT"
+
+      - name: Regenerate index
+        run: python3 .github/scripts/scan_to_html.py --index reports/html
+
+      - name: Upload HTML report as artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ steps.resolve.outputs.scan_file != '' && format('scan-report-{0}', github.run_number) || 'scan-report' }}
+          path: ${{ steps.convert.outputs.html_file }}
+          if-no-files-found: error
+
+      - name: Commit HTML report to repository
+        run: |
+          HTML="${{ steps.convert.outputs.html_file }}"
+
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add "$HTML" reports/html/index.html
+
+          if git diff --cached --quiet; then
+            echo "HTML report is already up-to-date, nothing to commit."
+            exit 0
+          fi
+
+          git commit -m "chore: add HTML report for ${{ steps.resolve.outputs.scan_file }}"
+
+          BRANCH="${{ github.ref_name }}"
+          git fetch origin "$BRANCH"
+
+          for attempt in 1 2 3; do
+            git pull --rebase origin "$BRANCH" \
+              && git push origin HEAD:"$BRANCH" \
+              && exit 0
+            echo "Push failed (attempt $attempt/3), retrying..."
+            git rebase --abort || true
+            git fetch origin "$BRANCH"
+          done
+
+          echo "::error::Failed to push HTML report after 3 attempts."
+          exit 1
