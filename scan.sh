@@ -512,6 +512,20 @@ CREATE TABLE IF NOT EXISTS scan_metrics (
     created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))
 );
 CREATE INDEX IF NOT EXISTS idx_scan_metrics_scanned_at ON scan_metrics(scanned_at);
+CREATE INDEX IF NOT EXISTS idx_scan_metrics_source_ref_scanned_at
+    ON scan_metrics(source_ref, scanned_at);
+CREATE UNIQUE INDEX IF NOT EXISTS uq_scan_metrics_run_signature
+    ON scan_metrics(
+        scanned_at,
+        source_ref,
+        total_images,
+        images_with_cves,
+        critical_cves,
+        high_cves,
+        go_stdlib_cves,
+        go_module_cves,
+        base_image_cves
+    );
 SQL
 }
 
@@ -663,7 +677,7 @@ if init_metrics_db; then
     source_ref_db="$(sqlite_escape "${ref_path:-release:${release_tag}}")"
 
     sqlite3 "$db_file" <<SQL
-INSERT INTO scan_metrics (
+INSERT OR IGNORE INTO scan_metrics (
     scanned_at,
     source_desc,
     source_ref,
@@ -687,7 +701,11 @@ INSERT INTO scan_metrics (
     ${bundle_base_image_cves}
 );
 SQL
-    echo "Scan metrics written to $db_file"
+    if [[ "$(sqlite3 "$db_file" 'SELECT changes();')" -gt 0 ]]; then
+        echo "Scan metrics written to $db_file"
+    else
+        echo "Scan metrics already recorded for this run signature; skipped duplicate insert"
+    fi
 fi
 
 if [[ -n "$gist_title" ]]; then
