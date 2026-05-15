@@ -374,9 +374,13 @@ def esc(text):
 
 
 def render_inline(text):
-    """Escape text and convert `backtick` spans to <code>."""
+    """Escape text and convert inline markdown spans to HTML."""
     escaped = esc(text)
-    return re.sub(r"`([^`]+)`", r"<code>\1</code>", escaped)
+    # Bold: **text** → <strong>text</strong>
+    escaped = re.sub(r"\*\*([^*]+)\*\*", r"<strong>\1</strong>", escaped)
+    # Backtick code: `code` → <code>code</code>
+    escaped = re.sub(r"`([^`]+)`", r"<code>\1</code>", escaped)
+    return escaped
 
 
 def _severity_badge(severity):
@@ -449,6 +453,59 @@ def render_table(headers, rows):
             out.append(f"<td{td_class}>{col_html(h, h_norm, val)}</td>")
         out.append("</tr>")
 
+    out.append("</tbody></table>")
+    return "\n".join(out)
+
+
+# ---------------------------------------------------------------------------
+# Markdown pipe-table helpers
+# ---------------------------------------------------------------------------
+
+def _is_pipe_table_row(line):
+    """True if line looks like a markdown pipe-table row."""
+    stripped = line.strip()
+    return stripped.startswith("|") and stripped.endswith("|")
+
+
+def _is_pipe_separator(line):
+    """True if line is a markdown pipe-table separator row (| --- | ---: | etc.)."""
+    if not _is_pipe_table_row(line):
+        return False
+    cells = [c.strip() for c in line.strip().strip("|").split("|")]
+    return bool(cells) and all(re.match(r"^:?-+:?$", c) for c in cells if c)
+
+
+def _parse_pipe_table(lines):
+    """
+    Parse a list of pipe-table markdown lines (header row, separator, data rows…).
+    Returns (headers: list[str], rows: list[dict[str,str]]).
+    """
+    headers = [c.strip() for c in lines[0].strip().strip("|").split("|")]
+    rows = []
+    for line in lines[2:]:  # skip separator row at index 1
+        cells = [c.strip() for c in line.strip().strip("|").split("|")]
+        while len(cells) < len(headers):
+            cells.append("")
+        cells = cells[: len(headers)]
+        rows.append(dict(zip(headers, cells)))
+    return headers, rows
+
+
+def render_pipe_table(headers, rows):
+    """Render (headers, rows) from a markdown pipe-table as a styled HTML table."""
+    if not headers or not rows:
+        return ""
+    out = ['<table class="report-table">']
+    out.append("<thead><tr>")
+    for h in headers:
+        out.append(f"<th>{render_inline(h)}</th>")
+    out.append("</tr></thead><tbody>")
+    for row in rows:
+        out.append("<tr>")
+        for h in headers:
+            val = row.get(h, "")
+            out.append(f"<td>{render_inline(val)}</td>")
+        out.append("</tr>")
     out.append("</tbody></table>")
     return "\n".join(out)
 
@@ -589,6 +646,24 @@ def _convert_markdown(md):
         elif not line.strip():
             close_ul()
 
+        # ---- markdown pipe table ----
+        elif _is_pipe_table_row(line):
+            close_ul()
+            table_lines = [line]
+            while i + 1 < len(lines) and _is_pipe_table_row(lines[i + 1]):
+                i += 1
+                table_lines.append(lines[i])
+            if len(table_lines) >= 2 and _is_pipe_separator(table_lines[1]):
+                headers, rows = _parse_pipe_table(table_lines)
+                if headers and rows:
+                    out.append(render_pipe_table(headers, rows))
+                else:
+                    for tl in table_lines:
+                        out.append(f"<p>{render_inline(tl.strip())}</p>")
+            else:
+                for tl in table_lines:
+                    out.append(f"<p>{render_inline(tl.strip())}</p>")
+
         # ---- paragraph ----
         else:
             close_ul()
@@ -613,6 +688,54 @@ def _convert_raw(text):
     """
     processed = _process_trivy_block(text)
     return f'<div class="scan-card">{processed}</div>' if processed.strip() else f'<pre class="raw-output">{esc(text)}</pre>'
+
+
+# ---------------------------------------------------------------------------
+# Markdown pre-processing helpers
+# ---------------------------------------------------------------------------
+
+def _move_summary_to_top(md):
+    """
+    Move the ``## Summary`` section from the bottom of the markdown to just
+    after the opening ``# …`` title heading, so it appears at the top of the
+    rendered page.
+    """
+    lines = md.split("\n")
+
+    # Locate the ## Summary section
+    summary_start = None
+    for i, line in enumerate(lines):
+        if line.strip() == "## Summary":
+            summary_start = i
+            break
+
+    if summary_start is None:
+        return md  # nothing to move
+
+    # Determine where the Summary section ends (next ## heading or EOF)
+    summary_end = len(lines)
+    for i in range(summary_start + 1, len(lines)):
+        if lines[i].startswith("## "):
+            summary_end = i
+            break
+
+    summary_lines = lines[summary_start:summary_end]
+    # Remove the summary block from its original location
+    remaining = lines[:summary_start] + lines[summary_end:]
+
+    # Find insertion point: right after the first # heading line
+    insert_at = 1  # fallback: just after line 0
+    for i, line in enumerate(remaining):
+        if line.startswith("# "):
+            insert_at = i + 1
+            break
+
+    # Skip any blank lines immediately following the heading
+    while insert_at < len(remaining) and not remaining[insert_at].strip():
+        insert_at += 1
+
+    new_lines = remaining[:insert_at] + [""] + summary_lines + [""] + remaining[insert_at:]
+    return "\n".join(new_lines)
 
 
 # ---------------------------------------------------------------------------
@@ -669,6 +792,7 @@ def convert(input_path, output_path=None):
     is_markdown = first_line.startswith("#")
 
     if is_markdown:
+        content = _move_summary_to_top(content)
         body_html = _convert_markdown(content)
         title_match = re.search(r"^# (.+)$", content, re.MULTILINE)
         title = title_match.group(1).strip() if title_match else "Scan Report"
