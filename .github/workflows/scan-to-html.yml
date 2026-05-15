@@ -81,6 +81,9 @@ jobs:
           python3 .github/scripts/scan_to_html.py "$INPUT" "$OUTPUT"
           echo "html_file=$OUTPUT" >> "$GITHUB_OUTPUT"
 
+      - name: Regenerate index
+        run: python3 .github/scripts/scan_to_html.py --index reports/html
+
       - name: Upload HTML report as artifact
         uses: actions/upload-artifact@v4
         with:
@@ -94,7 +97,7 @@ jobs:
 
           git config user.name  "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add "$HTML"
+          git add "$HTML" reports/html/index.html
 
           if git diff --cached --quiet; then
             echo "HTML report is already up-to-date, nothing to commit."

@@ -689,10 +689,196 @@ def convert(input_path, output_path=None):
     return output_path
 
 
+# ---------------------------------------------------------------------------
+# Index page generator
+# ---------------------------------------------------------------------------
+
+_INDEX_CSS_EXTRA = """
+/* ---- Index card grid ---- */
+.index-intro {
+  color: var(--muted);
+  margin-bottom: 32px;
+  font-size: 14px;
+}
+.reports-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 16px;
+  margin-top: 16px;
+}
+.report-card {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--body-bg);
+  padding: 20px 22px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  transition: box-shadow .15s, border-color .15s;
+  text-decoration: none;
+  color: inherit;
+}
+.report-card:hover {
+  box-shadow: 0 4px 16px rgba(0,0,0,.10);
+  border-color: var(--link);
+}
+.report-card .rc-name {
+  font-family: 'Roboto Mono', monospace;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--link);
+  word-break: break-all;
+}
+.report-card .rc-date {
+  font-size: 12px;
+  color: var(--muted);
+}
+.report-card .rc-arrow {
+  margin-left: auto;
+  color: var(--muted);
+  font-size: 16px;
+  align-self: flex-start;
+}
+.rc-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+}
+.empty-state {
+  color: var(--muted);
+  font-size: 14px;
+  padding: 48px 0;
+  text-align: center;
+}
+"""
+
+
+def _parse_date_from_filename(name):
+    """
+    Try to parse a date from filenames like scan-20260515-1.html.
+    Returns a datetime or datetime.min so sorting always works.
+    """
+    m = re.search(r"(\d{8})", name)
+    if m:
+        try:
+            return datetime.strptime(m.group(1), "%Y%m%d")
+        except ValueError:
+            pass
+    return datetime.min
+
+
+def generate_index(html_dir):
+    """
+    Scan *html_dir* for *.html files (excluding index.html itself) and
+    write a styled index.html listing them all, most-recent first.
+
+    Returns the path of the written index file.
+    """
+    html_dir = os.path.abspath(html_dir)
+    entries = sorted(
+        [
+            f
+            for f in os.listdir(html_dir)
+            if f.endswith(".html") and f != "index.html"
+        ],
+        key=lambda f: (_parse_date_from_filename(f), f),
+        reverse=True,
+    )
+
+    now = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
+
+    if entries:
+        cards = []
+        for fname in entries:
+            m = re.search(r"(\d{8})", fname)
+            date_str = ""
+            if m:
+                try:
+                    date_str = datetime.strptime(m.group(1), "%Y%m%d").strftime(
+                        "%B %d, %Y"
+                    )
+                except ValueError:
+                    pass
+
+            stem = os.path.splitext(fname)[0]
+            card = (
+                f'<a class="report-card" href="{esc(fname)}">'
+                f'  <div class="rc-header">'
+                f'    <div>'
+                f'      <div class="rc-name">{esc(stem)}</div>'
+                + (f'      <div class="rc-date">{esc(date_str)}</div>' if date_str else "")
+                + f"    </div>"
+                f'    <span class="rc-arrow">&#8594;</span>'
+                f"  </div>"
+                f"</a>"
+            )
+            cards.append(card)
+
+        grid_html = '<div class="reports-grid">\n' + "\n".join(cards) + "\n</div>"
+    else:
+        grid_html = '<p class="empty-state">No scan reports found yet.</p>'
+
+    count = len(entries)
+    subtitle = f"{count} report{'s' if count != 1 else ''} available"
+
+    body_html = f"""
+<h1>Trivy Scan Reports</h1>
+<p class="index-intro">{esc(subtitle)}</p>
+{grid_html}
+<div class="page-footer">
+  Index generated &nbsp;·&nbsp; {esc(now)}
+</div>
+"""
+
+    full_html = f"""<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>RKE2 Toolbox — Scan Reports</title>
+  <style>{CSS}{_INDEX_CSS_EXTRA}</style>
+</head>
+<body>
+  <header class="page-header">
+    <div class="brand">
+      {_RANCHER_LOGO_SVG}
+      RKE2 Toolbox
+    </div>
+    <span class="subtitle">— Trivy Scan Reports</span>
+  </header>
+  <main class="page-content">
+    {body_html}
+  </main>
+</body>
+</html>"""
+
+    index_path = os.path.join(html_dir, "index.html")
+    with open(index_path, "w", encoding="utf-8") as fh:
+        fh.write(full_html)
+
+    return index_path
+
+
 def main():
     if len(sys.argv) < 2:
-        print(f"Usage: {sys.argv[0]} <scan-file.md> [output.html]", file=sys.stderr)
+        print(
+            f"Usage: {sys.argv[0]} <scan-file.md> [output.html]\n"
+            f"       {sys.argv[0]} --index <html-dir>",
+            file=sys.stderr,
+        )
         sys.exit(1)
+
+    if sys.argv[1] == "--index":
+        if len(sys.argv) < 3:
+            print(f"Usage: {sys.argv[0]} --index <html-dir>", file=sys.stderr)
+            sys.exit(1)
+        html_dir = sys.argv[2]
+        if not os.path.isdir(html_dir):
+            print(f"Error: directory not found: {html_dir}", file=sys.stderr)
+            sys.exit(1)
+        out = generate_index(html_dir)
+        print(f"Index written to: {out}")
+        return
 
     input_file = sys.argv[1]
     output_file = sys.argv[2] if len(sys.argv) > 2 else None
