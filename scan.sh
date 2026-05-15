@@ -738,8 +738,8 @@ INSERT OR IGNORE INTO scan_metrics (
     '${source_ref_db}',
     $(wc -l < "$input_file" | tr -d ' '),
     ${bundle_images_with_cves},
-    ${bundle_total_critical},
-    ${bundle_total_high},
+    ${total_critical},
+    ${total_high},
     ${bundle_go_stdlib_cves},
     ${bundle_go_module_cves},
     ${bundle_base_image_cves}
