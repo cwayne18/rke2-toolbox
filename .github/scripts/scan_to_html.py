@@ -545,7 +545,11 @@ def render_md_table(headers, rows):
         if h_norm == "status":
             return _status_badge(val) if val.strip() else ""
         if h_norm == "image":
-            return f'<code style="font-size:11px;word-break:break-all">{esc(val)}</code>'
+            # Strip surrounding backticks if the cell value is a markdown code span
+            clean = val.strip()
+            if clean.startswith("`") and clean.endswith("`") and len(clean) > 1:
+                clean = clean[1:-1]
+            return f'<code style="font-size:11px;word-break:break-all">{esc(clean)}</code>'
         if h_norm in ("buildrepo",):
             repo = val.strip()
             if repo and repo != "N/A":
