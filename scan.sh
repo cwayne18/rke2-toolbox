@@ -485,6 +485,14 @@ sqlite_escape() {
     printf '%s' "$1" | sed "s/'/''/g"
 }
 
+source_attribution_python_enabled=1
+source_attribution_warning_emitted=0
+if ! command -v python3 >/dev/null 2>&1; then
+    source_attribution_python_enabled=0
+    source_attribution_warning_emitted=1
+    echo "Warning: python3 not found; skipping CVE source attribution"
+fi
+
 init_metrics_db() {
     local db_dir
 
@@ -531,12 +539,32 @@ SQL
 
 classify_cve_sources() {
     local scan_json="$1"
-    python3 - "$scan_json" <<'PY'
+    local result
+
+    if (( source_attribution_python_enabled == 0 )); then
+        echo "0|0|0"
+        return
+    fi
+
+    if [[ ! -s "$scan_json" ]]; then
+        if (( source_attribution_warning_emitted == 0 )); then
+            echo "Warning: missing Trivy JSON results; CVE source attribution will default to zero counts" >&2
+            source_attribution_warning_emitted=1
+        fi
+        echo "0|0|0"
+        return
+    fi
+
+    if ! result="$(python3 - "$scan_json" <<'PY'
 import json
 import sys
 
-with open(sys.argv[1], "r", encoding="utf-8") as f:
-    data = json.load(f)
+try:
+    with open(sys.argv[1], "r", encoding="utf-8") as f:
+        data = json.load(f)
+except (FileNotFoundError, json.JSONDecodeError):
+    print("0|0|0")
+    sys.exit(0)
 
 counts = {"go_stdlib": 0, "go_module": 0, "base_image": 0}
 
@@ -563,6 +591,16 @@ for result in data.get("Results", []):
 
 print(f"{counts['go_stdlib']}|{counts['go_module']}|{counts['base_image']}")
 PY
+)"; then
+        if (( source_attribution_warning_emitted == 0 )); then
+            echo "Warning: failed to classify CVE sources from Trivy JSON; defaulting attribution to zero counts" >&2
+            source_attribution_warning_emitted=1
+        fi
+        echo "0|0|0"
+        return
+    fi
+
+    echo "$result"
 }
 
 # Loop through each image in the input file
