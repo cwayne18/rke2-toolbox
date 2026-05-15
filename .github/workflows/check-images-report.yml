@@ -8,6 +8,10 @@ on:
 permissions:
   contents: write
 
+concurrency:
+  group: reports-commit
+  cancel-in-progress: false
+
 jobs:
   check-images:
     runs-on: ubuntu-latest
