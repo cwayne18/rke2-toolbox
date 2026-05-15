@@ -567,6 +567,12 @@ PY
 
 # Loop through each image in the input file
 while IFS= read -r image; do
+    image="${image#"${image%%[![:space:]]*}"}"
+    image="${image%"${image##*[![:space:]]}"}"
+    if [[ -z "$image" || "$image" == \#* ]]; then
+        continue
+    fi
+
     echo "Scanning image: $image"
     scan_tmp=$(mktemp)
     scan_json_tmp=$(mktemp)
