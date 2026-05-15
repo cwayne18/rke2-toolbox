@@ -570,8 +570,8 @@ while IFS= read -r image; do
     echo "Scanning image: $image"
     scan_tmp=$(mktemp)
     scan_json_tmp=$(mktemp)
-    trivy image "$image" $vex_flag  --severity CRITICAL,HIGH > "$scan_tmp" 2>/dev/null
-    trivy image "$image" $vex_flag  --severity CRITICAL,HIGH --format json > "$scan_json_tmp" 2>/dev/null
+    trivy image "$image" $vex_flag --severity CRITICAL,HIGH --format json > "$scan_json_tmp" 2>/dev/null
+    trivy convert --format table "$scan_json_tmp" > "$scan_tmp" 2>/dev/null
     {
         echo "## Scan Results: \`$image\`"
         echo ""
