@@ -19,6 +19,10 @@ on:
 permissions:
   contents: write
 
+concurrency:
+  group: html-reports
+  cancel-in-progress: false
+
 jobs:
   convert:
     runs-on: ubuntu-latest
@@ -81,9 +85,6 @@ jobs:
           python3 .github/scripts/scan_to_html.py "$INPUT" "$OUTPUT"
           echo "html_file=$OUTPUT" >> "$GITHUB_OUTPUT"
 
-      - name: Regenerate index
-        run: python3 .github/scripts/scan_to_html.py --index reports/html
-
       - name: Upload HTML report as artifact
         uses: actions/upload-artifact@v4
         with:
@@ -94,28 +95,32 @@ jobs:
       - name: Commit HTML report to repository
         run: |
           HTML="${{ steps.convert.outputs.html_file }}"
+          BRANCH="${{ github.ref_name }}"
 
           git config user.name  "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add "$HTML" reports/html/index.html
-
-          if git diff --cached --quiet; then
-            echo "HTML report is already up-to-date, nothing to commit."
-            exit 0
-          fi
-
-          git commit -m "chore: add HTML report for ${{ steps.resolve.outputs.scan_file }}"
-
-          BRANCH="${{ github.ref_name }}"
-          git fetch origin "$BRANCH"
 
           for attempt in 1 2 3; do
-            git pull --rebase origin "$BRANCH" \
-              && git push origin HEAD:"$BRANCH" \
-              && exit 0
-            echo "Push failed (attempt $attempt/3), retrying..."
-            git rebase --abort || true
+            # Regenerate index from the current tree (post-rebase on retries)
+            python3 .github/scripts/scan_to_html.py --index reports/html
+
+            git add "$HTML" reports/html/index.html
+
+            if git diff --cached --quiet; then
+              echo "HTML report is already up-to-date, nothing to commit."
+              exit 0
+            fi
+
+            git commit -m "chore: add HTML report for ${{ steps.resolve.outputs.scan_file }}"
+
             git fetch origin "$BRANCH"
+            if git push origin HEAD:"$BRANCH"; then
+              exit 0
+            fi
+
+            echo "Push failed (attempt $attempt/3), retrying..."
+            git reset --soft HEAD~1
+            git pull --rebase origin "$BRANCH"
           done
 
           echo "::error::Failed to push HTML report after 3 attempts."
