@@ -444,9 +444,13 @@ def esc(text):
 
 
 def render_inline(text):
-    """Escape text and convert `backtick` spans to <code>."""
+    """Escape text and convert inline markdown spans to HTML."""
     escaped = esc(text)
-    return re.sub(r"`([^`]+)`", r"<code>\1</code>", escaped)
+    # Bold: **text** → <strong>text</strong>
+    escaped = re.sub(r"\*\*([^*]+)\*\*", r"<strong>\1</strong>", escaped)
+    # Backtick code: `code` → <code>code</code>
+    escaped = re.sub(r"`([^`]+)`", r"<code>\1</code>", escaped)
+    return escaped
 
 
 def _severity_badge(severity):
@@ -541,7 +545,11 @@ def render_md_table(headers, rows):
         if h_norm == "status":
             return _status_badge(val) if val.strip() else ""
         if h_norm == "image":
-            return f'<code style="font-size:11px;word-break:break-all">{esc(val)}</code>'
+            # Strip surrounding backticks if the cell value is a markdown code span
+            clean = val.strip()
+            if clean.startswith("`") and clean.endswith("`") and len(clean) > 1:
+                clean = clean[1:-1]
+            return f'<code style="font-size:11px;word-break:break-all">{esc(clean)}</code>'
         if h_norm in ("buildrepo",):
             repo = val.strip()
             if repo and repo != "N/A":
@@ -551,12 +559,12 @@ def render_md_table(headers, rows):
                     f'<a href="{esc(url)}" target="_blank" rel="noopener noreferrer">'
                     f"{esc(val)}</a>"
                 )
-        return esc(val)
+        return render_inline(val)
 
     out = ['<table class="report-table">']
     out.append("<thead><tr>")
     for h in headers:
-        out.append(f"<th>{esc(h)}</th>")
+        out.append(f"<th>{render_inline(h)}</th>")
     out.append("</tr></thead><tbody>")
 
     for row in rows:
@@ -751,6 +759,54 @@ def _convert_raw(text):
 
 
 # ---------------------------------------------------------------------------
+# Markdown pre-processing helpers
+# ---------------------------------------------------------------------------
+
+def _move_summary_to_top(md):
+    """
+    Move the ``## Summary`` section from the bottom of the markdown to just
+    after the opening ``# …`` title heading, so it appears at the top of the
+    rendered page.
+    """
+    lines = md.split("\n")
+
+    # Locate the ## Summary section
+    summary_start = None
+    for i, line in enumerate(lines):
+        if line.strip() == "## Summary":
+            summary_start = i
+            break
+
+    if summary_start is None:
+        return md  # nothing to move
+
+    # Determine where the Summary section ends (next ## heading or EOF)
+    summary_end = len(lines)
+    for i in range(summary_start + 1, len(lines)):
+        if lines[i].startswith("## "):
+            summary_end = i
+            break
+
+    summary_lines = lines[summary_start:summary_end]
+    # Remove the summary block from its original location
+    remaining = lines[:summary_start] + lines[summary_end:]
+
+    # Find insertion point: right after the first # heading line
+    insert_at = 1  # fallback: just after line 0
+    for i, line in enumerate(remaining):
+        if line.startswith("# "):
+            insert_at = i + 1
+            break
+
+    # Skip any blank lines immediately following the heading
+    while insert_at < len(remaining) and not remaining[insert_at].strip():
+        insert_at += 1
+
+    new_lines = remaining[:insert_at] + [""] + summary_lines + [""] + remaining[insert_at:]
+    return "\n".join(new_lines)
+
+
+# ---------------------------------------------------------------------------
 # Full HTML document builder
 # ---------------------------------------------------------------------------
 
@@ -812,6 +868,8 @@ def convert(input_path, output_path=None):
     is_markdown = first_line.startswith("#")
 
     if is_markdown:
+        if not basename.startswith("check-"):
+            content = _move_summary_to_top(content)
         body_html = _convert_markdown(content)
         title_match = re.search(r"^# (.+)$", content, re.MULTILINE)
         title = title_match.group(1).strip() if title_match else "Report"
