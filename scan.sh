@@ -1,0 +1,470 @@
+#!/bin/bash
+
+# Output file to store the Trivy scan reports
+output_file="trivy_scan_report.txt"
+branch=""
+pr_input=""
+gist_title=""
+use_prime_ingress="false"
+release_version=""
+
+usage() {
+    echo "Usage: $0 [branch] [--pr <pr-number|pr-url>] [--release <version>] [--gist <title>] [--prime]"
+    echo ""
+    echo "Examples:"
+    echo "  $0"
+    echo "  $0 release-1.32"
+    echo "  $0 --pr 9994"
+    echo "  $0 --pr https://github.com/rancher/rke2/pull/9994"
+    echo "  $0 --release v1.36.1-rc1-rke2r1"
+    echo "  $0 --release v1.36.1+rke2r1"
+    echo "  $0 --prime"
+    echo "  $0 --gist 'My Scan Results'"
+}
+
+while [[ $# -gt 0 ]]; do
+    case "$1" in
+        -p|--pr)
+            if [[ -z "$2" ]]; then
+                echo "Error: --pr requires a value"
+                usage
+                exit 1
+            fi
+            pr_input="$2"
+            shift 2
+            ;;
+        -g|--gist)
+            if [[ -z "$2" ]]; then
+                echo "Error: --gist requires a title value"
+                usage
+                exit 1
+            fi
+            gist_title="$2"
+            shift 2
+            ;;
+        -r|--release)
+            if [[ -z "$2" ]]; then
+                echo "Error: --release requires a version value"
+                usage
+                exit 1
+            fi
+            release_version="$2"
+            shift 2
+            ;;
+        --prime)
+            use_prime_ingress="true"
+            shift
+            ;;
+        -h|--help)
+            usage
+            exit 0
+            ;;
+        *)
+            # Backward-compatible positional branch argument.
+            if [[ -z "$branch" ]]; then
+                branch="$1"
+                shift
+            else
+                echo "Error: Unknown argument '$1'"
+                usage
+                exit 1
+            fi
+            ;;
+    esac
+done
+
+if [[ -z "$branch" ]]; then
+    branch="master"
+fi
+
+# Validate mutually exclusive flags
+if [[ -n "$release_version" && -n "$pr_input" ]]; then
+    echo "Error: --release and --pr cannot be used together"
+    usage
+    exit 1
+fi
+
+if [[ -n "$release_version" ]]; then
+    # Normalize release version: convert "-rke2rN" suffix to "+rke2rN" so the
+    # tag matches GitHub's release naming. URL-encode the '+' as '%2B'.
+    release_tag="$release_version"
+    if [[ "$release_tag" =~ ^(.*)-rke2r([0-9]+)$ ]]; then
+        release_tag="${BASH_REMATCH[1]}+rke2r${BASH_REMATCH[2]}"
+    fi
+    release_tag_url="${release_tag//+/%2B}"
+    source_desc="release ${release_tag}"
+elif [[ -n "$pr_input" ]]; then
+    if [[ "$pr_input" =~ ^[0-9]+$ ]]; then
+        pr_number="$pr_input"
+    elif [[ "$pr_input" =~ github\.com/rancher/rke2/pull/([0-9]+) ]]; then
+        pr_number="${BASH_REMATCH[1]}"
+    else
+        echo "Error: --pr value must be a PR number or Rancher rke2 PR URL"
+        usage
+        exit 1
+    fi
+
+    ref_path="refs/pull/${pr_number}/head"
+    source_desc="PR #${pr_number}"
+    
+    # Fetch PR head SHA and head branch for artifact lookup
+    pr_info_output=$(gh pr view "$pr_number" -R rancher/rke2 --json headRefOid,headRefName,headRepositoryOwner 2>&1)
+    pr_info_exit=$?
+    if [[ $pr_info_exit -ne 0 ]]; then
+        echo "Error fetching PR info: $pr_info_output"
+        pr_head_sha=""
+        pr_head_ref=""
+    else
+        pr_head_sha=$(echo "$pr_info_output" | grep -oE '"headRefOid":\s*"[^"]+"' | sed 's/.*"\([^"]*\)"$/\1/')
+        pr_head_ref=$(echo "$pr_info_output" | grep -oE '"headRefName":\s*"[^"]+"' | sed 's/.*"\([^"]*\)"$/\1/')
+        echo "PR head SHA: $pr_head_sha"
+        echo "PR head ref: $pr_head_ref"
+    fi
+else
+    ref_path="refs/heads/${branch}"
+    source_desc="branch '${branch}'"
+fi
+
+# Clear files if they already exist
+rm -f "$output_file"
+rm -f images.txt
+
+echo "Scanning using ${source_desc} (${ref_path:-release tag $release_tag})"
+
+# Always set up a work_dir + cleanup so the trap is consistent
+work_dir=$(mktemp -d)
+cleanup() {
+    rm -rf "$work_dir"
+    rm -f rancher.openvex.json
+}
+trap cleanup EXIT
+
+if [[ -n "$release_version" ]]; then
+    # Release mode: download the published images list directly from the GitHub release
+    release_url="https://github.com/rancher/rke2/releases/download/${release_tag_url}/rke2-images.linux-amd64.txt"
+    echo "Downloading release images list from: $release_url"
+    if ! curl -fsSL "$release_url" -o images.txt; then
+        echo "Error: Failed to download release images list from $release_url"
+        echo "       Verify that the release tag '${release_tag}' exists at https://github.com/rancher/rke2/releases"
+        exit 1
+    fi
+    
+    if [[ ! -s images.txt ]]; then
+        echo "Error: Downloaded release images list is empty"
+        exit 1
+    fi
+    
+    echo "Downloaded $(wc -l < images.txt | tr -d ' ') images from release ${release_tag}"
+else
+    # Build-from-source mode: execute the upstream build-images script in a temp sandbox
+    # and use the generated image lists.
+    mkdir -p "$work_dir/scripts" "$work_dir/bin" "$work_dir/build"
+
+    raw_repo="rancher/rke2"
+    raw_ref="$ref_path"
+
+    download_build_scripts() {
+        curl -fsSL "https://raw.githubusercontent.com/${raw_repo}/${raw_ref}/scripts/version.sh" \
+            -o "$work_dir/scripts/version.sh" 2>/dev/null \
+        && curl -fsSL "https://raw.githubusercontent.com/${raw_repo}/${raw_ref}/scripts/build-images" \
+            -o "$work_dir/scripts/build-images" 2>/dev/null
+    }
+
+    if ! download_build_scripts; then
+        if [[ -n "$pr_input" ]]; then
+            echo "Unable to fetch scripts via ${raw_repo}/${raw_ref}; resolving PR head via GitHub API..."
+            if ! pr_json=$(curl -fsSL "https://api.github.com/repos/rancher/rke2/pulls/${pr_number}" 2>/dev/null); then
+                echo "Error: PR #${pr_number} not found or inaccessible in rancher/rke2"
+                exit 1
+            fi
+
+            pr_head_repo=$(printf '%s' "$pr_json" | perl -0777 -ne 'if (/"head"\s*:\s*\{.*?"repo"\s*:\s*\{.*?"full_name"\s*:\s*"([^"]+)"/s) { print $1; }')
+            pr_head_sha=$(printf '%s' "$pr_json" | perl -0777 -ne 'if (/"head"\s*:\s*\{.*?"sha"\s*:\s*"([0-9a-f]{40})"/s) { print $1; }')
+
+            if [[ -z "$pr_head_repo" || -z "$pr_head_sha" ]]; then
+                echo "Error: could not parse head repo/SHA for PR #${pr_number}"
+                exit 1
+            fi
+
+            raw_repo="$pr_head_repo"
+            raw_ref="$pr_head_sha"
+            source_desc="PR #${pr_number} (${raw_repo}@${raw_ref})"
+            echo "Retrying with ${source_desc}"
+
+            if ! download_build_scripts; then
+                echo "Error: failed to fetch scripts for PR #${pr_number} from ${raw_repo}@${raw_ref}"
+                exit 1
+            fi
+        else
+            echo "Error: failed to fetch scripts for ${source_desc} (${ref_path})"
+            exit 1
+        fi
+    fi
+
+    chmod +x "$work_dir/scripts/build-images"
+
+    if [[ "$use_prime_ingress" == "true" ]]; then
+        ingress_nginx_hardened_tag=$(sed -n 's/^INGRESS_NGINX_HARDENED_TAG=//p' "$work_dir/scripts/build-images" | head -n 1)
+        ingress_nginx_prime_tag=$(sed -n 's/^INGRESS_NGINX_PRIME_TAG=//p' "$work_dir/scripts/build-images" | head -n 1)
+
+        if [[ -z "$ingress_nginx_hardened_tag" || -z "$ingress_nginx_prime_tag" ]]; then
+            echo "Error: failed to determine ingress-nginx hardened/prime tags from build-images"
+            exit 1
+        fi
+    fi
+
+    cat <<'EOF' > "$work_dir/bin/git"
+#!/bin/sh
+case "$1" in
+    rev-parse)
+        echo deadbeefdeadbeefdeadbeefdeadbeefdeadbeef
+        ;;
+    diff|status|tag)
+        exit 0
+        ;;
+    log)
+        echo deadbeefdeadbeefdeadbeefdeadbeefdeadbeef someone@example.com
+        ;;
+    *)
+        exit 0
+        ;;
+esac
+EOF
+    chmod +x "$work_dir/bin/git"
+
+    if ! PATH="$work_dir/bin:$PATH" \
+        GOARCH="${GOARCH:-$(go env GOARCH)}" \
+        GOOS="${GOOS:-$(go env GOOS)}" \
+        BUILD_DIR="$work_dir/build" \
+        SKIP_BUILD_IMAGE_RUNTIME=1 \
+        PULL_CMD=echo \
+        PULL_CMD_CORE=echo \
+        bash "$work_dir/scripts/build-images" \
+        > /dev/null 2> "$work_dir/build-images.log"; then
+        cat "$work_dir/build-images.log"
+        exit 1
+    fi
+
+    if [[ "$use_prime_ingress" == "true" ]]; then
+        ingress_images_file="$work_dir/build/images-ingress-nginx.txt"
+
+        if [[ ! -f "$ingress_images_file" ]]; then
+            echo "Error: expected ingress-nginx image list was not generated"
+            exit 1
+        fi
+
+        sed -i.bak "s/:${ingress_nginx_hardened_tag}$/:${ingress_nginx_prime_tag}/" "$ingress_images_file"
+        rm -f "${ingress_images_file}.bak"
+    fi
+
+
+    exclude_pattern="multus|harvester|mirrored"
+
+    find "$work_dir/build" -maxdepth 1 -type f -name 'images-*.txt' ! -name 'images.txt' -print0 \
+        | xargs -0 cat \
+        | grep -vE "$exclude_pattern" \
+        > images.txt
+fi
+
+# Input file containing the list of Docker images
+input_file="./images.txt"
+
+# If a PR was specified, download and load the rke2-runtime image from the PR's CI artifact
+pr_runtime_images=""
+pr_runtime_tar=""
+keep_artifact_dir=""
+if [[ -n "$pr_number" ]]; then
+    echo "Fetching workflow runs for PR #${pr_number}..."
+    
+    if [[ -n "$pr_head_sha" ]]; then
+        # Get all completed runs matching this PR's head SHA
+        candidate_run_ids=$(gh run list -R rancher/rke2 -s completed --limit 100 --json databaseId,headSha,name --jq ".[] | select(.headSha==\"$pr_head_sha\") | .databaseId" 2>/dev/null)
+        
+        # Also try matching by branch name (covers cases where the SHA differs e.g. merge commit)
+        if [[ -n "$pr_head_ref" ]]; then
+            branch_run_ids=$(gh run list -R rancher/rke2 -s completed -b "$pr_head_ref" --limit 50 --json databaseId --jq '.[].databaseId' 2>/dev/null)
+            candidate_run_ids="$candidate_run_ids $branch_run_ids"
+        fi
+        
+        # Also try associated workflow runs via the GitHub API (matches PR by event)
+        api_run_ids=$(gh api "repos/rancher/rke2/actions/runs?event=pull_request&per_page=100" --jq ".workflow_runs[] | select(.pull_requests[]?.number == ${pr_number}) | .id" 2>/dev/null)
+        candidate_run_ids="$candidate_run_ids $api_run_ids"
+        
+        # De-duplicate
+        candidate_run_ids=$(echo "$candidate_run_ids" | tr ' ' '\n' | grep -v '^$' | sort -u | tr '\n' ' ')
+        
+        if [[ -z "$candidate_run_ids" ]]; then
+            echo "Warning: No completed workflow runs found for SHA $pr_head_sha"
+        else
+            # Find a run that has an artifact containing rke2 runtime/images
+            run_id=""
+            artifact_name=""
+            for candidate in $candidate_run_ids; do
+                artifact_names=$(gh api "repos/rancher/rke2/actions/runs/${candidate}/artifacts" --paginate --jq '.artifacts[].name' 2>/dev/null)
+                if [[ -z "$artifact_names" ]]; then
+                    continue
+                fi
+                # Try to find a matching artifact: prefer runtime, then test-artifacts, then images
+                match=$(echo "$artifact_names" | grep -E "rke2-runtime|rke2-test-artifacts|rke2-images" | head -1)
+                if [[ -n "$match" ]]; then
+                    run_id="$candidate"
+                    artifact_name="$match"
+                    echo "Found workflow run ID $run_id with artifact: $artifact_name"
+                    break
+                fi
+            done
+            
+            if [[ -z "$run_id" ]]; then
+                echo "Warning: None of the workflow runs for PR #${pr_number} contain a matching rke2 artifact"
+                echo "Checked runs: $candidate_run_ids"
+                echo ""
+                echo "Available artifacts across runs:"
+                for candidate in $candidate_run_ids; do
+                    names=$(gh api "repos/rancher/rke2/actions/runs/${candidate}/artifacts" --paginate --jq '.artifacts[].name' 2>/dev/null)
+                    if [[ -n "$names" ]]; then
+                        echo "  Run $candidate:"
+                        echo "$names" | sed 's/^/    /'
+                    fi
+                done
+            else
+                artifact_dir=$(mktemp -d)
+                
+                # Download the artifact
+                echo "Downloading $artifact_name from workflow run..."
+                download_output=$(gh run download "$run_id" -R rancher/rke2 -n "$artifact_name" -D "$artifact_dir" 2>&1)
+                download_exit=$?
+                if [[ $download_exit -eq 0 ]]; then
+                    
+                    # Prefer the rke2-runtime tarball; fall back to linux-amd64 images archive
+                    runtime_tar=""
+                    
+                    # Look for rke2-runtime tarball (could be .tar or .tar.zst)
+                    runtime_archive=$(find "$artifact_dir" -type f \( -name "rke2-runtime*.tar.zst" -o -name "rke2-runtime*.tar" \) | head -1)
+                    
+                    if [[ -z "$runtime_archive" ]]; then
+                        # Fall back to linux-amd64 image archive
+                        runtime_archive=$(find "$artifact_dir" -type f -name "rke2-images.linux-amd64.tar.zst" | head -1)
+                    fi
+                    
+                    if [[ -n "$runtime_archive" ]]; then
+                        echo "Found archive: $runtime_archive"
+                        
+                        # Decompress if zstd-compressed
+                        if [[ "$runtime_archive" == *.zst ]]; then
+                            runtime_tar="${runtime_archive%.zst}"
+                            echo "Decompressing archive..."
+                            if ! zstd -d "$runtime_archive" -o "$runtime_tar" 2>/dev/null; then
+                                echo "Warning: Failed to decompress archive"
+                                runtime_tar=""
+                            fi
+                        else
+                            runtime_tar="$runtime_archive"
+                        fi
+                        
+                        if [[ -n "$runtime_tar" ]]; then
+                            # Save the tarball path for trivy to scan directly via --input
+                            pr_runtime_tar="$runtime_tar"
+                            # Don't delete the artifact_dir until after scan
+                            keep_artifact_dir="$artifact_dir"
+                            artifact_dir=""
+                            echo "Will scan PR runtime tarball: $pr_runtime_tar"
+                        fi
+                    else
+                        echo "Warning: No suitable runtime/image archive found in artifact"
+                        echo "Artifact contents:"
+                        find "$artifact_dir" -type f
+                    fi
+                else
+                    echo "Warning: Failed to download artifact from workflow run (exit $download_exit): $download_output"
+                fi
+                
+                # Cleanup temp directory if not retained for scanning
+                if [[ -n "$artifact_dir" ]]; then
+                    rm -rf "$artifact_dir"
+                fi
+            fi
+        fi
+    else
+        echo "Warning: Could not fetch PR head SHA for PR #${pr_number}"
+    fi
+fi
+
+# Download the Rancher OpenVEX Trivy report
+if curl -fsSL https://raw.githubusercontent.com/rancher/vexhub/refs/heads/main/reports/rancher.openvex.json \
+    -o rancher.openvex.json 2>/dev/null && [[ -s rancher.openvex.json ]]; then
+    # Validate it's actually valid JSON/VEX by checking for opening brace
+    if head -c 1 rancher.openvex.json | grep -q '{'; then
+        vex_flag="--vex rancher.openvex.json"
+    else
+        echo "Warning: Downloaded OpenVEX file appears invalid; continuing without VEX suppression"
+        rm -f rancher.openvex.json
+        vex_flag=""
+    fi
+else
+    echo "Warning: Failed to download Rancher OpenVEX report; continuing without VEX suppression"
+    vex_flag=""
+fi
+
+# Write the list of images being scanned to the output file
+{
+    echo "The following images have been scanned:"
+    cat "$input_file"
+    if [[ -n "$pr_runtime_tar" ]]; then
+        echo ""
+        echo "PR Runtime Tarball:"
+        echo "$pr_runtime_tar"
+    fi
+    echo -e "\n\n"
+} >> "$output_file"
+
+# Loop through each image in the input file
+while IFS= read -r image; do
+    echo "Scanning image: $image"
+
+    # Run Trivy scan and append the report to the output file
+    trivy image "$image" $vex_flag --scanners vuln --severity CRITICAL,HIGH >> "$output_file"
+
+    # Add a separator between reports for readability
+    echo -e "\n\n" >> "$output_file"
+done < "$input_file"
+
+# Also scan PR runtime tarball directly if available
+if [[ -n "$pr_runtime_tar" ]]; then
+    echo "Scanning PR runtime tarball: $pr_runtime_tar"
+    {
+        echo "=== PR Runtime Tarball Scan: $(basename "$pr_runtime_tar") ==="
+    } >> "$output_file"
+    
+    # Trivy can scan a tar file directly via --input
+    trivy image --input "$pr_runtime_tar" $vex_flag --scanners vuln --severity CRITICAL,HIGH >> "$output_file"
+    
+    echo -e "\n\n" >> "$output_file"
+    
+    # Cleanup the artifact dir now that we're done
+    if [[ -n "$keep_artifact_dir" ]]; then
+        rm -rf "$keep_artifact_dir"
+    fi
+fi
+
+echo "Trivy scan completed. Reports are saved in $output_file."
+
+if [[ -n "$gist_title" ]]; then
+    echo "Uploading results to GitHub Gist..."
+    gist_url=$(gh gist create --public --desc "$gist_title" --filename "$output_file" "$output_file" 2>&1)
+    if [[ $? -eq 0 ]]; then
+        echo "Gist created: $gist_url"
+
+        # If both PR and gist are provided, add a comment to the PR with the gist link
+        if [[ -n "$pr_number" ]]; then
+            echo "Adding comment to PR #${pr_number} with gist link..."
+            if gh pr comment "$pr_number" -R "rancher/rke2" --body "Trivy scan results: ${gist_url}"; then
+                echo "Comment added to PR #${pr_number}"
+            else
+                echo "Warning: Failed to add comment to PR #${pr_number}"
+            fi
+        fi
+    else
+        echo "Error creating gist: $gist_url"
+        exit 1
+    fi
+fi
