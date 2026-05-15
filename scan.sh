@@ -2,6 +2,7 @@
 
 # Output file to store the Trivy scan reports
 output_file="trivy_scan_report.txt"
+db_file="${SCAN_STATS_DB_PATH:-reports/scan_metrics.db}"
 branch=""
 pr_input=""
 gist_title=""
@@ -448,6 +449,14 @@ total_high=0
 images_with_cves=()
 images_clean=()
 
+# Track bundle-level metrics for sqlite persistence (images list only).
+bundle_total_critical=0
+bundle_total_high=0
+bundle_images_with_cves=0
+bundle_go_stdlib_cves=0
+bundle_go_module_cves=0
+bundle_base_image_cves=0
+
 # tally_severities <display-name> <scan-output-file>
 # Parses trivy "Total: N (HIGH: x, CRITICAL: y)" lines and updates summary state.
 tally_severities() {
@@ -472,11 +481,141 @@ tally_severities() {
     fi
 }
 
+sqlite_escape() {
+    printf '%s' "$1" | sed "s/'/''/g"
+}
+
+source_attribution_python_enabled=1
+source_attribution_warning_emitted=0
+if ! command -v python3 >/dev/null 2>&1; then
+    source_attribution_python_enabled=0
+    source_attribution_warning_emitted=1
+    echo "Warning: python3 not found; skipping CVE source attribution"
+fi
+
+init_metrics_db() {
+    local db_dir
+
+    if ! command -v sqlite3 >/dev/null 2>&1; then
+        echo "Warning: sqlite3 not found; skipping metrics database updates"
+        return 1
+    fi
+
+    db_dir="$(dirname "$db_file")"
+    mkdir -p "$db_dir"
+
+    sqlite3 "$db_file" <<'SQL'
+CREATE TABLE IF NOT EXISTS scan_metrics (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    scanned_at TEXT NOT NULL,
+    source_desc TEXT NOT NULL,
+    source_ref TEXT NOT NULL,
+    total_images INTEGER NOT NULL,
+    images_with_cves INTEGER NOT NULL,
+    critical_cves INTEGER NOT NULL,
+    high_cves INTEGER NOT NULL,
+    go_stdlib_cves INTEGER NOT NULL,
+    go_module_cves INTEGER NOT NULL,
+    base_image_cves INTEGER NOT NULL,
+    created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))
+);
+CREATE INDEX IF NOT EXISTS idx_scan_metrics_scanned_at ON scan_metrics(scanned_at);
+CREATE INDEX IF NOT EXISTS idx_scan_metrics_source_ref_scanned_at
+    ON scan_metrics(source_ref, scanned_at);
+CREATE UNIQUE INDEX IF NOT EXISTS uq_scan_metrics_run_signature
+    ON scan_metrics(
+        scanned_at,
+        source_ref,
+        total_images,
+        images_with_cves,
+        critical_cves,
+        high_cves,
+        go_stdlib_cves,
+        go_module_cves,
+        base_image_cves
+    );
+SQL
+}
+
+classify_cve_sources() {
+    local scan_json="$1"
+    local result
+
+    if (( source_attribution_python_enabled == 0 )); then
+        echo "0|0|0"
+        return
+    fi
+
+    if [[ ! -s "$scan_json" ]]; then
+        if (( source_attribution_warning_emitted == 0 )); then
+            echo "Warning: missing Trivy JSON results; CVE source attribution will default to zero counts" >&2
+            source_attribution_warning_emitted=1
+        fi
+        echo "0|0|0"
+        return
+    fi
+
+    if ! result="$(python3 - "$scan_json" <<'PY'
+import json
+import sys
+
+try:
+    with open(sys.argv[1], "r", encoding="utf-8") as f:
+        data = json.load(f)
+except (FileNotFoundError, json.JSONDecodeError):
+    print("0|0|0")
+    sys.exit(0)
+
+counts = {"go_stdlib": 0, "go_module": 0, "base_image": 0}
+
+for result in data.get("Results", []):
+    result_class = (result.get("Class") or "").lower()
+    result_type = (result.get("Type") or "").lower()
+
+    for vuln in result.get("Vulnerabilities") or []:
+        if vuln.get("Severity") not in {"HIGH", "CRITICAL"}:
+            continue
+
+        pkg_name = (vuln.get("PkgName") or "").lower()
+
+        if result_class == "os-pkgs":
+            counts["base_image"] += 1
+            continue
+
+        if pkg_name in {"stdlib", "go"}:
+            counts["go_stdlib"] += 1
+            continue
+
+        if result_type in {"gomod", "gobinary"}:
+            counts["go_module"] += 1
+
+print(f"{counts['go_stdlib']}|{counts['go_module']}|{counts['base_image']}")
+PY
+)"; then
+        if (( source_attribution_warning_emitted == 0 )); then
+            echo "Warning: failed to classify CVE sources from Trivy JSON; defaulting attribution to zero counts" >&2
+            source_attribution_warning_emitted=1
+        fi
+        echo "0|0|0"
+        return
+    fi
+
+    echo "$result"
+}
+
 # Loop through each image in the input file
 while IFS= read -r image; do
+    image="${image#"${image%%[![:space:]]*}"}"
+    image="${image%"${image##*[![:space:]]}"}"
+    if [[ -z "$image" || "$image" == \#* ]]; then
+        continue
+    fi
+
     echo "Scanning image: $image"
     scan_tmp=$(mktemp)
-    trivy image "$image" $vex_flag  --severity CRITICAL,HIGH > "$scan_tmp" 2>/dev/null
+    scan_json_tmp=$(mktemp)
+    trivy image "$image" $vex_flag --severity CRITICAL,HIGH --format json > "$scan_json_tmp" 2>/dev/null
+    trivy convert --format table "$scan_json_tmp" > "$scan_tmp" 2>/dev/null
     {
         echo "## Scan Results: \`$image\`"
         echo ""
@@ -486,7 +625,27 @@ while IFS= read -r image; do
         echo ""
     } >> "$output_file"
     tally_severities "$image" "$scan_tmp"
+    source_breakdown=$(classify_cve_sources "$scan_json_tmp")
+    img_go_stdlib="${source_breakdown%%|*}"
+    source_breakdown="${source_breakdown#*|}"
+    img_go_module="${source_breakdown%%|*}"
+    img_base_image="${source_breakdown##*|}"
+
+    bundle_go_stdlib_cves=$((bundle_go_stdlib_cves + img_go_stdlib))
+    bundle_go_module_cves=$((bundle_go_module_cves + img_go_module))
+    bundle_base_image_cves=$((bundle_base_image_cves + img_base_image))
+
+    img_critical=$(grep -E '^Total: [0-9]+ \(' "$scan_tmp" | sed -nE 's/.*CRITICAL:[[:space:]]*([0-9]+).*/\1/p' | awk '{s+=$1} END{print s+0}')
+    img_high=$(grep -E '^Total: [0-9]+ \(' "$scan_tmp" | sed -nE 's/.*HIGH:[[:space:]]*([0-9]+).*/\1/p' | awk '{s+=$1} END{print s+0}')
+
+    bundle_total_critical=$((bundle_total_critical + img_critical))
+    bundle_total_high=$((bundle_total_high + img_high))
+    if (( img_critical + img_high > 0 )); then
+        bundle_images_with_cves=$((bundle_images_with_cves + 1))
+    fi
+
     rm -f "$scan_tmp"
+    rm -f "$scan_json_tmp"
 done < "$input_file"
 
 # Also scan PR runtime tarball directly if available
@@ -555,6 +714,43 @@ fi
 } >> "$output_file"
 
 echo "Trivy scan completed. Reports are saved in $output_file."
+
+if init_metrics_db; then
+    scanned_at="$(date -u '+%Y-%m-%dT%H:%M:%SZ')"
+    source_desc_db="$(sqlite_escape "$source_desc")"
+    source_ref_db="$(sqlite_escape "${ref_path:-release:${release_tag}}")"
+
+    sqlite3 "$db_file" <<SQL
+INSERT OR IGNORE INTO scan_metrics (
+    scanned_at,
+    source_desc,
+    source_ref,
+    total_images,
+    images_with_cves,
+    critical_cves,
+    high_cves,
+    go_stdlib_cves,
+    go_module_cves,
+    base_image_cves
+) VALUES (
+    '${scanned_at}',
+    '${source_desc_db}',
+    '${source_ref_db}',
+    $(wc -l < "$input_file" | tr -d ' '),
+    ${bundle_images_with_cves},
+    ${total_critical},
+    ${total_high},
+    ${bundle_go_stdlib_cves},
+    ${bundle_go_module_cves},
+    ${bundle_base_image_cves}
+);
+SQL
+    if [[ "$(sqlite3 "$db_file" 'SELECT changes();')" -gt 0 ]]; then
+        echo "Scan metrics written to $db_file"
+    else
+        echo "Scan metrics already recorded for this run signature; skipped duplicate insert"
+    fi
+fi
 
 if [[ -n "$gist_title" ]]; then
     echo "Uploading results to GitHub Gist..."
