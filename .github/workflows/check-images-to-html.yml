@@ -1,20 +1,20 @@
-name: Convert Scan Report to HTML
+name: Convert Check Images Report to HTML
 
 on:
   push:
     paths:
-      - 'reports/scan-*.md'
+      - 'reports/check-*.md'
   workflow_dispatch:
     inputs:
-      scan_file:
+      check_file:
         description: >
-          Path to the scan-*.md file inside the reports/ directory
-          (e.g. reports/scan-20260515-2.md).  Glob patterns such as
-          reports/scan-*.md are also accepted; when multiple files match the
+          Path to the check-*.md file inside the reports/ directory
+          (e.g. reports/check-20260515-1.md).  Glob patterns such as
+          reports/check-*.md are also accepted; when multiple files match the
           most recently modified one is used.
         required: true
         type: string
-        default: 'reports/scan-*.md'
+        default: 'reports/check-*.md'
 
 permissions:
   contents: write
@@ -30,28 +30,27 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Resolve scan file
+      - name: Resolve check-images file
         id: resolve
         run: |
           if [ "${{ github.event_name }}" = "push" ]; then
             BEFORE="${{ github.event.before }}"
             SHA="${{ github.sha }}"
-            # Detect scan-*.md files added/modified in this push
+            # Detect check-*.md files added/modified in this push
             if [ "$BEFORE" = "0000000000000000000000000000000000000000" ]; then
-              # Initial push — list all scan-*.md files by recency
-              FILE=$(ls -t reports/scan-*.md 2>/dev/null | head -n 1)
+              # Initial push — list all check-*.md files by recency
+              FILE=$(ls -t reports/check-*.md 2>/dev/null | head -n 1)
             else
-              FILE=$(git diff --name-only --diff-filter=AM "$BEFORE" "$SHA" -- 'reports/scan-*.md' 2>/dev/null | head -n 1)
+              FILE=$(git diff --name-only --diff-filter=AM "$BEFORE" "$SHA" -- 'reports/check-*.md' 2>/dev/null | head -n 1)
             fi
             if [ -z "$FILE" ]; then
               # Fallback to most recently modified
-              FILE=$(ls -t reports/scan-*.md 2>/dev/null | head -n 1)
+              FILE=$(ls -t reports/check-*.md 2>/dev/null | head -n 1)
             fi
           else
-            INPUT="${{ inputs.scan_file }}"
+            INPUT="${{ inputs.check_file }}"
             # Expand glob if needed
             if echo "$INPUT" | grep -q '[*?[]'; then
-              # Pick the most-recently modified matching file
               FILE=$(ls -t $INPUT 2>/dev/null | head -n 1)
               if [ -z "$FILE" ]; then
                 echo "::error::No files match the pattern: $INPUT"
@@ -67,8 +66,8 @@ jobs:
             exit 1
           fi
 
-          echo "scan_file=$FILE" >> "$GITHUB_OUTPUT"
-          echo "Resolved scan file: $FILE"
+          echo "check_file=$FILE" >> "$GITHUB_OUTPUT"
+          echo "Resolved check-images file: $FILE"
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -78,7 +77,7 @@ jobs:
       - name: Convert Markdown report to HTML
         id: convert
         run: |
-          INPUT="${{ steps.resolve.outputs.scan_file }}"
+          INPUT="${{ steps.resolve.outputs.check_file }}"
           BASENAME=$(basename "${INPUT%.md}")
           mkdir -p reports/html
           OUTPUT="reports/html/${BASENAME}.html"
@@ -88,7 +87,7 @@ jobs:
       - name: Upload HTML report as artifact
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ steps.resolve.outputs.scan_file != '' && format('scan-report-{0}', github.run_number) || 'scan-report' }}
+          name: check-images-report-${{ github.run_number }}
           path: ${{ steps.convert.outputs.html_file }}
           if-no-files-found: error
 
@@ -111,7 +110,7 @@ jobs:
               exit 0
             fi
 
-            git commit -m "chore: add HTML report for ${{ steps.resolve.outputs.scan_file }}"
+            git commit -m "chore: add HTML report for ${{ steps.resolve.outputs.check_file }}"
 
             git fetch origin "$BRANCH"
             if git push origin HEAD:"$BRANCH"; then

@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>RKE2 Toolbox — Scan Reports</title>
+  <title>RKE2 Toolbox — Reports</title>
   <style>
 @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&family=Lato:ital,wght@0,400;0,700;1,400&family=Roboto+Mono:wght@400;500&display=swap');
 
@@ -36,6 +36,14 @@
   --sev-unknown-bg:      #EDEFF3;
   --sev-unknown-text:    #6C6C76;
   --sev-unknown-border:  #DCDEE7;
+
+  /* Check-images status */
+  --status-needs-bg:     #E45C1E;
+  --status-needs-text:   #FFFFFF;
+  --status-needs-border: #B03A0A;
+  --status-ok-bg:        #27AE60;
+  --status-ok-text:      #FFFFFF;
+  --status-ok-border:    #1A7A41;
 }
 
 *, *::before, *::after { box-sizing: border-box; }
@@ -210,6 +218,23 @@ ul.generic-list li code {
 .sev-LOW      { background: var(--sev-low-bg);      color: var(--sev-low-text);      border-color: var(--sev-low-border);      }
 .sev-UNKNOWN  { background: var(--sev-unknown-bg);  color: var(--sev-unknown-text);  border-color: var(--sev-unknown-border);  }
 
+/* ---- Status badges (check-images) ---- */
+.status {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: .04em;
+  white-space: nowrap;
+  border-width: 1px;
+  border-style: solid;
+}
+.status-NEEDS_UPDATE { background: var(--status-needs-bg); color: var(--status-needs-text); border-color: var(--status-needs-border); }
+.status-UP_TO_DATE   { background: var(--status-ok-bg);    color: var(--status-ok-text);    border-color: var(--status-ok-border);    }
+.status-UNKNOWN      { background: var(--sev-unknown-bg);  color: var(--sev-unknown-text);  border-color: var(--sev-unknown-border);  }
+
 /* ---- Pre / fallback ---- */
 pre.raw-output {
   background: var(--box-bg);
@@ -320,20 +345,18 @@ code {
       <svg viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="16" cy="16" r="14" fill="#2F68DF"/><path d="M9 16.5l4.5 4.5 9.5-9.5" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
       RKE2 Toolbox
     </div>
-    <span class="subtitle">— Trivy Scan Reports</span>
+    <span class="subtitle">— Reports</span>
   </header>
   <main class="page-content">
-    
-<h1>Trivy Scan Reports</h1>
-<p class="index-intro">2 reports available</p>
-<div class="reports-grid">
+    <h1>RKE2 Toolbox Reports</h1>
+<h2>Trivy Scan Reports</h2><p class="index-intro">2 reports available</p><div class="reports-grid">
 <a class="report-card" href="scan-20260515-4.html">  <div class="rc-header">    <div>      <div class="rc-name">scan-20260515-4</div>      <div class="rc-date">May 15, 2026</div>    </div>    <span class="rc-arrow">&#8594;</span>  </div></a>
 <a class="report-card" href="scan-20260515-1.html">  <div class="rc-header">    <div>      <div class="rc-name">scan-20260515-1</div>      <div class="rc-date">May 15, 2026</div>    </div>    <span class="rc-arrow">&#8594;</span>  </div></a>
 </div>
-<div class="page-footer">
-  Index generated &nbsp;·&nbsp; 2026-05-15 20:45 UTC
+<h2>Check Images Reports</h2><p class="index-intro">1 report available</p><div class="reports-grid">
+<a class="report-card" href="check-20260515-1.html">  <div class="rc-header">    <div>      <div class="rc-name">check-20260515-1</div>      <div class="rc-date">May 15, 2026</div>    </div>    <span class="rc-arrow">&#8594;</span>  </div></a>
 </div>
-
+<div class="page-footer">Index generated &nbsp;·&nbsp; 2026-05-15 20:50 UTC</div>
   </main>
 </body>
 </html>
