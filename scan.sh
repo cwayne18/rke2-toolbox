@@ -558,7 +558,7 @@ for result in data.get("Results", []):
             counts["go_stdlib"] += 1
             continue
 
-        if result_type.startswith("go") or result_type == "gobinary" or result_class == "lang-pkgs":
+        if result_type in {"gomod", "gobinary"}:
             counts["go_module"] += 1
 
 print(f"{counts['go_stdlib']}|{counts['go_module']}|{counts['base_image']}")
