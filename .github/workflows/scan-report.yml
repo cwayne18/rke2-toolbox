@@ -1,0 +1,81 @@
+name: Trivy Scan Report
+
+on:
+  schedule:
+    - cron: '0 6 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: reports-commit
+  cancel-in-progress: false
+
+jobs:
+  scan:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install Trivy
+        run: |
+          set -euo pipefail
+          TRIVY_VERSION="0.51.2"
+          TRIVY_ARCHIVE="trivy_${TRIVY_VERSION}_Linux-64bit.tar.gz"
+          BASE_URL="https://github.com/aquasecurity/trivy/releases/download/v${TRIVY_VERSION}"
+
+          curl -fsSLO "${BASE_URL}/${TRIVY_ARCHIVE}"
+          curl -fsSLO "${BASE_URL}/trivy_${TRIVY_VERSION}_checksums.txt"
+          grep " ${TRIVY_ARCHIVE}$" "trivy_${TRIVY_VERSION}_checksums.txt" | sha256sum -c -
+
+          tar -xzf "${TRIVY_ARCHIVE}" trivy
+          sudo install -m 0755 trivy /usr/local/bin/trivy
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: 'stable'
+
+      - name: Run scan.sh
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: bash scan.sh master --prime
+
+      - name: Determine output filename
+        id: filename
+        run: |
+          DATE=$(date +%Y%m%d)
+          N=1
+          while [ -f "reports/scan-${DATE}-${N}.md" ]; do
+            N=$((N + 1))
+          done
+          echo "filename=reports/scan-${DATE}-${N}.md" >> "$GITHUB_OUTPUT"
+
+      - name: Move report to reports directory
+        run: mv trivy_scan_report.txt "${{ steps.filename.outputs.filename }}"
+
+      - name: Commit and push report
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add "${{ steps.filename.outputs.filename }}"
+          if git diff --cached --quiet; then
+            echo "No changes to commit"
+            exit 0
+          fi
+          git commit -m "chore: add scan report ${{ steps.filename.outputs.filename }}"
+
+          BRANCH="${{ github.ref_name }}"
+          git fetch origin "$BRANCH"
+
+          for attempt in 1 2 3; do
+            git pull --rebase origin "$BRANCH" && git push origin HEAD:"$BRANCH" && exit 0
+            echo "Push failed due to concurrent update, retrying ($attempt/3)..."
+            git rebase --abort || true
+            git fetch origin "$BRANCH"
+          done
+
+          echo "Failed to push report after 3 attempts"
+          exit 1
