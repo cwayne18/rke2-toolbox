@@ -1,6 +1,9 @@
 name: Convert Scan Report to HTML
 
 on:
+  push:
+    paths:
+      - 'reports/scan-*.md'
   workflow_dispatch:
     inputs:
       scan_file:
@@ -26,18 +29,33 @@ jobs:
       - name: Resolve scan file
         id: resolve
         run: |
-          INPUT="${{ inputs.scan_file }}"
-
-          # Expand glob if needed
-          if echo "$INPUT" | grep -q '[*?[]'; then
-            # Pick the most-recently modified matching file
-            FILE=$(ls -t $INPUT 2>/dev/null | head -n 1)
+          if [ "${{ github.event_name }}" = "push" ]; then
+            BEFORE="${{ github.event.before }}"
+            SHA="${{ github.sha }}"
+            # Detect scan-*.md files added/modified in this push
+            if [ "$BEFORE" = "0000000000000000000000000000000000000000" ]; then
+              # Initial push — list all scan-*.md files by recency
+              FILE=$(ls -t reports/scan-*.md 2>/dev/null | head -n 1)
+            else
+              FILE=$(git diff --name-only --diff-filter=AM "$BEFORE" "$SHA" -- 'reports/scan-*.md' 2>/dev/null | head -n 1)
+            fi
             if [ -z "$FILE" ]; then
-              echo "::error::No files match the pattern: $INPUT"
-              exit 1
+              # Fallback to most recently modified
+              FILE=$(ls -t reports/scan-*.md 2>/dev/null | head -n 1)
             fi
           else
-            FILE="$INPUT"
+            INPUT="${{ inputs.scan_file }}"
+            # Expand glob if needed
+            if echo "$INPUT" | grep -q '[*?[]'; then
+              # Pick the most-recently modified matching file
+              FILE=$(ls -t $INPUT 2>/dev/null | head -n 1)
+              if [ -z "$FILE" ]; then
+                echo "::error::No files match the pattern: $INPUT"
+                exit 1
+              fi
+            else
+              FILE="$INPUT"
+            fi
           fi
 
           if [ ! -f "$FILE" ]; then
@@ -57,7 +75,9 @@ jobs:
         id: convert
         run: |
           INPUT="${{ steps.resolve.outputs.scan_file }}"
-          OUTPUT="${INPUT%.md}.html"
+          BASENAME=$(basename "${INPUT%.md}")
+          mkdir -p reports/html
+          OUTPUT="reports/html/${BASENAME}.html"
           python3 .github/scripts/scan_to_html.py "$INPUT" "$OUTPUT"
           echo "html_file=$OUTPUT" >> "$GITHUB_OUTPUT"
 
