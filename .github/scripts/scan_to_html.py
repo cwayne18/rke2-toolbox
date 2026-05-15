@@ -543,10 +543,12 @@ def render_md_table(headers, rows):
         if h_norm == "image":
             return f'<code style="font-size:11px;word-break:break-all">{esc(val)}</code>'
         if h_norm in ("buildrepo",):
-            if val.strip() and val.strip() != "N/A":
-                url = f"https://github.com/rancher/{esc(val.strip())}"
+            repo = val.strip()
+            if repo and repo != "N/A":
+                repo_path = repo if "/" in repo else f"rancher/{repo}"
+                url = f"https://github.com/{repo_path}"
                 return (
-                    f'<a href="{url}" target="_blank" rel="noopener noreferrer">'
+                    f'<a href="{esc(url)}" target="_blank" rel="noopener noreferrer">'
                     f"{esc(val)}</a>"
                 )
         return esc(val)
