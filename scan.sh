@@ -266,6 +266,25 @@ EOF
         > images.txt
 fi
 
+# When --prime is set, rewrite image references to use registry.suse.com instead
+# of docker.io (or no registry prefix, which implicitly means docker.io).
+if [[ "$use_prime_ingress" == "true" ]]; then
+    awk '
+        {
+            line = $0
+            if (line == "") { print; next }
+            sub(/^docker\.io\//, "registry.suse.com/", line)
+            # If still has no registry (no "." or ":" in the first path segment), prepend.
+            n = index(line, "/")
+            first = (n > 0) ? substr(line, 1, n - 1) : line
+            if (first !~ /[.:]/) {
+                line = "registry.suse.com/" line
+            }
+            print line
+        }
+    ' images.txt > images.txt.tmp && mv images.txt.tmp images.txt
+fi
+
 # Input file containing the list of Docker images
 input_file="./images.txt"
 
@@ -423,46 +442,117 @@ fi
     echo ""
 } >> "$output_file"
 
+# Track per-image CVE counts for the summary section
+total_critical=0
+total_high=0
+images_with_cves=()
+images_clean=()
+
+# tally_severities <display-name> <scan-output-file>
+# Parses trivy "Total: N (HIGH: x, CRITICAL: y)" lines and updates summary state.
+tally_severities() {
+    local display_name="$1"
+    local scan_file="$2"
+    local img_critical=0 img_high=0 h c
+
+    while IFS= read -r line; do
+        h=$(echo "$line" | sed -nE 's/.*HIGH:[[:space:]]*([0-9]+).*/\1/p')
+        c=$(echo "$line" | sed -nE 's/.*CRITICAL:[[:space:]]*([0-9]+).*/\1/p')
+        [[ -n "$h" ]] && img_high=$((img_high + h))
+        [[ -n "$c" ]] && img_critical=$((img_critical + c))
+    done < <(grep -E '^Total: [0-9]+ \(' "$scan_file")
+
+    total_high=$((total_high + img_high))
+    total_critical=$((total_critical + img_critical))
+
+    if (( img_high + img_critical > 0 )); then
+        images_with_cves+=("${display_name}|${img_critical}|${img_high}")
+    else
+        images_clean+=("$display_name")
+    fi
+}
+
 # Loop through each image in the input file
 while IFS= read -r image; do
     echo "Scanning image: $image"
+    scan_tmp=$(mktemp)
+    trivy image "$image" $vex_flag  --severity CRITICAL,HIGH > "$scan_tmp" 2>/dev/null
     {
         echo "## Scan Results: \`$image\`"
         echo ""
         echo '```text'
-    } >> "$output_file"
-
-    # Run Trivy scan and append the report to the output file
-    trivy image "$image" $vex_flag --scanners vuln --severity CRITICAL,HIGH >> "$output_file"
-
-    {
+        cat "$scan_tmp"
         echo '```'
         echo ""
     } >> "$output_file"
+    tally_severities "$image" "$scan_tmp"
+    rm -f "$scan_tmp"
 done < "$input_file"
 
 # Also scan PR runtime tarball directly if available
 if [[ -n "$pr_runtime_tar" ]]; then
     echo "Scanning PR runtime tarball: $pr_runtime_tar"
+    tarball_label="PR Runtime Tarball: $(basename "$pr_runtime_tar")"
+    scan_tmp=$(mktemp)
+    trivy image --input "$pr_runtime_tar" $vex_flag  --severity CRITICAL,HIGH > "$scan_tmp" 2>/dev/null
     {
-        echo "## Scan Results: PR Runtime Tarball \`$(basename "$pr_runtime_tar")\`"
+        echo "## Scan Results: ${tarball_label}"
         echo ""
         echo '```text'
-    } >> "$output_file"
-    
-    # Trivy can scan a tar file directly via --input
-    trivy image --input "$pr_runtime_tar" $vex_flag --scanners vuln --severity CRITICAL,HIGH >> "$output_file"
-    
-    {
+        cat "$scan_tmp"
         echo '```'
         echo ""
     } >> "$output_file"
-    
+    tally_severities "$tarball_label" "$scan_tmp"
+    rm -f "$scan_tmp"
+
     # Cleanup the artifact dir now that we're done
     if [[ -n "$keep_artifact_dir" ]]; then
         rm -rf "$keep_artifact_dir"
     fi
 fi
+
+# Append a markdown summary section to the end of the report
+{
+    echo "## Summary"
+    echo ""
+    echo "### CVEs by Severity"
+    echo ""
+    echo "| Severity | Count |"
+    echo "| --- | ---: |"
+    echo "| CRITICAL | ${total_critical} |"
+    echo "| HIGH | ${total_high} |"
+    echo "| **Total** | **$((total_critical + total_high))** |"
+    echo ""
+
+    echo "### Images with CVEs (${#images_with_cves[@]})"
+    echo ""
+    if (( ${#images_with_cves[@]} == 0 )); then
+        echo "_None_"
+    else
+        echo "| Image | CRITICAL | HIGH |"
+        echo "| --- | ---: | ---: |"
+        for entry in "${images_with_cves[@]}"; do
+            name="${entry%%|*}"
+            rest="${entry#*|}"
+            crit="${rest%%|*}"
+            high="${rest#*|}"
+            printf '| `%s` | %d | %d |\n' "$name" "$crit" "$high"
+        done
+    fi
+    echo ""
+
+    echo "### CVE-free Images (${#images_clean[@]})"
+    echo ""
+    if (( ${#images_clean[@]} == 0 )); then
+        echo "_None_"
+    else
+        for name in "${images_clean[@]}"; do
+            printf -- '- `%s`\n' "$name"
+        done
+    fi
+    echo ""
+} >> "$output_file"
 
 echo "Trivy scan completed. Reports are saved in $output_file."
 
