@@ -412,13 +412,13 @@ fi
     echo "## Images Scanned"
     echo ""
     while IFS= read -r image; do
-        printf -- "- `%s`\n" "$image"
+        printf -- '- `%s`\n' "$image"
     done < "$input_file"
     if [[ -n "$pr_runtime_tar" ]]; then
         echo ""
         echo "## PR Runtime Tarball"
         echo ""
-        printf -- "- `%s`\n" "$pr_runtime_tar"
+        printf -- '- `%s`\n' "$pr_runtime_tar"
     fi
     echo ""
 } >> "$output_file"
