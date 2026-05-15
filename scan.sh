@@ -405,40 +405,58 @@ else
     vex_flag=""
 fi
 
-# Write the list of images being scanned to the output file
+# Write markdown header and the list of images being scanned to the output file
 {
-    echo "The following images have been scanned:"
-    cat "$input_file"
+    echo "# Trivy Scan Report"
+    echo ""
+    echo "## Images Scanned"
+    echo ""
+    while IFS= read -r image; do
+        printf -- "- `%s`\n" "$image"
+    done < "$input_file"
     if [[ -n "$pr_runtime_tar" ]]; then
         echo ""
-        echo "PR Runtime Tarball:"
-        echo "$pr_runtime_tar"
+        echo "## PR Runtime Tarball"
+        echo ""
+        printf -- "- `%s`\n" "$pr_runtime_tar"
     fi
-    echo -e "\n\n"
+    echo ""
 } >> "$output_file"
 
 # Loop through each image in the input file
 while IFS= read -r image; do
     echo "Scanning image: $image"
+    {
+        echo "## Scan Results: \`$image\`"
+        echo ""
+        echo '```text'
+    } >> "$output_file"
 
     # Run Trivy scan and append the report to the output file
     trivy image "$image" $vex_flag --scanners vuln --severity CRITICAL,HIGH >> "$output_file"
 
-    # Add a separator between reports for readability
-    echo -e "\n\n" >> "$output_file"
+    {
+        echo '```'
+        echo ""
+    } >> "$output_file"
 done < "$input_file"
 
 # Also scan PR runtime tarball directly if available
 if [[ -n "$pr_runtime_tar" ]]; then
     echo "Scanning PR runtime tarball: $pr_runtime_tar"
     {
-        echo "=== PR Runtime Tarball Scan: $(basename "$pr_runtime_tar") ==="
+        echo "## Scan Results: PR Runtime Tarball \`$(basename "$pr_runtime_tar")\`"
+        echo ""
+        echo '```text'
     } >> "$output_file"
     
     # Trivy can scan a tar file directly via --input
     trivy image --input "$pr_runtime_tar" $vex_flag --scanners vuln --severity CRITICAL,HIGH >> "$output_file"
     
-    echo -e "\n\n" >> "$output_file"
+    {
+        echo '```'
+        echo ""
+    } >> "$output_file"
     
     # Cleanup the artifact dir now that we're done
     if [[ -n "$keep_artifact_dir" ]]; then
