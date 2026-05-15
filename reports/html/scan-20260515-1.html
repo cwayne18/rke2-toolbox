@@ -36,6 +36,14 @@
   --sev-unknown-bg:      #EDEFF3;
   --sev-unknown-text:    #6C6C76;
   --sev-unknown-border:  #DCDEE7;
+
+  /* Check-images status */
+  --status-needs-bg:     #E45C1E;
+  --status-needs-text:   #FFFFFF;
+  --status-needs-border: #B03A0A;
+  --status-ok-bg:        #27AE60;
+  --status-ok-text:      #FFFFFF;
+  --status-ok-border:    #1A7A41;
 }
 
 *, *::before, *::after { box-sizing: border-box; }
@@ -209,6 +217,23 @@ ul.generic-list li code {
 .sev-MEDIUM   { background: var(--sev-medium-bg);   color: var(--sev-medium-text);   border-color: var(--sev-medium-border);   }
 .sev-LOW      { background: var(--sev-low-bg);      color: var(--sev-low-text);      border-color: var(--sev-low-border);      }
 .sev-UNKNOWN  { background: var(--sev-unknown-bg);  color: var(--sev-unknown-text);  border-color: var(--sev-unknown-border);  }
+
+/* ---- Status badges (check-images) ---- */
+.status {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: .04em;
+  white-space: nowrap;
+  border-width: 1px;
+  border-style: solid;
+}
+.status-NEEDS_UPDATE { background: var(--status-needs-bg); color: var(--status-needs-text); border-color: var(--status-needs-border); }
+.status-UP_TO_DATE   { background: var(--status-ok-bg);    color: var(--status-ok-text);    border-color: var(--status-ok-border);    }
+.status-UNKNOWN      { background: var(--sev-unknown-bg);  color: var(--sev-unknown-text);  border-color: var(--sev-unknown-border);  }
 
 /* ---- Pre / fallback ---- */
 pre.raw-output {
@@ -1638,7 +1663,7 @@ Report Summary</pre>
 - &#x27;-&#x27;: Not scanned
 - &#x27;0&#x27;: Clean (no security findings detected)</div></div>
     <div class="page-footer">
-      Generated from <code>scan-20260515-1.md</code> &nbsp;·&nbsp; 2026-05-15 20:52 UTC
+      Generated from <code>scan-20260515-1.md</code> &nbsp;·&nbsp; 2026-05-15 20:57 UTC
     </div>
   </main>
 </body>

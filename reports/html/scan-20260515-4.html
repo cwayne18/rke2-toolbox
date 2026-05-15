@@ -36,6 +36,14 @@
   --sev-unknown-bg:      #EDEFF3;
   --sev-unknown-text:    #6C6C76;
   --sev-unknown-border:  #DCDEE7;
+
+  /* Check-images status */
+  --status-needs-bg:     #E45C1E;
+  --status-needs-text:   #FFFFFF;
+  --status-needs-border: #B03A0A;
+  --status-ok-bg:        #27AE60;
+  --status-ok-text:      #FFFFFF;
+  --status-ok-border:    #1A7A41;
 }
 
 *, *::before, *::after { box-sizing: border-box; }
@@ -210,6 +218,23 @@ ul.generic-list li code {
 .sev-LOW      { background: var(--sev-low-bg);      color: var(--sev-low-text);      border-color: var(--sev-low-border);      }
 .sev-UNKNOWN  { background: var(--sev-unknown-bg);  color: var(--sev-unknown-text);  border-color: var(--sev-unknown-border);  }
 
+/* ---- Status badges (check-images) ---- */
+.status {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: .04em;
+  white-space: nowrap;
+  border-width: 1px;
+  border-style: solid;
+}
+.status-NEEDS_UPDATE { background: var(--status-needs-bg); color: var(--status-needs-text); border-color: var(--status-needs-border); }
+.status-UP_TO_DATE   { background: var(--status-ok-bg);    color: var(--status-ok-text);    border-color: var(--status-ok-border);    }
+.status-UNKNOWN      { background: var(--sev-unknown-bg);  color: var(--sev-unknown-text);  border-color: var(--sev-unknown-border);  }
+
 /* ---- Pre / fallback ---- */
 pre.raw-output {
   background: var(--box-bg);
@@ -269,6 +294,7 @@ code {
     <h1>Trivy Scan Report</h1>
 <h2>Summary</h2>
 <h3>CVEs by Severity</h3>
+<div class="scan-card">
 <table class="report-table">
 <thead><tr>
 <th>Severity</th>
@@ -287,7 +313,9 @@ code {
 <td><strong>29</strong></td>
 </tr>
 </tbody></table>
+</div>
 <h3>Images with CVEs (2)</h3>
+<div class="scan-card">
 <table class="report-table">
 <thead><tr>
 <th>Image</th>
@@ -295,16 +323,17 @@ code {
 <th>HIGH</th>
 </tr></thead><tbody>
 <tr>
-<td><code>registry.suse.com/rancher/hardened-kubernetes:v1.36.1-rke2r1-build20260512</code></td>
+<td><code style="font-size:11px;word-break:break-all">`registry.suse.com/rancher/hardened-kubernetes:v1.36.1-rke2r1-build20260512`</code></td>
 <td>0</td>
 <td>24</td>
 </tr>
 <tr>
-<td><code>registry.suse.com/rancher/rke2-cloud-provider:v1.36.0-rc2.0.20260427154526-d239025e2a23-build20260429</code></td>
+<td><code style="font-size:11px;word-break:break-all">`registry.suse.com/rancher/rke2-cloud-provider:v1.36.0-rc2.0.20260427154526-d239025e2a23-build20260429`</code></td>
 <td>0</td>
 <td>5</td>
 </tr>
 </tbody></table>
+</div>
 <h3>CVE-free Images (21)</h3>
 <ul class="generic-list">
 <li><code>registry.suse.com/rancher/hardened-cni-plugins:v1.9.1-build20260511</code></li>
@@ -1758,7 +1787,7 @@ Total: 5 (HIGH: 5, CRITICAL: 0)</pre>
 <div class="legend">- &#x27;-&#x27;: Not scanned
 - &#x27;0&#x27;: Clean (no security findings detected)</div></div>
     <div class="page-footer">
-      Generated from <code>scan-20260515-4.md</code> &nbsp;·&nbsp; 2026-05-15 20:52 UTC
+      Generated from <code>scan-20260515-4.md</code> &nbsp;·&nbsp; 2026-05-15 20:57 UTC
     </div>
   </main>
 </body>

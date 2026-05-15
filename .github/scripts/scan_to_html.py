@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
-"""Convert a scan-*.md Trivy report to styled HTML matching github.com/rancher/dashboard."""
+"""Convert scan-*.md Trivy reports and check-*.md image-update reports to styled HTML
+matching github.com/rancher/dashboard."""
 
 import sys
 import os
@@ -44,6 +45,14 @@ CSS = """
   --sev-unknown-bg:      #EDEFF3;
   --sev-unknown-text:    #6C6C76;
   --sev-unknown-border:  #DCDEE7;
+
+  /* Check-images status */
+  --status-needs-bg:     #E45C1E;
+  --status-needs-text:   #FFFFFF;
+  --status-needs-border: #B03A0A;
+  --status-ok-bg:        #27AE60;
+  --status-ok-text:      #FFFFFF;
+  --status-ok-border:    #1A7A41;
 }
 
 *, *::before, *::after { box-sizing: border-box; }
@@ -218,6 +227,23 @@ ul.generic-list li code {
 .sev-LOW      { background: var(--sev-low-bg);      color: var(--sev-low-text);      border-color: var(--sev-low-border);      }
 .sev-UNKNOWN  { background: var(--sev-unknown-bg);  color: var(--sev-unknown-text);  border-color: var(--sev-unknown-border);  }
 
+/* ---- Status badges (check-images) ---- */
+.status {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: .04em;
+  white-space: nowrap;
+  border-width: 1px;
+  border-style: solid;
+}
+.status-NEEDS_UPDATE { background: var(--status-needs-bg); color: var(--status-needs-text); border-color: var(--status-needs-border); }
+.status-UP_TO_DATE   { background: var(--status-ok-bg);    color: var(--status-ok-text);    border-color: var(--status-ok-border);    }
+.status-UNKNOWN      { background: var(--sev-unknown-bg);  color: var(--sev-unknown-text);  border-color: var(--sev-unknown-border);  }
+
 /* ---- Pre / fallback ---- */
 pre.raw-output {
   background: var(--box-bg);
@@ -366,8 +392,52 @@ def parse_ascii_table(lines):
 
 
 # ---------------------------------------------------------------------------
-# HTML rendering helpers
+# Markdown pipe-table parser  (used for check-*.md reports)
 # ---------------------------------------------------------------------------
+
+def parse_md_table(lines):
+    """
+    Parse a standard GitHub-flavoured markdown pipe table.
+
+    *lines* is a list of raw strings (or a single string that will be split).
+    Returns (headers: list[str], rows: list[dict]) or (None, None).
+    Separator rows (|---|---|) are skipped.
+    """
+    if isinstance(lines, str):
+        lines = lines.split("\n")
+
+    table_lines = [l for l in lines if l.strip().startswith("|")]
+    if not table_lines:
+        return None, None
+
+    def split_row(line):
+        parts = line.strip().split("|")
+        # strip leading/trailing empty strings from outer pipes
+        if parts and parts[0].strip() == "":
+            parts = parts[1:]
+        if parts and parts[-1].strip() == "":
+            parts = parts[:-1]
+        return [p.strip() for p in parts]
+
+    import re as _re
+
+    headers = None
+    rows = []
+    for line in table_lines:
+        cells = split_row(line)
+        if headers is None:
+            headers = cells
+            continue
+        # Skip separator row (cells like ---, :--:, etc.)
+        if all(_re.match(r"^:?-+:?$", c) for c in cells if c):
+            continue
+        while len(cells) < len(headers):
+            cells.append("")
+        rows.append(dict(zip(headers, cells[: len(headers)])))
+
+    if not headers or not rows:
+        return None, None
+    return headers, rows
 
 def esc(text):
     return html_lib.escape(str(text))
@@ -387,6 +457,13 @@ def _severity_badge(severity):
     s = severity.strip().upper()
     css = s if s in ("CRITICAL", "HIGH", "MEDIUM", "LOW") else "UNKNOWN"
     return f'<span class="sev sev-{css}">{esc(severity.strip())}</span>'
+
+
+def _status_badge(status):
+    """Render a check-images Status cell (NEEDS_UPDATE / UP_TO_DATE / UNKNOWN)."""
+    s = status.strip().upper()
+    css = s if s in ("NEEDS_UPDATE", "UP_TO_DATE", "UNKNOWN") else "UNKNOWN"
+    return f'<span class="status status-{css}">{esc(status.strip())}</span>'
 
 
 def _vuln_count_cell(val):
@@ -457,62 +534,44 @@ def render_table(headers, rows):
     return "\n".join(out)
 
 
-# ---------------------------------------------------------------------------
-# Markdown pipe-table helpers
-# ---------------------------------------------------------------------------
-
-def _is_pipe_table_row(line):
-    """True if line looks like a markdown pipe-table row."""
-    stripped = line.strip()
-    return stripped.startswith("|") and stripped.endswith("|")
-
-
-def _is_pipe_separator(line):
-    """True if line is a markdown pipe-table separator row (| --- | ---: | etc.)."""
-    if not _is_pipe_table_row(line):
-        return False
-    cells = [c.strip() for c in line.strip().strip("|").split("|")]
-    return bool(cells) and all(re.match(r"^:?-+:?$", c) for c in cells if c)
-
-
-def _parse_pipe_table(lines):
-    """
-    Parse a list of pipe-table markdown lines (header row, separator, data rows…).
-    Returns (headers: list[str], rows: list[dict[str,str]]).
-    """
-    headers = [c.strip() for c in lines[0].strip().strip("|").split("|")]
-    rows = []
-    for line in lines[2:]:  # skip separator row at index 1
-        cells = [c.strip() for c in line.strip().strip("|").split("|")]
-        while len(cells) < len(headers):
-            cells.append("")
-        cells = cells[: len(headers)]
-        rows.append(dict(zip(headers, cells)))
-    return headers, rows
-
-
-def render_pipe_table(headers, rows):
-    """Render (headers, rows) from a markdown pipe-table as a styled HTML table."""
+def render_md_table(headers, rows):
+    """Render a parsed markdown pipe table as HTML with check-images aware styling."""
     if not headers or not rows:
         return ""
+
+    hlo = [h.lower().replace(" ", "").replace("(", "").replace(")", "") for h in headers]
+
+    def col_html(h_norm, val):
+        if h_norm == "status":
+            return _status_badge(val) if val.strip() else ""
+        if h_norm == "image":
+            return f'<code style="font-size:11px;word-break:break-all">{esc(val)}</code>'
+        if h_norm in ("buildrepo",):
+            repo = val.strip()
+            if repo and repo != "N/A":
+                repo_path = repo if "/" in repo else f"rancher/{repo}"
+                url = f"https://github.com/{repo_path}"
+                return (
+                    f'<a href="{esc(url)}" target="_blank" rel="noopener noreferrer">'
+                    f"{esc(val)}</a>"
+                )
+        return render_inline(val)
+
     out = ['<table class="report-table">']
     out.append("<thead><tr>")
     for h in headers:
         out.append(f"<th>{render_inline(h)}</th>")
     out.append("</tr></thead><tbody>")
+
     for row in rows:
         out.append("<tr>")
-        for h in headers:
+        for h, h_norm in zip(headers, hlo):
             val = row.get(h, "")
-            out.append(f"<td>{render_inline(val)}</td>")
+            out.append(f"<td>{col_html(h_norm, val)}</td>")
         out.append("</tr>")
+
     out.append("</tbody></table>")
     return "\n".join(out)
-
-
-# ---------------------------------------------------------------------------
-# Code-block processor
-# ---------------------------------------------------------------------------
 
 def _process_trivy_block(content):
     """
@@ -574,7 +633,7 @@ def _process_trivy_block(content):
 # ---------------------------------------------------------------------------
 
 def _convert_markdown(md):
-    """Convert the structured scan markdown to an HTML body string."""
+    """Convert the structured scan/check-images markdown to an HTML body string."""
     lines = md.split("\n")
     out = []
     i = 0
@@ -583,16 +642,26 @@ def _convert_markdown(md):
     in_code = False
     code_lang = ""
     code_lines = []
+    in_pipe_table = False
+    pipe_table_lines = []
 
     def close_ul():
         nonlocal in_ul, in_images_list
         if in_ul:
-            if in_images_list:
-                out.append("</ul>")
-                in_images_list = False
-            else:
-                out.append("</ul>")
+            out.append("</ul>")
+            in_images_list = False
             in_ul = False
+
+    def close_pipe_table():
+        nonlocal in_pipe_table, pipe_table_lines
+        if in_pipe_table:
+            headers, rows = parse_md_table(pipe_table_lines)
+            if headers and rows:
+                out.append('<div class="scan-card">')
+                out.append(render_md_table(headers, rows))
+                out.append("</div>")
+            in_pipe_table = False
+            pipe_table_lines = []
 
     while i < len(lines):
         line = lines[i]
@@ -601,6 +670,7 @@ def _convert_markdown(md):
         if line.startswith("```"):
             if not in_code:
                 close_ul()
+                close_pipe_table()
                 in_code = True
                 code_lang = line[3:].strip()
                 code_lines = []
@@ -618,6 +688,17 @@ def _convert_markdown(md):
             code_lines.append(line)
             i += 1
             continue
+
+        # ---- markdown pipe table ----
+        if line.strip().startswith("|"):
+            close_ul()
+            in_pipe_table = True
+            pipe_table_lines.append(line)
+            i += 1
+            continue
+
+        # Any non-pipe line closes an open pipe table
+        close_pipe_table()
 
         # ---- headings ----
         if line.startswith("# "):
@@ -646,24 +727,6 @@ def _convert_markdown(md):
         elif not line.strip():
             close_ul()
 
-        # ---- markdown pipe table ----
-        elif _is_pipe_table_row(line):
-            close_ul()
-            table_lines = [line]
-            while i + 1 < len(lines) and _is_pipe_table_row(lines[i + 1]):
-                i += 1
-                table_lines.append(lines[i])
-            if len(table_lines) >= 2 and _is_pipe_separator(table_lines[1]):
-                headers, rows = _parse_pipe_table(table_lines)
-                if headers and rows:
-                    out.append(render_pipe_table(headers, rows))
-                else:
-                    for tl in table_lines:
-                        out.append(f"<p>{render_inline(tl.strip())}</p>")
-            else:
-                for tl in table_lines:
-                    out.append(f"<p>{render_inline(tl.strip())}</p>")
-
         # ---- paragraph ----
         else:
             close_ul()
@@ -673,6 +736,7 @@ def _convert_markdown(md):
 
         i += 1
 
+    close_pipe_table()
     close_ul()
     return "\n".join(out)
 
@@ -751,7 +815,7 @@ _RANCHER_LOGO_SVG = (
 )
 
 
-def build_html(title, body_html, source_filename):
+def build_html(title, body_html, source_filename, subtitle="— Report"):
     now = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
     return f"""<!DOCTYPE html>
 <html lang="en">
@@ -767,7 +831,7 @@ def build_html(title, body_html, source_filename):
       {_RANCHER_LOGO_SVG}
       RKE2 Toolbox
     </div>
-    <span class="subtitle">— Trivy Scan Report</span>
+    <span class="subtitle">{esc(subtitle)}</span>
   </header>
   <main class="page-content">
     {body_html}
@@ -787,20 +851,29 @@ def convert(input_path, output_path=None):
     with open(input_path, encoding="utf-8") as fh:
         content = fh.read()
 
+    basename = os.path.basename(input_path)
+
+    # Detect report type from filename prefix
+    if basename.startswith("check-"):
+        subtitle = "— Check Images Report"
+    else:
+        subtitle = "— Trivy Scan Report"
+
     # Detect format: markdown if first non-blank line starts with #
     first_line = next((l for l in content.splitlines() if l.strip()), "")
     is_markdown = first_line.startswith("#")
 
     if is_markdown:
-        content = _move_summary_to_top(content)
+        if not basename.startswith("check-"):
+            content = _move_summary_to_top(content)
         body_html = _convert_markdown(content)
         title_match = re.search(r"^# (.+)$", content, re.MULTILINE)
-        title = title_match.group(1).strip() if title_match else "Scan Report"
+        title = title_match.group(1).strip() if title_match else "Report"
     else:
         body_html = _convert_raw(content)
-        title = os.path.splitext(os.path.basename(input_path))[0]
+        title = os.path.splitext(basename)[0]
 
-    full_html = build_html(title, body_html, os.path.basename(input_path))
+    full_html = build_html(title, body_html, basename, subtitle)
 
     if output_path is None:
         base = os.path.splitext(input_path)[0]
@@ -894,12 +967,13 @@ def _parse_date_from_filename(name):
 def generate_index(html_dir):
     """
     Scan *html_dir* for *.html files (excluding index.html itself) and
-    write a styled index.html listing them all, most-recent first.
+    write a styled index.html with two sections: Trivy Scan Reports and
+    Check Images Reports, each showing cards sorted most-recent first.
 
     Returns the path of the written index file.
     """
     html_dir = os.path.abspath(html_dir)
-    entries = sorted(
+    all_entries = sorted(
         [
             f
             for f in os.listdir(html_dir)
@@ -909,9 +983,12 @@ def generate_index(html_dir):
         reverse=True,
     )
 
+    scan_entries = [f for f in all_entries if f.startswith("scan-")]
+    check_entries = [f for f in all_entries if f.startswith("check-")]
+
     now = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
 
-    if entries:
+    def _make_cards(entries):
         cards = []
         for fname in entries:
             m = re.search(r"(\d{8})", fname)
@@ -937,29 +1014,36 @@ def generate_index(html_dir):
                 f"</a>"
             )
             cards.append(card)
+        return cards
 
-        grid_html = '<div class="reports-grid">\n' + "\n".join(cards) + "\n</div>"
-    else:
-        grid_html = '<p class="empty-state">No scan reports found yet.</p>'
+    def _section(title, entries, empty_msg):
+        if entries:
+            cards = _make_cards(entries)
+            grid = '<div class="reports-grid">\n' + "\n".join(cards) + "\n</div>"
+        else:
+            grid = f'<p class="empty-state">{esc(empty_msg)}</p>'
+        count = len(entries)
+        subtitle_text = f"{count} report{'s' if count != 1 else ''} available"
+        return (
+            f'<h2>{esc(title)}</h2>'
+            f'<p class="index-intro">{esc(subtitle_text)}</p>'
+            f"{grid}"
+        )
 
-    count = len(entries)
-    subtitle = f"{count} report{'s' if count != 1 else ''} available"
-
-    body_html = f"""
-<h1>Trivy Scan Reports</h1>
-<p class="index-intro">{esc(subtitle)}</p>
-{grid_html}
-<div class="page-footer">
-  Index generated &nbsp;·&nbsp; {esc(now)}
-</div>
-"""
+    body_html = (
+        "<h1>RKE2 Toolbox Reports</h1>\n"
+        + _section("Trivy Scan Reports", scan_entries, "No scan reports found yet.")
+        + "\n"
+        + _section("Check Images Reports", check_entries, "No check-images reports found yet.")
+        + f'\n<div class="page-footer">Index generated &nbsp;·&nbsp; {esc(now)}</div>'
+    )
 
     full_html = f"""<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>RKE2 Toolbox — Scan Reports</title>
+  <title>RKE2 Toolbox — Reports</title>
   <style>{CSS}{_INDEX_CSS_EXTRA}</style>
 </head>
 <body>
@@ -968,7 +1052,7 @@ def generate_index(html_dir):
       {_RANCHER_LOGO_SVG}
       RKE2 Toolbox
     </div>
-    <span class="subtitle">— Trivy Scan Reports</span>
+    <span class="subtitle">— Reports</span>
   </header>
   <main class="page-content">
     {body_html}
