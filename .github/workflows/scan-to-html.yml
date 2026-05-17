@@ -18,6 +18,7 @@ on:
 
 permissions:
   contents: write
+  models: read
 
 concurrency:
   group: html-reports
@@ -77,6 +78,9 @@ jobs:
 
       - name: Convert Markdown report to HTML
         id: convert
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          COPILOT_MODEL: openai/gpt-4.1-mini
         run: |
           INPUT="${{ steps.resolve.outputs.scan_file }}"
           BASENAME=$(basename "${INPUT%.md}")
