@@ -1037,7 +1037,15 @@ def _copilot_suggested_actions(title, findings_by_image):
         )
         actions = _parse_actions_from_copilot_text(content)
         return actions[:6] if actions else fallback_actions
-    except (urllib.error.URLError, urllib.error.HTTPError, json.JSONDecodeError, KeyError, IndexError):
+    except (
+        urllib.error.URLError,
+        json.JSONDecodeError,
+        KeyError,
+        IndexError,
+        AttributeError,
+        TimeoutError,
+        ConnectionResetError,
+    ):
         return fallback_actions
 
 
