@@ -1052,7 +1052,7 @@ def _copilot_suggested_actions(title, findings_by_image):
 def _render_suggested_actions(actions):
     if not actions:
         return ""
-    items = "\n".join(f"<li>{render_inline(a)}</li>" for a in actions)
+    items = "\n".join(f"<li>{esc(a)}</li>" for a in actions)
     return (
         '<section class="suggested-actions">'
         "<h2>Suggested Actions</h2>"
