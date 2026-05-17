@@ -280,6 +280,25 @@ code {
   background: var(--box-bg);
   border-top: 1px solid var(--border);
 }
+
+/* ---- Suggested actions ---- */
+.suggested-actions {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: #F8FAFF;
+  padding: 18px 20px 8px;
+  margin-bottom: 22px;
+}
+.suggested-actions h2 {
+  margin: 0 0 10px;
+}
+.suggested-actions ul {
+  margin: 0;
+  padding-left: 20px;
+}
+.suggested-actions li {
+  margin-bottom: 8px;
+}
 </style>
 </head>
 <body>
@@ -291,7 +310,10 @@ code {
     <span class="subtitle">— Trivy Scan Report</span>
   </header>
   <main class="page-content">
-    <h1>Trivy Scan Report</h1>
+    <section class="suggested-actions"><h2>Suggested Actions</h2><ul><li>Update registry.suse.com/rancher/hardened-kubernetes image to use Go stdlib version 1.25.10 or later</li>
+<li>Rebuild registry.suse.com/rancher/hardened-kubernetes:v1.36.1-rke2r1-build20260512 with updated Go stdlib dependencies</li>
+<li>Update registry.suse.com/rancher/rke2-cloud-provider image to use Go stdlib version 1.25.10 or later</li>
+<li>Rebuild registry.suse.com/rancher/rke2-cloud-provider:v1.36.0-rc2.0.20260427154526-d239025e2a23-build20260429 with updated Go stdlib dependencies</li></ul></section><h1>Trivy Scan Report</h1>
 <h2>Summary</h2>
 <h3>CVEs by Severity</h3>
 <div class="scan-card">
@@ -1787,7 +1809,7 @@ Total: 5 (HIGH: 5, CRITICAL: 0)</pre>
 <div class="legend">- &#x27;-&#x27;: Not scanned
 - &#x27;0&#x27;: Clean (no security findings detected)</div></div>
     <div class="page-footer">
-      Generated from <code>scan-20260515-4.md</code> &nbsp;·&nbsp; 2026-05-15 21:02 UTC
+      Generated from <code>scan-20260515-4.md</code> &nbsp;·&nbsp; 2026-05-17 14:07 UTC
     </div>
   </main>
 </body>
