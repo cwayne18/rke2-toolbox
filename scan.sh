@@ -456,6 +456,8 @@ bundle_images_with_cves=0
 bundle_go_stdlib_cves=0
 bundle_go_module_cves=0
 bundle_base_image_cves=0
+bundle_images_scanned=0
+bundle_binaries_scanned=0
 
 # tally_severities <display-name> <scan-output-file>
 # Parses trivy "Total: N (HIGH: x, CRITICAL: y)" lines and updates summary state.
@@ -542,7 +544,7 @@ classify_cve_sources() {
     local result
 
     if (( source_attribution_python_enabled == 0 )); then
-        echo "0|0|0"
+        echo "0|0|0|0"
         return
     fi
 
@@ -551,7 +553,7 @@ classify_cve_sources() {
             echo "Warning: missing Trivy JSON results; CVE source attribution will default to zero counts" >&2
             source_attribution_warning_emitted=1
         fi
-        echo "0|0|0"
+        echo "0|0|0|0"
         return
     fi
 
@@ -563,14 +565,22 @@ try:
     with open(sys.argv[1], "r", encoding="utf-8") as f:
         data = json.load(f)
 except (FileNotFoundError, json.JSONDecodeError):
-    print("0|0|0")
+    print("0|0|0|0")
     sys.exit(0)
 
 counts = {"go_stdlib": 0, "go_module": 0, "base_image": 0}
+binary_targets = set()
+binary_target_fallback_count = 0
 
 for result in data.get("Results", []):
     result_class = (result.get("Class") or "").lower()
     result_type = (result.get("Type") or "").lower()
+    if result_type in {"gobinary", "binary"}:
+        target = (result.get("Target") or "").strip()
+        if target:
+            binary_targets.add(target)
+        else:
+            binary_target_fallback_count += 1
 
     for vuln in result.get("Vulnerabilities") or []:
         if vuln.get("Severity") not in {"HIGH", "CRITICAL"}:
@@ -589,14 +599,17 @@ for result in data.get("Results", []):
         if result_type in {"gomod", "gobinary"}:
             counts["go_module"] += 1
 
-print(f"{counts['go_stdlib']}|{counts['go_module']}|{counts['base_image']}")
+print(
+    f"{counts['go_stdlib']}|{counts['go_module']}|{counts['base_image']}|"
+    f"{len(binary_targets) + binary_target_fallback_count}"
+)
 PY
 )"; then
         if (( source_attribution_warning_emitted == 0 )); then
             echo "Warning: failed to classify CVE sources from Trivy JSON; defaulting attribution to zero counts" >&2
             source_attribution_warning_emitted=1
         fi
-        echo "0|0|0"
+        echo "0|0|0|0"
         return
     fi
 
@@ -612,6 +625,7 @@ while IFS= read -r image; do
     fi
 
     echo "Scanning image: $image"
+    bundle_images_scanned=$((bundle_images_scanned + 1))
     scan_tmp=$(mktemp)
     scan_json_tmp=$(mktemp)
     trivy image "$image" $vex_flag --severity CRITICAL,HIGH --format json > "$scan_json_tmp" 2>/dev/null
@@ -626,14 +640,12 @@ while IFS= read -r image; do
     } >> "$output_file"
     tally_severities "$image" "$scan_tmp"
     source_breakdown=$(classify_cve_sources "$scan_json_tmp")
-    img_go_stdlib="${source_breakdown%%|*}"
-    source_breakdown="${source_breakdown#*|}"
-    img_go_module="${source_breakdown%%|*}"
-    img_base_image="${source_breakdown##*|}"
+    IFS='|' read -r img_go_stdlib img_go_module img_base_image img_binaries_scanned <<< "$source_breakdown"
 
     bundle_go_stdlib_cves=$((bundle_go_stdlib_cves + img_go_stdlib))
     bundle_go_module_cves=$((bundle_go_module_cves + img_go_module))
     bundle_base_image_cves=$((bundle_base_image_cves + img_base_image))
+    bundle_binaries_scanned=$((bundle_binaries_scanned + img_binaries_scanned))
 
     img_critical=$(grep -E '^Total: [0-9]+ \(' "$scan_tmp" | sed -nE 's/.*CRITICAL:[[:space:]]*([0-9]+).*/\1/p' | awk '{s+=$1} END{print s+0}')
     img_high=$(grep -E '^Total: [0-9]+ \(' "$scan_tmp" | sed -nE 's/.*HIGH:[[:space:]]*([0-9]+).*/\1/p' | awk '{s+=$1} END{print s+0}')
@@ -653,7 +665,9 @@ if [[ -n "$pr_runtime_tar" ]]; then
     echo "Scanning PR runtime tarball: $pr_runtime_tar"
     tarball_label="PR Runtime Tarball: $(basename "$pr_runtime_tar")"
     scan_tmp=$(mktemp)
-    trivy image --input "$pr_runtime_tar" $vex_flag  --severity CRITICAL,HIGH > "$scan_tmp" 2>/dev/null
+    scan_json_tmp=$(mktemp)
+    trivy image --input "$pr_runtime_tar" $vex_flag  --severity CRITICAL,HIGH --format json > "$scan_json_tmp" 2>/dev/null
+    trivy convert --format table "$scan_json_tmp" > "$scan_tmp" 2>/dev/null
     {
         echo "## Scan Results: ${tarball_label}"
         echo ""
@@ -663,7 +677,11 @@ if [[ -n "$pr_runtime_tar" ]]; then
         echo ""
     } >> "$output_file"
     tally_severities "$tarball_label" "$scan_tmp"
+    source_breakdown=$(classify_cve_sources "$scan_json_tmp")
+    IFS='|' read -r _ _ _ img_binaries_scanned <<< "$source_breakdown"
+    bundle_binaries_scanned=$((bundle_binaries_scanned + img_binaries_scanned))
     rm -f "$scan_tmp"
+    rm -f "$scan_json_tmp"
 
     # Cleanup the artifact dir now that we're done
     if [[ -n "$keep_artifact_dir" ]]; then
@@ -682,6 +700,15 @@ fi
     echo "| CRITICAL | ${total_critical} |"
     echo "| HIGH | ${total_high} |"
     echo "| **Total** | **$((total_critical + total_high))** |"
+    echo ""
+
+    echo "### Scan Coverage"
+    echo ""
+    echo "| Metric | Count |"
+    echo "| --- | ---: |"
+    echo "| Images scanned | ${bundle_images_scanned} |"
+    echo "| Binaries scanned | ${bundle_binaries_scanned} |"
+    echo "| **Total scanned targets** | **$((bundle_images_scanned + bundle_binaries_scanned))** |"
     echo ""
 
     echo "### Images with CVEs (${#images_with_cves[@]})"
