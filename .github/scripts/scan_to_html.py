@@ -1017,10 +1017,12 @@ def _copilot_suggested_actions(title, findings_by_image):
     }
 
     req = urllib.request.Request(
-        "https://models.inference.ai.azure.com/chat/completions",
+        "https://models.github.ai/inference/chat/completions",
         data=json.dumps(payload).encode("utf-8"),
         headers={
             "Content-Type": "application/json",
+            "Accept": "application/vnd.github+json",
+            "X-GitHub-Api-Version": "2022-11-28",
             "Authorization": f"Bearer {token}",
         },
         method="POST",
