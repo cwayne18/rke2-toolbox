@@ -6,6 +6,7 @@ import sys
 import os
 import re
 import json
+import sqlite3
 import html as html_lib
 import urllib.request
 import urllib.error
@@ -828,6 +829,153 @@ def _move_summary_to_top(md):
     return "\n".join(new_lines)
 
 
+def _extract_summary_total_cves(md):
+    """Extract total CVEs from the markdown summary table."""
+    m = re.search(r"^\|\s*\*\*Total\*\*\s*\|\s*\*\*(\d+)\*\*\s*\|", md, re.MULTILINE)
+    if m:
+        return int(m.group(1))
+
+    critical = re.search(r"^\|\s*CRITICAL\s*\|\s*(\d+)\s*\|", md, re.MULTILINE)
+    high = re.search(r"^\|\s*HIGH\s*\|\s*(\d+)\s*\|", md, re.MULTILINE)
+    if critical and high:
+        return int(critical.group(1)) + int(high.group(1))
+    return None
+
+
+def _count_images_scanned(md):
+    """Count entries in the '## Images Scanned' section."""
+    lines = md.split("\n")
+    start = None
+    for i, line in enumerate(lines):
+        if line.strip() == "## Images Scanned":
+            start = i + 1
+            break
+    if start is None:
+        return 0
+
+    count = 0
+    for i in range(start, len(lines)):
+        line = lines[i]
+        if line.startswith("## "):
+            break
+        if re.match(r"^\s*[-*]\s+`[^`]+`\s*$", line):
+            count += 1
+    return count
+
+
+def _count_scanned_binaries(md):
+    """Count gobinary/binary targets reported by Trivy scan output."""
+    return len(re.findall(r"(?im)^\s*.+\((?:go)?binary\)\s*$", md))
+
+
+def _metrics_db_path(input_path):
+    """Resolve the metrics DB location."""
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    repo_root_db = os.path.abspath(os.path.join(script_dir, "..", "..", "reports", "scan_metrics.db"))
+    if os.path.isfile(repo_root_db):
+        return repo_root_db
+
+    sibling_db = os.path.join(os.path.dirname(os.path.abspath(input_path)), "scan_metrics.db")
+    if os.path.isfile(sibling_db):
+        return sibling_db
+    return None
+
+
+def _recent_cve_totals_from_db(input_path):
+    """Return most recent CVE totals from metrics DB (latest first)."""
+    db_path = _metrics_db_path(input_path)
+    if not db_path:
+        return []
+    try:
+        with sqlite3.connect(db_path) as conn:
+            cur = conn.cursor()
+            cur.execute(
+                """
+                SELECT (critical_cves + high_cves) AS total_cves
+                FROM scan_metrics
+                ORDER BY scanned_at DESC, id DESC
+                LIMIT 2
+                """
+            )
+            rows = [int(r[0]) for r in cur.fetchall() if r and r[0] is not None]
+            return rows
+    except sqlite3.Error:
+        return []
+
+
+def _augment_scan_summary(md, input_path):
+    """Add extra scan metrics sections into the markdown Summary section."""
+    lines = md.split("\n")
+    summary_start = None
+    for i, line in enumerate(lines):
+        if line.strip() == "## Summary":
+            summary_start = i
+            break
+    if summary_start is None:
+        return md
+
+    summary_end = len(lines)
+    for i in range(summary_start + 1, len(lines)):
+        if lines[i].startswith("## "):
+            summary_end = i
+            break
+
+    summary_lines = lines[summary_start:summary_end]
+    summary_text = "\n".join(summary_lines)
+    add_lines = []
+
+    if "### CVE Delta vs Previous Scan" not in summary_text:
+        current_total = _extract_summary_total_cves(md)
+        recent_totals = _recent_cve_totals_from_db(input_path)
+
+        previous_total = None
+        delta_value = None
+        if recent_totals:
+            if current_total is None:
+                current_total = recent_totals[0]
+            if len(recent_totals) >= 2:
+                previous_total = recent_totals[1] if current_total == recent_totals[0] else recent_totals[0]
+                delta_value = current_total - previous_total if current_total is not None else None
+
+        delta_display = f"{delta_value:+d}" if delta_value is not None else "N/A"
+        add_lines.extend(
+            [
+                "",
+                "### CVE Delta vs Previous Scan",
+                "",
+                "| Metric | Count |",
+                "| --- | ---: |",
+                f"| Previous scan CVEs | {previous_total if previous_total is not None else 'N/A'} |",
+                f"| Current scan CVEs | {current_total if current_total is not None else 'N/A'} |",
+                f"| **Delta** | **{delta_display}** |",
+                "",
+            ]
+        )
+
+    if "### Scan Coverage" not in summary_text:
+        image_count = _count_images_scanned(md)
+        binary_count = _count_scanned_binaries(md)
+        add_lines.extend(
+            [
+                "### Scan Coverage",
+                "",
+                "| Metric | Count |",
+                "| --- | ---: |",
+                f"| Images scanned | {image_count} |",
+                f"| Binaries scanned | {binary_count} |",
+                f"| **Total scanned targets** | **{image_count + binary_count}** |",
+                "",
+            ]
+        )
+
+    if not add_lines:
+        return md
+
+    updated_summary = summary_lines + add_lines
+    new_lines = lines[:summary_start] + updated_summary + lines[summary_end:]
+    return "\n".join(new_lines)
+
+
 def _extract_ascii_tables_from_text(text):
     """Return all parsed ASCII tables found in *text*."""
     tables = []
@@ -1125,6 +1273,8 @@ def convert(input_path, output_path=None):
     is_markdown = first_line.startswith("#")
 
     if is_markdown:
+        if basename.startswith("scan-"):
+            content = _augment_scan_summary(content, input_path)
         if not basename.startswith("check-"):
             content = _move_summary_to_top(content)
         body_html = _convert_markdown(content)
