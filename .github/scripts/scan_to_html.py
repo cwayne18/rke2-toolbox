@@ -5,7 +5,10 @@ matching github.com/rancher/dashboard."""
 import sys
 import os
 import re
+import json
 import html as html_lib
+import urllib.request
+import urllib.error
 from datetime import datetime, timezone
 
 
@@ -288,6 +291,25 @@ code {
   padding: 8px 14px;
   background: var(--box-bg);
   border-top: 1px solid var(--border);
+}
+
+/* ---- Suggested actions ---- */
+.suggested-actions {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: #F8FAFF;
+  padding: 18px 20px 8px;
+  margin-bottom: 22px;
+}
+.suggested-actions h2 {
+  margin: 0 0 10px;
+}
+.suggested-actions ul {
+  margin: 0;
+  padding-left: 20px;
+}
+.suggested-actions li {
+  margin-bottom: 8px;
 }
 """
 
@@ -806,6 +828,231 @@ def _move_summary_to_top(md):
     return "\n".join(new_lines)
 
 
+def _extract_ascii_tables_from_text(text):
+    """Return all parsed ASCII tables found in *text*."""
+    tables = []
+    lines = text.split("\n")
+    table_buf = []
+    in_table = False
+    for line in lines:
+        if not in_table and line.startswith("┌"):
+            in_table = True
+            table_buf = [line]
+            continue
+        if in_table:
+            table_buf.append(line)
+            if line.startswith("└"):
+                headers, rows = parse_ascii_table(table_buf)
+                if headers and rows:
+                    tables.append((headers, rows))
+                table_buf = []
+                in_table = False
+    return tables
+
+
+def _extract_scan_findings(md):
+    """Extract scan findings grouped by image from a scan markdown report."""
+    findings_by_image = {}
+    lines = md.split("\n")
+    current_image = None
+    in_code = False
+    code_lines = []
+
+    for line in lines:
+        m = re.match(r"^##\s+Scan Results:\s+`([^`]+)`", line.strip())
+        if m:
+            current_image = m.group(1).strip()
+            findings_by_image.setdefault(current_image, [])
+            continue
+
+        if line.startswith("```"):
+            if not in_code:
+                in_code = True
+                code_lines = []
+            else:
+                in_code = False
+                if current_image:
+                    for headers, rows in _extract_ascii_tables_from_text("\n".join(code_lines)):
+                        hmap = {h.lower().replace(" ", ""): h for h in headers}
+                        lib_key = hmap.get("library")
+                        vuln_key = hmap.get("vulnerability")
+                        sev_key = hmap.get("severity")
+                        status_key = hmap.get("status")
+                        inst_key = hmap.get("installedversion")
+                        fix_key = hmap.get("fixedversion")
+                        title_key = hmap.get("title")
+                        for row in rows:
+                            vuln = row.get(vuln_key, "").strip() if vuln_key else ""
+                            if not re.match(r"^CVE-\d{4}-\d+", vuln, re.I):
+                                continue
+                            findings_by_image[current_image].append(
+                                {
+                                    "library": row.get(lib_key, "").strip() if lib_key else "",
+                                    "vulnerability": vuln,
+                                    "severity": row.get(sev_key, "").strip() if sev_key else "",
+                                    "status": row.get(status_key, "").strip() if status_key else "",
+                                    "installed_version": row.get(inst_key, "").strip() if inst_key else "",
+                                    "fixed_version": row.get(fix_key, "").strip() if fix_key else "",
+                                    "title": row.get(title_key, "").strip() if title_key else "",
+                                }
+                            )
+                code_lines = []
+            continue
+
+        if in_code:
+            code_lines.append(line)
+
+    return findings_by_image
+
+
+def _fallback_suggested_actions(findings_by_image):
+    """Generate deterministic suggested actions from parsed findings."""
+    actions = []
+    for image, findings in findings_by_image.items():
+        if not findings:
+            continue
+
+        stdlib_high = [
+            f for f in findings
+            if f.get("library", "").lower() == "stdlib"
+            and f.get("severity", "").upper() in ("CRITICAL", "HIGH")
+        ]
+        if stdlib_high:
+            actions.append(
+                f"For `{image}`, Go stdlib CVEs were detected; bump Go/toolchain to a fixed release and rebuild/publish the image."
+            )
+
+        fixed_versions = sorted(
+            {
+                f["fixed_version"]
+                for f in findings
+                if f.get("fixed_version")
+            }
+        )
+        if fixed_versions:
+            actions.append(
+                f"For `{image}`, update vulnerable components to available fixed versions ({', '.join(fixed_versions[:3])}) and regenerate the image SBOM/scan."
+            )
+
+    if not actions:
+        return ["No actionable CVEs were found in this report."]
+    return actions[:6]
+
+
+def _parse_actions_from_copilot_text(text):
+    text = text.strip()
+    if not text:
+        return []
+
+    try:
+        payload = json.loads(text)
+        if isinstance(payload, list):
+            parsed = [str(x).strip() for x in payload if str(x).strip()]
+            if parsed:
+                return parsed
+    except json.JSONDecodeError:
+        pass
+
+    out = []
+    for line in text.splitlines():
+        line = line.strip()
+        if not line:
+            continue
+        line = re.sub(r"^[-*]\s+", "", line)
+        line = re.sub(r"^\d+\.\s+", "", line)
+        if line:
+            out.append(line)
+    return out
+
+
+def _copilot_suggested_actions(title, findings_by_image):
+    """Ask Copilot/GitHub Models for suggested actions; fallback on local rules."""
+    fallback_actions = _fallback_suggested_actions(findings_by_image)
+    token = os.getenv("GITHUB_TOKEN")
+    if not token:
+        return fallback_actions
+
+    findings_summary = []
+    for image, findings in findings_by_image.items():
+        if not findings:
+            continue
+        cves = sorted({f["vulnerability"] for f in findings if f.get("vulnerability")})
+        libs = sorted({f["library"] for f in findings if f.get("library")})
+        severities = sorted({f["severity"].upper() for f in findings if f.get("severity")})
+        fixed_versions = sorted({f["fixed_version"] for f in findings if f.get("fixed_version")})
+        findings_summary.append(
+            {
+                "image": image,
+                "cves": cves[:20],
+                "libraries": libs[:10],
+                "severities": severities[:10],
+                "fixed_versions": fixed_versions[:10],
+            }
+        )
+
+    if not findings_summary:
+        return fallback_actions
+
+    model = os.getenv("COPILOT_MODEL", "openai/gpt-4.1-mini")
+    user_prompt = (
+        "Suggest concise remediation actions for this Trivy scan report.\n"
+        "Return JSON only: an array of plain strings, 2-6 items, no markdown.\n"
+        "Prefer image-specific rebuild/update actions.\n"
+        f"Report title: {title}\n"
+        f"Findings summary: {json.dumps(findings_summary, ensure_ascii=False)}"
+    )
+    payload = {
+        "model": model,
+        "temperature": 0.2,
+        "messages": [
+            {
+                "role": "system",
+                "content": (
+                    "You are GitHub Copilot helping with container vulnerability remediation. "
+                    "Prioritize concrete actions such as dependency bumps and image rebuilds."
+                ),
+            },
+            {"role": "user", "content": user_prompt},
+        ],
+    }
+
+    req = urllib.request.Request(
+        "https://models.inference.ai.azure.com/chat/completions",
+        data=json.dumps(payload).encode("utf-8"),
+        headers={
+            "Content-Type": "application/json",
+            "Authorization": f"Bearer {token}",
+        },
+        method="POST",
+    )
+
+    try:
+        with urllib.request.urlopen(req, timeout=15) as resp:
+            raw = resp.read().decode("utf-8")
+        decoded = json.loads(raw)
+        content = (
+            decoded.get("choices", [{}])[0]
+            .get("message", {})
+            .get("content", "")
+        )
+        actions = _parse_actions_from_copilot_text(content)
+        return actions[:6] if actions else fallback_actions
+    except (urllib.error.URLError, urllib.error.HTTPError, json.JSONDecodeError, KeyError, IndexError):
+        return fallback_actions
+
+
+def _render_suggested_actions(actions):
+    if not actions:
+        return ""
+    items = "\n".join(f"<li>{render_inline(a)}</li>" for a in actions)
+    return (
+        '<section class="suggested-actions">'
+        "<h2>Suggested Actions</h2>"
+        f"<ul>{items}</ul>"
+        "</section>"
+    )
+
+
 # ---------------------------------------------------------------------------
 # Full HTML document builder
 # ---------------------------------------------------------------------------
@@ -873,6 +1120,10 @@ def convert(input_path, output_path=None):
         body_html = _convert_markdown(content)
         title_match = re.search(r"^# (.+)$", content, re.MULTILINE)
         title = title_match.group(1).strip() if title_match else "Report"
+        if basename.startswith("scan-"):
+            findings_by_image = _extract_scan_findings(content)
+            suggested_actions = _copilot_suggested_actions(title, findings_by_image)
+            body_html = _render_suggested_actions(suggested_actions) + body_html
     else:
         body_html = _convert_raw(content)
         title = os.path.splitext(basename)[0]
