@@ -1,6 +1,11 @@
 name: Convert Check Images Report to HTML
 
 on:
+  workflow_run:
+    workflows:
+      - Check Images Report
+    types:
+      - completed
   push:
     paths:
       - 'reports/check-*.md'
@@ -25,6 +30,7 @@ concurrency:
 
 jobs:
   convert:
+    if: ${{ github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success' }}
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
@@ -47,6 +53,9 @@ jobs:
               # Fallback to most recently modified
               FILE=$(ls -t reports/check-*.md 2>/dev/null | head -n 1)
             fi
+          elif [ "${{ github.event_name }}" = "workflow_run" ]; then
+            # For chained runs, use the most recently generated check report.
+            FILE=$(ls -t reports/check-*.md 2>/dev/null | head -n 1)
           else
             INPUT="${{ inputs.check_file }}"
             # Expand glob if needed
