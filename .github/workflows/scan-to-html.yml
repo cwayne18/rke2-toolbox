@@ -1,6 +1,11 @@
 name: Convert Scan Report to HTML
 
 on:
+  workflow_run:
+    workflows:
+      - Trivy Scan Report
+    types:
+      - completed
   push:
     paths:
       - 'reports/scan-*.md'
@@ -26,6 +31,7 @@ concurrency:
 
 jobs:
   convert:
+    if: ${{ github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success' }}
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
@@ -48,6 +54,9 @@ jobs:
               # Fallback to most recently modified
               FILE=$(ls -t reports/scan-*.md 2>/dev/null | head -n 1)
             fi
+          elif [ "${{ github.event_name }}" = "workflow_run" ]; then
+            # For chained runs, use the most recently generated scan report.
+            FILE=$(ls -t reports/scan-*.md 2>/dev/null | head -n 1)
           else
             INPUT="${{ inputs.scan_file }}"
             # Expand glob if needed
