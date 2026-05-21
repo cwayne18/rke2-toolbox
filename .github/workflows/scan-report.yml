@@ -4,6 +4,17 @@ on:
   schedule:
     - cron: '0 6 * * *'
   workflow_dispatch:
+    inputs:
+      release_version:
+        description: 'RKE2 release version to scan (e.g. v1.36.1+rke2r1). Mutually exclusive with pr_number.'
+        required: false
+        type: string
+        default: ''
+      pr_number:
+        description: 'PR number or URL to scan (e.g. 9994 or https://github.com/rancher/rke2/pull/9994). Mutually exclusive with release_version.'
+        required: false
+        type: string
+        default: ''
 
 permissions:
   contents: write
@@ -29,21 +40,51 @@ jobs:
         with:
           go-version: 'stable'
 
+      - name: Build scan.sh arguments
+        id: scan_args
+        run: |
+          ARGS="master --prime"
+          MODE="scheduled"
+          if [ -n "${{ inputs.release_version }}" ]; then
+            ARGS="--release ${{ inputs.release_version }}"
+            MODE="release"
+          elif [ -n "${{ inputs.pr_number }}" ]; then
+            ARGS="--pr ${{ inputs.pr_number }}"
+            MODE="pr"
+          fi
+          echo "args=$ARGS" >> "$GITHUB_OUTPUT"
+          echo "mode=$MODE" >> "$GITHUB_OUTPUT"
+
       - name: Run scan.sh
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           TRIVY_DISABLE_VEX_NOTICE: "true"
-        run: bash scan.sh master --prime
+        run: bash scan.sh ${{ steps.scan_args.outputs.args }}
 
       - name: Determine output filename
         id: filename
         run: |
-          DATE=$(date +%Y%m%d)
-          N=1
-          while [ -f "reports/scan-${DATE}-${N}.md" ]; do
-            N=$((N + 1))
-          done
-          echo "filename=reports/scan-${DATE}-${N}.md" >> "$GITHUB_OUTPUT"
+          MODE="${{ steps.scan_args.outputs.mode }}"
+          if [ "$MODE" = "release" ]; then
+            BASE="release"
+            N=1
+            while [ -f "reports/${BASE}-${N}.md" ]; do
+              N=$((N + 1))
+            done
+            echo "filename=reports/${BASE}-${N}.md" >> "$GITHUB_OUTPUT"
+          elif [ "$MODE" = "pr" ]; then
+            PR="${{ inputs.pr_number }}"
+            # Extract just the number if a full URL was provided
+            PR_NUM=$(echo "$PR" | grep -oE '[0-9]+$')
+            echo "filename=reports/pr-${PR_NUM}.md" >> "$GITHUB_OUTPUT"
+          else
+            DATE=$(date +%Y%m%d)
+            N=1
+            while [ -f "reports/scan-${DATE}-${N}.md" ]; do
+              N=$((N + 1))
+            done
+            echo "filename=reports/scan-${DATE}-${N}.md" >> "$GITHUB_OUTPUT"
+          fi
 
       - name: Move report to reports directory
         run: mv trivy_scan_report.txt "${{ steps.filename.outputs.filename }}"
