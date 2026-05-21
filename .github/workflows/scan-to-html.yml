@@ -40,29 +40,54 @@ jobs:
       - name: Resolve scan file
         id: resolve
         run: |
+          pick_latest_by_history() {
+            local pattern="$1"
+            local file ts
+            shopt -s nullglob
+            local files=( $pattern )
+            shopt -u nullglob
+            [ ${#files[@]} -eq 0 ] && return 0
+            for file in "${files[@]}"; do
+              ts=$(git log -1 --format=%ct -- "$file" 2>/dev/null || echo 0)
+              printf '%s\t%s\n' "$ts" "$file"
+            done | sort -k1,1nr -k2,2Vr | head -n 1 | cut -f2-
+          }
+
+          pick_latest_from_list_by_history() {
+            local list="$1"
+            local file ts
+            [ -z "$list" ] && return 0
+            while IFS= read -r file; do
+              [ -f "$file" ] || continue
+              ts=$(git log -1 --format=%ct -- "$file" 2>/dev/null || echo 0)
+              printf '%s\t%s\n' "$ts" "$file"
+            done <<< "$list" | sort -k1,1nr -k2,2Vr | head -n 1 | cut -f2-
+          }
+
           if [ "${{ github.event_name }}" = "push" ]; then
             BEFORE="${{ github.event.before }}"
             SHA="${{ github.sha }}"
             # Detect scan-*.md files added/modified in this push
             if [ "$BEFORE" = "0000000000000000000000000000000000000000" ]; then
-              # Initial push — list all scan-*.md files by recency
-              FILE=$(ls -t reports/scan-*.md 2>/dev/null | head -n 1)
+              # Initial push — choose most recent by git history
+              FILE=$(pick_latest_by_history "reports/scan-*.md")
             else
-              FILE=$(git diff --name-only --diff-filter=AM "$BEFORE" "$SHA" -- 'reports/scan-*.md' 2>/dev/null | head -n 1)
+              CANDIDATES=$(git diff --name-only --diff-filter=AM "$BEFORE" "$SHA" -- 'reports/scan-*.md' 2>/dev/null)
+              FILE=$(pick_latest_from_list_by_history "$CANDIDATES")
             fi
             if [ -z "$FILE" ]; then
-              # Fallback to most recently modified
-              FILE=$(ls -t reports/scan-*.md 2>/dev/null | head -n 1)
+              # Fallback to most recent by git history
+              FILE=$(pick_latest_by_history "reports/scan-*.md")
             fi
           elif [ "${{ github.event_name }}" = "workflow_run" ]; then
-            # For chained runs, use the most recently generated scan report.
-            FILE=$(ls -t reports/scan-*.md 2>/dev/null | head -n 1)
+            # For chained runs, choose most recent by git history.
+            FILE=$(pick_latest_by_history "reports/scan-*.md")
           else
             INPUT="${{ inputs.scan_file }}"
             # Expand glob if needed
             if echo "$INPUT" | grep -q '[*?[]'; then
-              # Pick the most-recently modified matching file
-              FILE=$(ls -t $INPUT 2>/dev/null | head -n 1)
+              # Pick the most recent matching file by git history
+              FILE=$(pick_latest_by_history "$INPUT")
               if [ -z "$FILE" ]; then
                 echo "::error::No files match the pattern: $INPUT"
                 exit 1
