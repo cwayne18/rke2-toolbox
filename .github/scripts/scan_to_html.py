@@ -248,6 +248,25 @@ ul.generic-list li code {
 .status-UP_TO_DATE   { background: var(--status-ok-bg);    color: var(--status-ok-text);    border-color: var(--status-ok-border);    }
 .status-UNKNOWN      { background: var(--sev-unknown-bg);  color: var(--sev-unknown-text);  border-color: var(--sev-unknown-border);  }
 
+/* ---- All-clean banner ---- */
+.all-clean-banner {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 18px;
+  background: #EAF7EF;
+  border: 1px solid var(--status-ok-border);
+  border-radius: 6px;
+  color: #1A7A41;
+  font-weight: 600;
+  font-size: 13px;
+  margin-bottom: 8px;
+}
+.all-clean-banner .all-clean-icon {
+  font-size: 18px;
+  line-height: 1;
+}
+
 /* ---- Pre / fallback ---- */
 pre.raw-output {
   background: var(--box-bg);
@@ -671,6 +690,7 @@ def _convert_markdown(md):
     code_lines = []
     in_pipe_table = False
     pipe_table_lines = []
+    in_scan_result = False  # True while inside a "## Scan Results: `…`" section
 
     def close_ul():
         nonlocal in_ul, in_images_list
@@ -707,6 +727,21 @@ def _convert_markdown(md):
                 processed = _process_trivy_block(block_content)
                 if processed.strip():
                     out.append(f'<div class="scan-card">{processed}</div>')
+                    if in_scan_result and "<table" not in processed:
+                        out.append(
+                            '<div class="all-clean-banner">'
+                            '<span class="all-clean-icon">✓</span>'
+                            "No vulnerabilities found — this image is clean"
+                            "</div>"
+                        )
+                elif in_scan_result:
+                    out.append(
+                        '<div class="all-clean-banner">'
+                        '<span class="all-clean-icon">✓</span>'
+                        "No vulnerabilities found — this image is clean"
+                        "</div>"
+                    )
+                in_scan_result = False
                 code_lines = []
             i += 1
             continue
@@ -730,14 +765,17 @@ def _convert_markdown(md):
         # ---- headings ----
         if line.startswith("# "):
             close_ul()
+            in_scan_result = False
             out.append(f"<h1>{render_inline(line[2:].strip())}</h1>")
         elif line.startswith("## "):
             close_ul()
             title = line[3:].strip()
             out.append(f"<h2>{render_inline(title)}</h2>")
             in_images_list = title.lower().startswith("images scanned")
+            in_scan_result = bool(re.match(r"Scan Results:\s*`[^`]+`", title))
         elif line.startswith("### "):
             close_ul()
+            in_scan_result = False
             out.append(f"<h3>{render_inline(line[4:].strip())}</h3>")
 
         # ---- bullet list ----

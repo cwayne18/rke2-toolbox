@@ -32,6 +32,7 @@ jobs:
       - name: Run scan.sh
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TRIVY_DISABLE_VEX_NOTICE: "true"
         run: bash scan.sh master --prime
 
       - name: Determine output filename
