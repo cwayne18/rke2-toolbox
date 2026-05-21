@@ -66,7 +66,12 @@ jobs:
         run: |
           MODE="${{ steps.scan_args.outputs.mode }}"
           if [ "$MODE" = "release" ]; then
-            BASE="release"
+            RELEASE="${{ inputs.release_version }}"
+            SAFE_RELEASE=$(echo "$RELEASE" | sed -E 's/\+/\./g; s/[^A-Za-z0-9._-]+/-/g; s/^-+|-+$//g')
+            if [ -z "$SAFE_RELEASE" ]; then
+              SAFE_RELEASE="release"
+            fi
+            BASE="scan-${SAFE_RELEASE}"
             N=1
             while [ -f "reports/${BASE}-${N}.md" ]; do
               N=$((N + 1))
