@@ -329,11 +329,11 @@ code {
     <span class="subtitle">— Trivy Scan Report</span>
   </header>
   <main class="page-content">
-    <section class="suggested-actions"><h2>Suggested Actions</h2><ul><li>Update docker.io/rancher/rke2-runtime image to use stdlib version 1.25.10 or higher and rebuild the image.</li>
-<li>Rebuild docker.io/rancher/hardened-kubernetes image with stdlib updated to version 1.25.10 or later.</li>
-<li>Rebuild docker.io/rancher/rke2-cloud-provider image incorporating stdlib version 1.25.10 or above.</li>
-<li>Ensure github.com/docker/docker dependency in rke2-runtime is updated to a version that includes fixes for CVE-2026-33814 and related CVEs.</li>
-<li>Perform full image rebuilds after dependency updates to apply security patches.</li></ul></section><h1>Trivy Scan Report</h1>
+    <section class="suggested-actions"><h2>Suggested Actions</h2><ul><li>Update docker.io/rancher/rke2-runtime image to a version using stdlib 1.25.10 or later and github.com/docker/docker 1.25.10 or later, then rebuild and redeploy.</li>
+<li>Update docker.io/rancher/hardened-kubernetes image to a version using stdlib 1.25.10 or later, then rebuild and redeploy.</li>
+<li>Update docker.io/rancher/rke2-cloud-provider image to a version using stdlib 1.25.10 or later, then rebuild and redeploy.</li>
+<li>Verify all updated images no longer contain CVEs CVE-2026-33814, CVE-2026-39820, CVE-2026-39836, CVE-2026-42499, and related vulnerabilities.</li>
+<li>Implement regular image scanning and update process to catch and remediate vulnerabilities promptly.</li></ul></section><h1>Trivy Scan Report</h1>
 <h2>Summary</h2>
 <h3>CVEs by Severity</h3>
 <div class="scan-card">
@@ -427,7 +427,7 @@ code {
 </tr></thead><tbody>
 <tr>
 <td>Previous scan CVEs</td>
-<td>3</td>
+<td>10</td>
 </tr>
 <tr>
 <td>Current scan CVEs</td>
@@ -435,7 +435,7 @@ code {
 </tr>
 <tr>
 <td><strong>Delta</strong></td>
-<td><strong>+38</strong></td>
+<td><strong>+31</strong></td>
 </tr>
 </tbody></table>
 </div>
@@ -1011,7 +1011,7 @@ Total: 5 (UNKNOWN: 0, LOW: 0, MEDIUM: 0, HIGH: 5, CRITICAL: 0)</pre>
 <h2>Scan Results: <code>docker.io/rancher/hardened-flannel:v0.28.4-build20260511</code></h2>
 <div class="all-clean-banner"><span class="all-clean-icon">✓</span>No vulnerabilities found — this image is clean</div>
     <div class="page-footer">
-      Generated from <code>scan-v1.36.1.rke2r1-1.md</code> &nbsp;·&nbsp; 2026-05-22 13:25 UTC
+      Generated from <code>scan-v1.36.1.rke2r1-1.md</code> &nbsp;·&nbsp; 2026-05-22 21:36 UTC
     </div>
   </main>
 </body>
