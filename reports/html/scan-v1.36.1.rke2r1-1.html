@@ -329,11 +329,11 @@ code {
     <span class="subtitle">— Trivy Scan Report</span>
   </header>
   <main class="page-content">
-    <section class="suggested-actions"><h2>Suggested Actions</h2><ul><li>Rebuild docker.io/rancher/rke2-runtime:v1.36.1-rke2r1 with Go stdlib updated to version 1.25.10 or later</li>
-<li>Rebuild docker.io/rancher/hardened-kubernetes:v1.36.1-rke2r1-build20260512 with Go stdlib updated to version 1.25.10 or later</li>
-<li>Rebuild docker.io/rancher/rke2-cloud-provider:v1.36.0-rc2.0.20260427154526-d239025e2a23-build20260429 with Go stdlib updated to version 1.25.10 or later</li>
-<li>Update github.com/docker/docker dependency in docker.io/rancher/rke2-runtime:v1.36.1-rke2r1 to version 1.25.10 or later</li>
-<li>Verify all rebuilt images are scanned again to confirm CVE remediation</li></ul></section><h1>Trivy Scan Report</h1>
+    <section class="suggested-actions"><h2>Suggested Actions</h2><ul><li>Update docker.io/rancher/rke2-runtime image to a version including stdlib fixed in 1.25.10 or later</li>
+<li>Rebuild docker.io/rancher/hardened-kubernetes image with stdlib patched to 1.25.10 or newer</li>
+<li>Upgrade docker.io/rancher/rke2-cloud-provider image to incorporate stdlib fixes from 1.25.10 or above</li>
+<li>Verify and update github.com/docker/docker dependency in rke2-runtime to version 1.25.10 or later</li>
+<li>Perform full image rebuilds after dependency updates to ensure CVE fixes are applied</li></ul></section><h1>Trivy Scan Report</h1>
 <h2>Summary</h2>
 <h3>CVEs by Severity</h3>
 <div class="scan-card">
@@ -1011,7 +1011,7 @@ Total: 5 (UNKNOWN: 0, LOW: 0, MEDIUM: 0, HIGH: 5, CRITICAL: 0)</pre>
 <h2>Scan Results: <code>docker.io/rancher/hardened-flannel:v0.28.4-build20260511</code></h2>
 <div class="all-clean-banner"><span class="all-clean-icon">✓</span>No vulnerabilities found — this image is clean</div>
     <div class="page-footer">
-      Generated from <code>scan-v1.36.1.rke2r1-1.md</code> &nbsp;·&nbsp; 2026-05-23 06:56 UTC
+      Generated from <code>scan-v1.36.1.rke2r1-1.md</code> &nbsp;·&nbsp; 2026-05-24 07:08 UTC
     </div>
   </main>
 </body>
