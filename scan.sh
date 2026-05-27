@@ -410,7 +410,7 @@ if [[ -n "$pr_number" ]]; then
 fi
 
 # Download the Rancher OpenVEX Trivy report
-if curl -fsSL https://raw.githubusercontent.com/rancher/vexhub/refs/heads/main/reports/rancher.openvex.json \
+if curl -fsSL https://github.com/rancher/vexhub/raw/refs/heads/main/reports/rancher.openvex.json \
     -o rancher.openvex.json 2>/dev/null && [[ -s rancher.openvex.json ]]; then
     # Validate it's actually valid JSON/VEX by checking for opening brace
     if head -c 1 rancher.openvex.json | grep -q '{'; then
