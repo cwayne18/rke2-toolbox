@@ -331,6 +331,57 @@ code {
 .suggested-actions li {
   margin-bottom: 8px;
 }
+
+/* ---- VEX candidates ---- */
+.vex-candidates {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: #F5FFF8;
+  padding: 18px 20px 12px;
+  margin-bottom: 22px;
+}
+.vex-candidates h2 {
+  margin: 0 0 4px;
+}
+.vex-candidates .vex-intro {
+  color: var(--muted);
+  font-size: 13px;
+  margin-bottom: 12px;
+}
+.vex-candidates .vex-intro a {
+  color: var(--link);
+}
+.vex-candidates table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+.vex-candidates th {
+  background: var(--table-header-bg);
+  text-align: left;
+  padding: 6px 10px;
+  border: 1px solid var(--border);
+  font-family: 'Poppins', sans-serif;
+  font-size: 12px;
+}
+.vex-candidates td {
+  padding: 6px 10px;
+  border: 1px solid var(--border);
+  vertical-align: top;
+}
+.vex-candidates tr:nth-child(even) td {
+  background: var(--box-bg);
+}
+.vex-status {
+  display: inline-block;
+  padding: 2px 7px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 600;
+  background: #D4EDDA;
+  color: #155724;
+  border: 1px solid #C3E6CB;
+}
 """
 
 # ---------------------------------------------------------------------------
@@ -1250,6 +1301,269 @@ def _render_suggested_actions(actions):
 
 
 # ---------------------------------------------------------------------------
+# VEX candidate helpers
+# ---------------------------------------------------------------------------
+
+# Libraries associated with interpreted/scripting runtimes that are typically
+# absent from the execution path in statically compiled (Go/Rust/C) workloads.
+_INTERP_RUNTIME_LIBS = re.compile(
+    r"(python|libpython|ruby|libruby|perl|libperl|nodejs|node\.js|npm|php|libphp"
+    r"|lua|liblua|tcl|libtcl|openjdk|java|jre|jdk)",
+    re.IGNORECASE,
+)
+
+# Libraries that indicate the image contains a Go binary.
+_GO_BINARY_INDICATORS = {"stdlib", "k8s.io", "github.com", "golang.org", "google.golang.org"}
+
+
+def _image_has_go_binaries(findings):
+    """Return True if the findings suggest this image contains Go binaries."""
+    for f in findings:
+        lib = f.get("library", "")
+        if lib.lower() == "stdlib":
+            return True
+        for indicator in _GO_BINARY_INDICATORS:
+            if lib.lower().startswith(indicator):
+                return True
+    return False
+
+
+def _fallback_vex_candidates(findings_by_image):
+    """Generate deterministic VEX candidate suggestions from parsed findings.
+
+    Applies simple heuristics:
+    - Interpreter/scripting-runtime libraries (libpython, libruby, …) in images
+      whose findings include Go-binary packages (stdlib, k8s.io/…) are likely
+      not in the execution path of the workload.
+    """
+    candidates = []
+    for image, findings in findings_by_image.items():
+        if not findings:
+            continue
+        is_go = _image_has_go_binaries(findings)
+        if not is_go:
+            continue
+        for f in findings:
+            lib = f.get("library", "")
+            if _INTERP_RUNTIME_LIBS.search(lib):
+                candidates.append(
+                    {
+                        "cve": f.get("vulnerability", ""),
+                        "image": image,
+                        "library": lib,
+                        "status": "not_affected",
+                        "justification": "vulnerable_code_not_in_execute_path",
+                        "note": (
+                            f"Library `{lib}` is an interpreted-runtime component "
+                            f"not present in the execution path of this statically "
+                            f"compiled Go workload."
+                        ),
+                    }
+                )
+    return candidates
+
+
+def _parse_vex_candidates_from_copilot_text(text):
+    """Parse the LLM response for VEX candidates.
+
+    Expects a JSON array of objects with keys: cve, image, library, status,
+    justification, note.  Returns an empty list on parse failure.
+    """
+    text = text.strip()
+    if not text:
+        return []
+    # Strip markdown code fences if present
+    text = re.sub(r"^```(?:json)?\s*", "", text, flags=re.MULTILINE)
+    text = re.sub(r"```\s*$", "", text, flags=re.MULTILINE)
+    text = text.strip()
+    try:
+        payload = json.loads(text)
+        if not isinstance(payload, list):
+            return []
+        out = []
+        for item in payload:
+            if not isinstance(item, dict):
+                continue
+            cve = str(item.get("cve", "")).strip()
+            if not cve:
+                continue
+            out.append(
+                {
+                    "cve": cve,
+                    "image": str(item.get("image", "")).strip(),
+                    "library": str(item.get("library", "")).strip(),
+                    "status": str(item.get("status", "not_affected")).strip(),
+                    "justification": str(item.get("justification", "")).strip(),
+                    "note": str(item.get("note", "")).strip(),
+                }
+            )
+        return out
+    except json.JSONDecodeError:
+        return []
+
+
+def _copilot_vex_candidates(title, findings_by_image):
+    """Ask the LLM to identify likely VEX candidates; fall back to local rules."""
+    fallback = _fallback_vex_candidates(findings_by_image)
+    token = os.getenv("GITHUB_TOKEN")
+    if not token:
+        return fallback
+
+    findings_summary = []
+    for image, findings in findings_by_image.items():
+        if not findings:
+            continue
+        entries = [
+            {
+                "cve": f["vulnerability"],
+                "library": f["library"],
+                "severity": f["severity"],
+                "title": f.get("title", ""),
+            }
+            for f in findings
+            if f.get("vulnerability")
+        ]
+        if entries:
+            findings_summary.append({"image": image, "findings": entries[:30]})
+
+    if not findings_summary:
+        return fallback
+
+    model = os.getenv("COPILOT_MODEL", "openai/gpt-4.1-mini")
+    user_prompt = (
+        "Analyze the following Trivy scan findings from an RKE2 Kubernetes distribution "
+        "and identify CVEs that are likely NOT exploitable in a typical RKE2 installation.\n\n"
+        "Focus on:\n"
+        "- Base-image OS packages (e.g. libpython, libruby, libperl, liblua, openjdk) present "
+        "in images whose workloads are statically compiled Go, Rust, or C binaries — these "
+        "libraries are not in the application execution path.\n"
+        "- Libraries included in the image layer but never loaded by the container's primary "
+        "process (e.g. scripting-language runtimes in a pure-Go service).\n"
+        "- CVEs that require an interpreted language runtime to be reachable when no such "
+        "runtime is invoked by the workload.\n\n"
+        "For each candidate, propose an OpenVEX-compliant statement. "
+        "Valid OpenVEX status values: not_affected, affected, fixed, under_investigation. "
+        "Valid justification values (from the OpenVEX spec): "
+        "component_not_present, vulnerable_code_not_present, "
+        "vulnerable_code_not_in_execute_path, "
+        "vulnerable_code_cannot_be_controlled_by_adversary, "
+        "inline_mitigations_already_exist.\n\n"
+        "Return ONLY a JSON array (no markdown, no extra text). Each element must have these "
+        "keys: cve, image, library, status, justification, note.\n"
+        "Limit your response to the 10 most confident candidates.\n\n"
+        f"Report title: {title}\n"
+        f"Findings: {json.dumps(findings_summary, ensure_ascii=False)}"
+    )
+    payload = {
+        "model": model,
+        "temperature": 0.1,
+        "messages": [
+            {
+                "role": "system",
+                "content": (
+                    "You are a container security analyst specialising in OpenVEX and "
+                    "RKE2/Kubernetes workload analysis. You help teams identify CVEs that "
+                    "are not exploitable due to the workload's runtime characteristics, "
+                    "following the automation patterns used in rancher/image-scanning. "
+                    "Respond only with valid JSON."
+                ),
+            },
+            {"role": "user", "content": user_prompt},
+        ],
+    }
+
+    req = urllib.request.Request(
+        "https://models.github.ai/inference/chat/completions",
+        data=json.dumps(payload).encode("utf-8"),
+        headers={
+            "Content-Type": "application/json",
+            "Accept": "application/vnd.github+json",
+            "X-GitHub-Api-Version": "2022-11-28",
+            "Authorization": f"Bearer {token}",
+        },
+        method="POST",
+    )
+
+    try:
+        with urllib.request.urlopen(req, timeout=30) as resp:
+            raw = resp.read().decode("utf-8")
+        decoded = json.loads(raw)
+        content = (
+            decoded.get("choices", [{}])[0]
+            .get("message", {})
+            .get("content", "")
+        )
+        candidates = _parse_vex_candidates_from_copilot_text(content)
+        return candidates if candidates else fallback
+    except (
+        urllib.error.URLError,
+        json.JSONDecodeError,
+        KeyError,
+        IndexError,
+        AttributeError,
+        TimeoutError,
+        ConnectionResetError,
+    ):
+        return fallback
+
+
+def _render_vex_candidates(candidates):
+    """Render the Potential VEX Candidates section as an HTML string."""
+    if not candidates:
+        return ""
+    rows = []
+    for c in candidates:
+        cve = c.get("cve", "")
+        cve_link = (
+            f'<a href="https://avd.aquasec.com/nvd/{cve.lower()}" '
+            f'target="_blank" rel="noopener noreferrer">{esc(cve)}</a>'
+            if re.match(r"^CVE-\d{4}-\d+$", cve, re.I)
+            else esc(cve)
+        )
+        image = esc(c.get("image", ""))
+        library = esc(c.get("library", ""))
+        status = esc(c.get("status", "not_affected"))
+        justification = esc(c.get("justification", ""))
+        note = esc(c.get("note", ""))
+        rows.append(
+            f"<tr>"
+            f"<td>{cve_link}</td>"
+            f'<td><code style="font-size:11px;word-break:break-all">{image}</code></td>'
+            f"<td><code>{library}</code></td>"
+            f'<td><span class="vex-status">{status}</span></td>'
+            f"<td>{justification}</td>"
+            f"<td>{note}</td>"
+            f"</tr>"
+        )
+    rows_html = "\n".join(rows)
+    return (
+        '<section class="vex-candidates">'
+        "<h2>Potential VEX Candidates (Automated Recommendations)</h2>"
+        '<p class="vex-intro">'
+        "The following CVEs may be suitable for "
+        '<a href="https://openvex.dev/" target="_blank" rel="noopener noreferrer">OpenVEX</a> '
+        "<code>not_affected</code> statements based on workload characteristics. "
+        "Review each entry before submitting a formal VEX statement. "
+        "Inspired by the <em>auto-vex-*</em> workflows in "
+        '<a href="https://github.com/rancher/image-scanning" target="_blank" rel="noopener noreferrer">'
+        "rancher/image-scanning</a>."
+        "</p>"
+        "<table>"
+        "<thead><tr>"
+        "<th>CVE</th>"
+        "<th>Image</th>"
+        "<th>Library</th>"
+        "<th>Proposed Status</th>"
+        "<th>Justification</th>"
+        "<th>Note</th>"
+        "</tr></thead>"
+        f"<tbody>{rows_html}</tbody>"
+        "</table>"
+        "</section>"
+    )
+
+
+# ---------------------------------------------------------------------------
 # Full HTML document builder
 # ---------------------------------------------------------------------------
 
@@ -1321,7 +1635,12 @@ def convert(input_path, output_path=None):
         if basename.startswith("scan-"):
             findings_by_image = _extract_scan_findings(content)
             suggested_actions = _copilot_suggested_actions(title, findings_by_image)
-            body_html = _render_suggested_actions(suggested_actions) + body_html
+            vex_candidates = _copilot_vex_candidates(title, findings_by_image)
+            body_html = (
+                _render_suggested_actions(suggested_actions)
+                + _render_vex_candidates(vex_candidates)
+                + body_html
+            )
     else:
         body_html = _convert_raw(content)
         title = os.path.splitext(basename)[0]
