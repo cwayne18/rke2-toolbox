@@ -110,6 +110,25 @@ h2 {
   font-size: 17px; font-weight: 600;
   margin-top: 36px; margin-bottom: 10px;
 }
+.anchored-heading {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.heading-anchor {
+  color: var(--muted);
+  text-decoration: none;
+  font-size: 12px;
+  opacity: 0;
+  transition: opacity .15s ease;
+}
+.anchored-heading:hover .heading-anchor,
+.anchored-heading:focus-within .heading-anchor {
+  opacity: 1;
+}
+.heading-anchor:hover {
+  color: var(--link);
+}
 h2 code {
   font-family: 'Roboto Mono', monospace;
   font-size: 13px;
@@ -194,6 +213,34 @@ ul.generic-list li code {
 }
 .report-table a:hover { text-decoration: underline; }
 .report-table .num { text-align: center; font-variant-numeric: tabular-nums; }
+.table-wrap { margin: 8px 0 14px; }
+.table-collapsible {
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--body-bg);
+  overflow: hidden;
+}
+.table-collapsible summary {
+  cursor: pointer;
+  list-style: none;
+  font-family: 'Poppins', sans-serif;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--muted);
+  background: var(--table-header-bg);
+  border-bottom: 1px solid var(--border);
+  padding: 10px 14px;
+}
+.table-collapsible summary::-webkit-details-marker { display: none; }
+.table-collapsible .toggle-label::before {
+  content: "▾";
+  display: inline-block;
+  margin-right: 8px;
+  transition: transform .15s ease;
+}
+.table-collapsible:not([open]) .toggle-label::before {
+  transform: rotate(-90deg);
+}
 
 /* vuln count colouring */
 .vuln-count { font-weight: 700; }
@@ -461,7 +508,7 @@ code {
 <a class="report-card" href="check-20260519-1.html">  <div class="rc-header">    <div>      <div class="rc-name">check-20260519-1</div>      <div class="rc-date">May 19, 2026</div>    </div>    <span class="rc-arrow">&#8594;</span>  </div></a>
 <a class="report-card" href="check-20260515-1.html">  <div class="rc-header">    <div>      <div class="rc-name">check-20260515-1</div>      <div class="rc-date">May 15, 2026</div>    </div>    <span class="rc-arrow">&#8594;</span>  </div></a>
 </div>
-<div class="page-footer">Index generated &nbsp;·&nbsp; 2026-05-28 21:25 UTC</div>
+<div class="page-footer">Index generated &nbsp;·&nbsp; 2026-05-28 21:51 UTC</div>
   </main>
 </body>
 </html>

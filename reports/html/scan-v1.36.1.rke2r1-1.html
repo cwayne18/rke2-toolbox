@@ -110,6 +110,25 @@ h2 {
   font-size: 17px; font-weight: 600;
   margin-top: 36px; margin-bottom: 10px;
 }
+.anchored-heading {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.heading-anchor {
+  color: var(--muted);
+  text-decoration: none;
+  font-size: 12px;
+  opacity: 0;
+  transition: opacity .15s ease;
+}
+.anchored-heading:hover .heading-anchor,
+.anchored-heading:focus-within .heading-anchor {
+  opacity: 1;
+}
+.heading-anchor:hover {
+  color: var(--link);
+}
 h2 code {
   font-family: 'Roboto Mono', monospace;
   font-size: 13px;
@@ -194,6 +213,34 @@ ul.generic-list li code {
 }
 .report-table a:hover { text-decoration: underline; }
 .report-table .num { text-align: center; font-variant-numeric: tabular-nums; }
+.table-wrap { margin: 8px 0 14px; }
+.table-collapsible {
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--body-bg);
+  overflow: hidden;
+}
+.table-collapsible summary {
+  cursor: pointer;
+  list-style: none;
+  font-family: 'Poppins', sans-serif;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--muted);
+  background: var(--table-header-bg);
+  border-bottom: 1px solid var(--border);
+  padding: 10px 14px;
+}
+.table-collapsible summary::-webkit-details-marker { display: none; }
+.table-collapsible .toggle-label::before {
+  content: "▾";
+  display: inline-block;
+  margin-right: 8px;
+  transition: transform .15s ease;
+}
+.table-collapsible:not([open]) .toggle-label::before {
+  transform: rotate(-90deg);
+}
 
 /* vuln count colouring */
 .vuln-count { font-weight: 700; }
@@ -318,6 +365,57 @@ code {
 .suggested-actions li {
   margin-bottom: 8px;
 }
+
+/* ---- VEX candidates ---- */
+.vex-candidates {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: #F5FFF8;
+  padding: 18px 20px 12px;
+  margin-bottom: 22px;
+}
+.vex-candidates h2 {
+  margin: 0 0 4px;
+}
+.vex-candidates .vex-intro {
+  color: var(--muted);
+  font-size: 13px;
+  margin-bottom: 12px;
+}
+.vex-candidates .vex-intro a {
+  color: var(--link);
+}
+.vex-candidates table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+.vex-candidates th {
+  background: var(--table-header-bg);
+  text-align: left;
+  padding: 6px 10px;
+  border: 1px solid var(--border);
+  font-family: 'Poppins', sans-serif;
+  font-size: 12px;
+}
+.vex-candidates td {
+  padding: 6px 10px;
+  border: 1px solid var(--border);
+  vertical-align: top;
+}
+.vex-candidates tr:nth-child(even) td {
+  background: var(--box-bg);
+}
+.vex-status {
+  display: inline-block;
+  padding: 2px 7px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 600;
+  background: #D4EDDA;
+  color: #155724;
+  border: 1px solid #C3E6CB;
+}
 </style>
 </head>
 <body>
@@ -333,11 +431,20 @@ code {
 <li>Rebuild docker.io/rancher/hardened-kubernetes:v1.36.1-rke2r1-build20260512 with Go stdlib updated to version 1.25.10 or later</li>
 <li>Rebuild docker.io/rancher/rke2-cloud-provider:v1.36.0-rc2.0.20260427154526-d239025e2a23-build20260429 with Go stdlib updated to version 1.25.10 or later</li>
 <li>Update github.com/docker/docker dependency in docker.io/rancher/rke2-runtime:v1.36.1-rke2r1 to version 1.25.10 or later</li>
-<li>Verify all rebuilt images no longer contain CVEs CVE-2026-33814, CVE-2026-39820, CVE-2026-39836, CVE-2026-42499</li></ul></section><h1>Trivy Scan Report</h1>
-<h2>Summary</h2>
-<h3>CVEs by Severity</h3>
+<li>Verify all rebuilt images pass vulnerability scans before deployment</li></ul></section><section class="vex-candidates"><h2 id="potential-vex-candidates-automated-recommendations" class="anchored-heading">Potential VEX Candidates (Automated Recommendations)<a class="heading-anchor" href="#potential-vex-candidates-automated-recommendations" aria-label="Link to section">#</a></h2><p class="vex-intro">The following CVEs may be suitable for <a href="https://openvex.dev/" target="_blank" rel="noopener noreferrer">OpenVEX</a> <code>not_affected</code> statements based on workload characteristics. Review each entry before submitting a formal VEX statement. Inspired by the <em>auto-vex-*</em> workflows in <a href="https://github.com/rancher/image-scanning" target="_blank" rel="noopener noreferrer">rancher/image-scanning</a>.</p><div class="table-wrap"><details class="table-collapsible" open><summary><span class="toggle-label">Potential VEX Candidates (10 rows)</span></summary><table class="report-table"><thead><tr><th>CVE</th><th>Image</th><th>Library</th><th>Proposed Status</th><th>Justification</th><th>Note</th></tr></thead><tbody><tr><td><a href="https://avd.aquasec.com/nvd/cve-2026-33814" target="_blank" rel="noopener noreferrer">CVE-2026-33814</a></td><td><code style="font-size:11px;word-break:break-all">docker.io/rancher/rke2-runtime:v1.36.1-rke2r1</code></td><td><code>stdlib</code></td><td><span class="vex-status">not_affected</span></td><td>vulnerable_code_not_in_execute_path</td><td>The stdlib is part of the Go runtime; RKE2 runtime workloads are statically compiled Go binaries where vulnerable HTTP/2 SETTINGS frame processing code is not reachable in typical usage.</td></tr>
+<tr><td><a href="https://avd.aquasec.com/nvd/cve-2026-39820" target="_blank" rel="noopener noreferrer">CVE-2026-39820</a></td><td><code style="font-size:11px;word-break:break-all">docker.io/rancher/rke2-runtime:v1.36.1-rke2r1</code></td><td><code>stdlib</code></td><td><span class="vex-status">not_affected</span></td><td>vulnerable_code_not_in_execute_path</td><td>Vulnerabilities in stdlib parsing functions are not exploitable as workloads are statically compiled Go binaries without external input paths triggering these code paths.</td></tr>
+<tr><td><a href="https://avd.aquasec.com/nvd/cve-2026-39836" target="_blank" rel="noopener noreferrer">CVE-2026-39836</a></td><td><code style="font-size:11px;word-break:break-all">docker.io/rancher/rke2-runtime:v1.36.1-rke2r1</code></td><td><code>stdlib</code></td><td><span class="vex-status">not_affected</span></td><td>vulnerable_code_not_in_execute_path</td><td>Panic on Windows-specific code paths in stdlib Dial and LookupPort are not reachable in Linux-based RKE2 workloads.</td></tr>
+<tr><td><a href="https://avd.aquasec.com/nvd/cve-2026-42499" target="_blank" rel="noopener noreferrer">CVE-2026-42499</a></td><td><code style="font-size:11px;word-break:break-all">docker.io/rancher/rke2-runtime:v1.36.1-rke2r1</code></td><td><code>stdlib</code></td><td><span class="vex-status">not_affected</span></td><td>vulnerable_code_not_in_execute_path</td><td>DoS via pathological inputs in stdlib parsing is not exploitable in statically compiled Go workloads without exposed vulnerable input vectors.</td></tr>
+<tr><td><a href="https://avd.aquasec.com/nvd/cve-2026-33814" target="_blank" rel="noopener noreferrer">CVE-2026-33814</a></td><td><code style="font-size:11px;word-break:break-all">docker.io/rancher/hardened-kubernetes:v1.36.1-rke2r1-build20260512</code></td><td><code>stdlib</code></td><td><span class="vex-status">not_affected</span></td><td>vulnerable_code_not_in_execute_path</td><td>Kubernetes hardened image uses statically compiled Go binaries; vulnerable HTTP/2 SETTINGS frame processing code is not reachable.</td></tr>
+<tr><td><a href="https://avd.aquasec.com/nvd/cve-2026-39820" target="_blank" rel="noopener noreferrer">CVE-2026-39820</a></td><td><code style="font-size:11px;word-break:break-all">docker.io/rancher/hardened-kubernetes:v1.36.1-rke2r1-build20260512</code></td><td><code>stdlib</code></td><td><span class="vex-status">not_affected</span></td><td>vulnerable_code_not_in_execute_path</td><td>Vulnerable stdlib parsing code paths are not triggered by Kubernetes components in this hardened image.</td></tr>
+<tr><td><a href="https://avd.aquasec.com/nvd/cve-2026-39836" target="_blank" rel="noopener noreferrer">CVE-2026-39836</a></td><td><code style="font-size:11px;word-break:break-all">docker.io/rancher/hardened-kubernetes:v1.36.1-rke2r1-build20260512</code></td><td><code>stdlib</code></td><td><span class="vex-status">not_affected</span></td><td>vulnerable_code_not_in_execute_path</td><td>Windows-specific panic conditions in stdlib are not relevant for Linux-based Kubernetes workloads.</td></tr>
+<tr><td><a href="https://avd.aquasec.com/nvd/cve-2026-42499" target="_blank" rel="noopener noreferrer">CVE-2026-42499</a></td><td><code style="font-size:11px;word-break:break-all">docker.io/rancher/hardened-kubernetes:v1.36.1-rke2r1-build20260512</code></td><td><code>stdlib</code></td><td><span class="vex-status">not_affected</span></td><td>vulnerable_code_not_in_execute_path</td><td>DoS vulnerabilities in stdlib parsing are not exploitable due to lack of exposed vulnerable input vectors in hardened Kubernetes workloads.</td></tr>
+<tr><td><a href="https://avd.aquasec.com/nvd/cve-2026-33811" target="_blank" rel="noopener noreferrer">CVE-2026-33811</a></td><td><code style="font-size:11px;word-break:break-all">docker.io/rancher/rke2-cloud-provider:v1.36.0-rc2.0.20260427154526-d239025e2a23-build20260429</code></td><td><code>stdlib</code></td><td><span class="vex-status">not_affected</span></td><td>vulnerable_code_not_in_execute_path</td><td>The cgo DNS resolver vulnerability is not exploitable as workloads are statically compiled Go binaries without cgo enabled.</td></tr>
+<tr><td><a href="https://avd.aquasec.com/nvd/cve-2026-33814" target="_blank" rel="noopener noreferrer">CVE-2026-33814</a></td><td><code style="font-size:11px;word-break:break-all">docker.io/rancher/rke2-cloud-provider:v1.36.0-rc2.0.20260427154526-d239025e2a23-build20260429</code></td><td><code>stdlib</code></td><td><span class="vex-status">not_affected</span></td><td>vulnerable_code_not_in_execute_path</td><td>HTTP/2 SETTINGS frame vulnerability in stdlib is not reachable in statically compiled Go workloads without exposed vulnerable input paths.</td></tr></tbody></table></details></div></section><h1 id="trivy-scan-report" class="anchored-heading">Trivy Scan Report<a class="heading-anchor" href="#trivy-scan-report" aria-label="Link to section">#</a></h1>
+<h2 id="summary" class="anchored-heading">Summary<a class="heading-anchor" href="#summary" aria-label="Link to section">#</a></h2>
+<h3 id="cves-by-severity" class="anchored-heading">CVEs by Severity<a class="heading-anchor" href="#cves-by-severity" aria-label="Link to section">#</a></h3>
 <div class="scan-card">
-<table class="report-table">
+<div class="table-wrap"><details class="table-collapsible" open><summary><span class="toggle-label">Table (3 rows)</span></summary><table class="report-table">
 <thead><tr>
 <th>Severity</th>
 <th>Count</th>
@@ -354,11 +461,11 @@ code {
 <td><strong>Total</strong></td>
 <td><strong>41</strong></td>
 </tr>
-</tbody></table>
+</tbody></table></details></div>
 </div>
-<h3>Scan Coverage</h3>
+<h3 id="scan-coverage" class="anchored-heading">Scan Coverage<a class="heading-anchor" href="#scan-coverage" aria-label="Link to section">#</a></h3>
 <div class="scan-card">
-<table class="report-table">
+<div class="table-wrap"><details class="table-collapsible" open><summary><span class="toggle-label">Table (3 rows)</span></summary><table class="report-table">
 <thead><tr>
 <th>Metric</th>
 <th>Count</th>
@@ -375,11 +482,11 @@ code {
 <td><strong>Total scanned targets</strong></td>
 <td><strong>71</strong></td>
 </tr>
-</tbody></table>
+</tbody></table></details></div>
 </div>
-<h3>Images with CVEs (3)</h3>
+<h3 id="images-with-cves-3" class="anchored-heading">Images with CVEs (3)<a class="heading-anchor" href="#images-with-cves-3" aria-label="Link to section">#</a></h3>
 <div class="scan-card">
-<table class="report-table">
+<div class="table-wrap"><details class="table-collapsible" open><summary><span class="toggle-label">Table (3 rows)</span></summary><table class="report-table">
 <thead><tr>
 <th>Image</th>
 <th>CRITICAL</th>
@@ -400,9 +507,9 @@ code {
 <td>0</td>
 <td>5</td>
 </tr>
-</tbody></table>
+</tbody></table></details></div>
 </div>
-<h3>CVE-free Images (13)</h3>
+<h3 id="cve-free-images-13" class="anchored-heading">CVE-free Images (13)<a class="heading-anchor" href="#cve-free-images-13" aria-label="Link to section">#</a></h3>
 <ul class="generic-list">
 <li><code>docker.io/rancher/hardened-coredns:v1.14.3-build20260511</code></li>
 <li><code>docker.io/rancher/hardened-cluster-autoscaler:v1.10.3-build20260511</code></li>
@@ -418,16 +525,16 @@ code {
 <li><code>docker.io/rancher/hardened-calico:v3.32.0-build20260511</code></li>
 <li><code>docker.io/rancher/hardened-flannel:v0.28.4-build20260511</code></li>
 </ul>
-<h3>CVE Delta vs Previous Scan</h3>
+<h3 id="cve-delta-vs-previous-scan" class="anchored-heading">CVE Delta vs Previous Scan<a class="heading-anchor" href="#cve-delta-vs-previous-scan" aria-label="Link to section">#</a></h3>
 <div class="scan-card">
-<table class="report-table">
+<div class="table-wrap"><details class="table-collapsible" open><summary><span class="toggle-label">Table (3 rows)</span></summary><table class="report-table">
 <thead><tr>
 <th>Metric</th>
 <th>Count</th>
 </tr></thead><tbody>
 <tr>
 <td>Previous scan CVEs</td>
-<td>14</td>
+<td>16</td>
 </tr>
 <tr>
 <td>Current scan CVEs</td>
@@ -435,11 +542,11 @@ code {
 </tr>
 <tr>
 <td><strong>Delta</strong></td>
-<td><strong>+27</strong></td>
+<td><strong>+25</strong></td>
 </tr>
-</tbody></table>
+</tbody></table></details></div>
 </div>
-<h2>Images Scanned</h2>
+<h2 id="images-scanned" class="anchored-heading">Images Scanned<a class="heading-anchor" href="#images-scanned" aria-label="Link to section">#</a></h2>
 <ul class="images-list">
 <li><code>`docker.io/rancher/rke2-runtime:v1.36.1-rke2r1`</code></li>
 <li><code>`docker.io/rancher/hardened-kubernetes:v1.36.1-rke2r1-build20260512`</code></li>
@@ -458,11 +565,11 @@ code {
 <li><code>`docker.io/rancher/hardened-calico:v3.32.0-build20260511`</code></li>
 <li><code>`docker.io/rancher/hardened-flannel:v0.28.4-build20260511`</code></li>
 </ul>
-<h2>Scan Results: <code>docker.io/rancher/rke2-runtime:v1.36.1-rke2r1</code></h2>
+<h2 id="scan-results-docker-io-rancher-rke2-runtime-v1-36-1-rke2r1" class="anchored-heading">Scan Results: <code>docker.io/rancher/rke2-runtime:v1.36.1-rke2r1</code><a class="heading-anchor" href="#scan-results-docker-io-rancher-rke2-runtime-v1-36-1-rke2r1" aria-label="Link to section">#</a></h2>
 <div class="scan-card"><pre class="raw-output">bin/containerd (gobinary)
 =========================
 Total: 2 (UNKNOWN: 0, LOW: 0, MEDIUM: 0, HIGH: 2, CRITICAL: 0)</pre>
-<table class="report-table">
+<div class="table-wrap"><details class="table-collapsible" open><summary><span class="toggle-label">Scan Findings (2 rows)</span></summary><table class="report-table">
 <thead><tr>
 <th>Library</th>
 <th>Vulnerability</th>
@@ -490,11 +597,11 @@ Total: 2 (UNKNOWN: 0, LOW: 0, MEDIUM: 0, HIGH: 2, CRITICAL: 0)</pre>
 <td></td>
 <td>Docker: Race condition in docker cp allows bind mount<br>redirection to host...<br><a href="https://avd.aquasec.com/nvd/cve-2026-42306" target="_blank" rel="noopener noreferrer">https://avd.aquasec.com/nvd/cve-2026-42306</a></td>
 </tr>
-</tbody></table>
+</tbody></table></details></div>
 <pre class="raw-output">bin/crictl (gobinary)
 =====================
 Total: 2 (UNKNOWN: 0, LOW: 0, MEDIUM: 0, HIGH: 2, CRITICAL: 0)</pre>
-<table class="report-table">
+<div class="table-wrap"><details class="table-collapsible" open><summary><span class="toggle-label">Scan Findings (2 rows)</span></summary><table class="report-table">
 <thead><tr>
 <th>Library</th>
 <th>Vulnerability</th>
@@ -522,11 +629,11 @@ Total: 2 (UNKNOWN: 0, LOW: 0, MEDIUM: 0, HIGH: 2, CRITICAL: 0)</pre>
 <td></td>
 <td>Docker: Race condition in docker cp allows bind mount<br>redirection to host...<br><a href="https://avd.aquasec.com/nvd/cve-2026-42306" target="_blank" rel="noopener noreferrer">https://avd.aquasec.com/nvd/cve-2026-42306</a></td>
 </tr>
-</tbody></table>
+</tbody></table></details></div>
 <pre class="raw-output">bin/kubectl (gobinary)
 ======================
 Total: 4 (UNKNOWN: 0, LOW: 0, MEDIUM: 0, HIGH: 4, CRITICAL: 0)</pre>
-<table class="report-table">
+<div class="table-wrap"><details class="table-collapsible" open><summary><span class="toggle-label">Scan Findings (4 rows)</span></summary><table class="report-table">
 <thead><tr>
 <th>Library</th>
 <th>Vulnerability</th>
@@ -572,11 +679,11 @@ Total: 4 (UNKNOWN: 0, LOW: 0, MEDIUM: 0, HIGH: 4, CRITICAL: 0)</pre>
 <td>1.25.10, 1.26.3</td>
 <td>Pathological inputs could cause DoS through consumePhrase<br>when parsing ...<br><a href="https://avd.aquasec.com/nvd/cve-2026-42499" target="_blank" rel="noopener noreferrer">https://avd.aquasec.com/nvd/cve-2026-42499</a></td>
 </tr>
-</tbody></table>
+</tbody></table></details></div>
 <pre class="raw-output">bin/kubelet (gobinary)
 ======================
 Total: 4 (UNKNOWN: 0, LOW: 0, MEDIUM: 0, HIGH: 4, CRITICAL: 0)</pre>
-<table class="report-table">
+<div class="table-wrap"><details class="table-collapsible" open><summary><span class="toggle-label">Scan Findings (4 rows)</span></summary><table class="report-table">
 <thead><tr>
 <th>Library</th>
 <th>Vulnerability</th>
@@ -622,12 +729,12 @@ Total: 4 (UNKNOWN: 0, LOW: 0, MEDIUM: 0, HIGH: 4, CRITICAL: 0)</pre>
 <td>1.25.10, 1.26.3</td>
 <td>Pathological inputs could cause DoS through consumePhrase<br>when parsing ...<br><a href="https://avd.aquasec.com/nvd/cve-2026-42499" target="_blank" rel="noopener noreferrer">https://avd.aquasec.com/nvd/cve-2026-42499</a></td>
 </tr>
-</tbody></table></div>
-<h2>Scan Results: <code>docker.io/rancher/hardened-kubernetes:v1.36.1-rke2r1-build20260512</code></h2>
+</tbody></table></details></div></div>
+<h2 id="scan-results-docker-io-rancher-hardened-kubernetes-v1-36-1-rke2r1-build20260512" class="anchored-heading">Scan Results: <code>docker.io/rancher/hardened-kubernetes:v1.36.1-rke2r1-build20260512</code><a class="heading-anchor" href="#scan-results-docker-io-rancher-hardened-kubernetes-v1-36-1-rke2r1-build20260512" aria-label="Link to section">#</a></h2>
 <div class="scan-card"><pre class="raw-output">usr/local/bin/kube-apiserver (gobinary)
 =======================================
 Total: 4 (UNKNOWN: 0, LOW: 0, MEDIUM: 0, HIGH: 4, CRITICAL: 0)</pre>
-<table class="report-table">
+<div class="table-wrap"><details class="table-collapsible" open><summary><span class="toggle-label">Scan Findings (4 rows)</span></summary><table class="report-table">
 <thead><tr>
 <th>Library</th>
 <th>Vulnerability</th>
@@ -673,11 +780,11 @@ Total: 4 (UNKNOWN: 0, LOW: 0, MEDIUM: 0, HIGH: 4, CRITICAL: 0)</pre>
 <td>1.25.10, 1.26.3</td>
 <td>Pathological inputs could cause DoS through consumePhrase<br>when parsing ...<br><a href="https://avd.aquasec.com/nvd/cve-2026-42499" target="_blank" rel="noopener noreferrer">https://avd.aquasec.com/nvd/cve-2026-42499</a></td>
 </tr>
-</tbody></table>
+</tbody></table></details></div>
 <pre class="raw-output">usr/local/bin/kube-controller-manager (gobinary)
 ================================================
 Total: 4 (UNKNOWN: 0, LOW: 0, MEDIUM: 0, HIGH: 4, CRITICAL: 0)</pre>
-<table class="report-table">
+<div class="table-wrap"><details class="table-collapsible" open><summary><span class="toggle-label">Scan Findings (4 rows)</span></summary><table class="report-table">
 <thead><tr>
 <th>Library</th>
 <th>Vulnerability</th>
@@ -723,11 +830,11 @@ Total: 4 (UNKNOWN: 0, LOW: 0, MEDIUM: 0, HIGH: 4, CRITICAL: 0)</pre>
 <td>1.25.10, 1.26.3</td>
 <td>Pathological inputs could cause DoS through consumePhrase<br>when parsing ...<br><a href="https://avd.aquasec.com/nvd/cve-2026-42499" target="_blank" rel="noopener noreferrer">https://avd.aquasec.com/nvd/cve-2026-42499</a></td>
 </tr>
-</tbody></table>
+</tbody></table></details></div>
 <pre class="raw-output">usr/local/bin/kube-proxy (gobinary)
 ===================================
 Total: 4 (UNKNOWN: 0, LOW: 0, MEDIUM: 0, HIGH: 4, CRITICAL: 0)</pre>
-<table class="report-table">
+<div class="table-wrap"><details class="table-collapsible" open><summary><span class="toggle-label">Scan Findings (4 rows)</span></summary><table class="report-table">
 <thead><tr>
 <th>Library</th>
 <th>Vulnerability</th>
@@ -773,11 +880,11 @@ Total: 4 (UNKNOWN: 0, LOW: 0, MEDIUM: 0, HIGH: 4, CRITICAL: 0)</pre>
 <td>1.25.10, 1.26.3</td>
 <td>Pathological inputs could cause DoS through consumePhrase<br>when parsing ...<br><a href="https://avd.aquasec.com/nvd/cve-2026-42499" target="_blank" rel="noopener noreferrer">https://avd.aquasec.com/nvd/cve-2026-42499</a></td>
 </tr>
-</tbody></table>
+</tbody></table></details></div>
 <pre class="raw-output">usr/local/bin/kube-scheduler (gobinary)
 =======================================
 Total: 4 (UNKNOWN: 0, LOW: 0, MEDIUM: 0, HIGH: 4, CRITICAL: 0)</pre>
-<table class="report-table">
+<div class="table-wrap"><details class="table-collapsible" open><summary><span class="toggle-label">Scan Findings (4 rows)</span></summary><table class="report-table">
 <thead><tr>
 <th>Library</th>
 <th>Vulnerability</th>
@@ -823,11 +930,11 @@ Total: 4 (UNKNOWN: 0, LOW: 0, MEDIUM: 0, HIGH: 4, CRITICAL: 0)</pre>
 <td>1.25.10, 1.26.3</td>
 <td>Pathological inputs could cause DoS through consumePhrase<br>when parsing ...<br><a href="https://avd.aquasec.com/nvd/cve-2026-42499" target="_blank" rel="noopener noreferrer">https://avd.aquasec.com/nvd/cve-2026-42499</a></td>
 </tr>
-</tbody></table>
+</tbody></table></details></div>
 <pre class="raw-output">usr/local/bin/kubectl (gobinary)
 ================================
 Total: 4 (UNKNOWN: 0, LOW: 0, MEDIUM: 0, HIGH: 4, CRITICAL: 0)</pre>
-<table class="report-table">
+<div class="table-wrap"><details class="table-collapsible" open><summary><span class="toggle-label">Scan Findings (4 rows)</span></summary><table class="report-table">
 <thead><tr>
 <th>Library</th>
 <th>Vulnerability</th>
@@ -873,11 +980,11 @@ Total: 4 (UNKNOWN: 0, LOW: 0, MEDIUM: 0, HIGH: 4, CRITICAL: 0)</pre>
 <td>1.25.10, 1.26.3</td>
 <td>Pathological inputs could cause DoS through consumePhrase<br>when parsing ...<br><a href="https://avd.aquasec.com/nvd/cve-2026-42499" target="_blank" rel="noopener noreferrer">https://avd.aquasec.com/nvd/cve-2026-42499</a></td>
 </tr>
-</tbody></table>
+</tbody></table></details></div>
 <pre class="raw-output">usr/local/bin/kubelet (gobinary)
 ================================
 Total: 4 (UNKNOWN: 0, LOW: 0, MEDIUM: 0, HIGH: 4, CRITICAL: 0)</pre>
-<table class="report-table">
+<div class="table-wrap"><details class="table-collapsible" open><summary><span class="toggle-label">Scan Findings (4 rows)</span></summary><table class="report-table">
 <thead><tr>
 <th>Library</th>
 <th>Vulnerability</th>
@@ -923,30 +1030,30 @@ Total: 4 (UNKNOWN: 0, LOW: 0, MEDIUM: 0, HIGH: 4, CRITICAL: 0)</pre>
 <td>1.25.10, 1.26.3</td>
 <td>Pathological inputs could cause DoS through consumePhrase<br>when parsing ...<br><a href="https://avd.aquasec.com/nvd/cve-2026-42499" target="_blank" rel="noopener noreferrer">https://avd.aquasec.com/nvd/cve-2026-42499</a></td>
 </tr>
-</tbody></table></div>
-<h2>Scan Results: <code>docker.io/rancher/hardened-coredns:v1.14.3-build20260511</code></h2>
+</tbody></table></details></div></div>
+<h2 id="scan-results-docker-io-rancher-hardened-coredns-v1-14-3-build20260511" class="anchored-heading">Scan Results: <code>docker.io/rancher/hardened-coredns:v1.14.3-build20260511</code><a class="heading-anchor" href="#scan-results-docker-io-rancher-hardened-coredns-v1-14-3-build20260511" aria-label="Link to section">#</a></h2>
 <div class="all-clean-banner"><span class="all-clean-icon">✓</span>No vulnerabilities found — this image is clean</div>
-<h2>Scan Results: <code>docker.io/rancher/hardened-cluster-autoscaler:v1.10.3-build20260511</code></h2>
+<h2 id="scan-results-docker-io-rancher-hardened-cluster-autoscaler-v1-10-3-build20260511" class="anchored-heading">Scan Results: <code>docker.io/rancher/hardened-cluster-autoscaler:v1.10.3-build20260511</code><a class="heading-anchor" href="#scan-results-docker-io-rancher-hardened-cluster-autoscaler-v1-10-3-build20260511" aria-label="Link to section">#</a></h2>
 <div class="all-clean-banner"><span class="all-clean-icon">✓</span>No vulnerabilities found — this image is clean</div>
-<h2>Scan Results: <code>docker.io/rancher/hardened-dns-node-cache:1.26.8-build20260511</code></h2>
+<h2 id="scan-results-docker-io-rancher-hardened-dns-node-cache-1-26-8-build20260511" class="anchored-heading">Scan Results: <code>docker.io/rancher/hardened-dns-node-cache:1.26.8-build20260511</code><a class="heading-anchor" href="#scan-results-docker-io-rancher-hardened-dns-node-cache-1-26-8-build20260511" aria-label="Link to section">#</a></h2>
 <div class="all-clean-banner"><span class="all-clean-icon">✓</span>No vulnerabilities found — this image is clean</div>
-<h2>Scan Results: <code>docker.io/rancher/hardened-etcd:v3.6.7-k3s1-build20260512</code></h2>
+<h2 id="scan-results-docker-io-rancher-hardened-etcd-v3-6-7-k3s1-build20260512" class="anchored-heading">Scan Results: <code>docker.io/rancher/hardened-etcd:v3.6.7-k3s1-build20260512</code><a class="heading-anchor" href="#scan-results-docker-io-rancher-hardened-etcd-v3-6-7-k3s1-build20260512" aria-label="Link to section">#</a></h2>
 <div class="all-clean-banner"><span class="all-clean-icon">✓</span>No vulnerabilities found — this image is clean</div>
-<h2>Scan Results: <code>docker.io/rancher/hardened-k8s-metrics-server:v0.8.1-build20260513</code></h2>
+<h2 id="scan-results-docker-io-rancher-hardened-k8s-metrics-server-v0-8-1-build20260513" class="anchored-heading">Scan Results: <code>docker.io/rancher/hardened-k8s-metrics-server:v0.8.1-build20260513</code><a class="heading-anchor" href="#scan-results-docker-io-rancher-hardened-k8s-metrics-server-v0-8-1-build20260513" aria-label="Link to section">#</a></h2>
 <div class="all-clean-banner"><span class="all-clean-icon">✓</span>No vulnerabilities found — this image is clean</div>
-<h2>Scan Results: <code>docker.io/rancher/hardened-addon-resizer:1.8.23-build20260511</code></h2>
+<h2 id="scan-results-docker-io-rancher-hardened-addon-resizer-1-8-23-build20260511" class="anchored-heading">Scan Results: <code>docker.io/rancher/hardened-addon-resizer:1.8.23-build20260511</code><a class="heading-anchor" href="#scan-results-docker-io-rancher-hardened-addon-resizer-1-8-23-build20260511" aria-label="Link to section">#</a></h2>
 <div class="all-clean-banner"><span class="all-clean-icon">✓</span>No vulnerabilities found — this image is clean</div>
-<h2>Scan Results: <code>docker.io/rancher/klipper-helm:v0.10.0-build20260513</code></h2>
+<h2 id="scan-results-docker-io-rancher-klipper-helm-v0-10-0-build20260513" class="anchored-heading">Scan Results: <code>docker.io/rancher/klipper-helm:v0.10.0-build20260513</code><a class="heading-anchor" href="#scan-results-docker-io-rancher-klipper-helm-v0-10-0-build20260513" aria-label="Link to section">#</a></h2>
 <div class="all-clean-banner"><span class="all-clean-icon">✓</span>No vulnerabilities found — this image is clean</div>
-<h2>Scan Results: <code>docker.io/rancher/klipper-lb:v0.4.17</code></h2>
+<h2 id="scan-results-docker-io-rancher-klipper-lb-v0-4-17" class="anchored-heading">Scan Results: <code>docker.io/rancher/klipper-lb:v0.4.17</code><a class="heading-anchor" href="#scan-results-docker-io-rancher-klipper-lb-v0-4-17" aria-label="Link to section">#</a></h2>
 <div class="all-clean-banner"><span class="all-clean-icon">✓</span>No vulnerabilities found — this image is clean</div>
-<h2>Scan Results: <code>docker.io/rancher/mirrored-pause:3.6</code></h2>
+<h2 id="scan-results-docker-io-rancher-mirrored-pause-3-6" class="anchored-heading">Scan Results: <code>docker.io/rancher/mirrored-pause:3.6</code><a class="heading-anchor" href="#scan-results-docker-io-rancher-mirrored-pause-3-6" aria-label="Link to section">#</a></h2>
 <div class="all-clean-banner"><span class="all-clean-icon">✓</span>No vulnerabilities found — this image is clean</div>
-<h2>Scan Results: <code>docker.io/rancher/rke2-cloud-provider:v1.36.0-rc2.0.20260427154526-d239025e2a23-build20260429</code></h2>
+<h2 id="scan-results-docker-io-rancher-rke2-cloud-provider-v1-36-0-rc2-0-20260427154526-d239025e2a23-build20260429" class="anchored-heading">Scan Results: <code>docker.io/rancher/rke2-cloud-provider:v1.36.0-rc2.0.20260427154526-d239025e2a23-build20260429</code><a class="heading-anchor" href="#scan-results-docker-io-rancher-rke2-cloud-provider-v1-36-0-rc2-0-20260427154526-d239025e2a23-build20260429" aria-label="Link to section">#</a></h2>
 <div class="scan-card"><pre class="raw-output">usr/local/bin/rke2-cloud-provider (gobinary)
 ============================================
 Total: 5 (UNKNOWN: 0, LOW: 0, MEDIUM: 0, HIGH: 5, CRITICAL: 0)</pre>
-<table class="report-table">
+<div class="table-wrap"><details class="table-collapsible" open><summary><span class="toggle-label">Scan Findings (5 rows)</span></summary><table class="report-table">
 <thead><tr>
 <th>Library</th>
 <th>Vulnerability</th>
@@ -1001,17 +1108,17 @@ Total: 5 (UNKNOWN: 0, LOW: 0, MEDIUM: 0, HIGH: 5, CRITICAL: 0)</pre>
 <td>1.25.10, 1.26.3</td>
 <td>Pathological inputs could cause DoS through consumePhrase<br>when parsing ...<br><a href="https://avd.aquasec.com/nvd/cve-2026-42499" target="_blank" rel="noopener noreferrer">https://avd.aquasec.com/nvd/cve-2026-42499</a></td>
 </tr>
-</tbody></table></div>
-<h2>Scan Results: <code>docker.io/rancher/hardened-snapshot-controller:v8.5.0-build20260513</code></h2>
+</tbody></table></details></div></div>
+<h2 id="scan-results-docker-io-rancher-hardened-snapshot-controller-v8-5-0-build20260513" class="anchored-heading">Scan Results: <code>docker.io/rancher/hardened-snapshot-controller:v8.5.0-build20260513</code><a class="heading-anchor" href="#scan-results-docker-io-rancher-hardened-snapshot-controller-v8-5-0-build20260513" aria-label="Link to section">#</a></h2>
 <div class="all-clean-banner"><span class="all-clean-icon">✓</span>No vulnerabilities found — this image is clean</div>
-<h2>Scan Results: <code>docker.io/rancher/hardened-traefik:v3.6.16-build20260512</code></h2>
+<h2 id="scan-results-docker-io-rancher-hardened-traefik-v3-6-16-build20260512" class="anchored-heading">Scan Results: <code>docker.io/rancher/hardened-traefik:v3.6.16-build20260512</code><a class="heading-anchor" href="#scan-results-docker-io-rancher-hardened-traefik-v3-6-16-build20260512" aria-label="Link to section">#</a></h2>
 <div class="all-clean-banner"><span class="all-clean-icon">✓</span>No vulnerabilities found — this image is clean</div>
-<h2>Scan Results: <code>docker.io/rancher/hardened-calico:v3.32.0-build20260511</code></h2>
+<h2 id="scan-results-docker-io-rancher-hardened-calico-v3-32-0-build20260511" class="anchored-heading">Scan Results: <code>docker.io/rancher/hardened-calico:v3.32.0-build20260511</code><a class="heading-anchor" href="#scan-results-docker-io-rancher-hardened-calico-v3-32-0-build20260511" aria-label="Link to section">#</a></h2>
 <div class="all-clean-banner"><span class="all-clean-icon">✓</span>No vulnerabilities found — this image is clean</div>
-<h2>Scan Results: <code>docker.io/rancher/hardened-flannel:v0.28.4-build20260511</code></h2>
+<h2 id="scan-results-docker-io-rancher-hardened-flannel-v0-28-4-build20260511" class="anchored-heading">Scan Results: <code>docker.io/rancher/hardened-flannel:v0.28.4-build20260511</code><a class="heading-anchor" href="#scan-results-docker-io-rancher-hardened-flannel-v0-28-4-build20260511" aria-label="Link to section">#</a></h2>
 <div class="all-clean-banner"><span class="all-clean-icon">✓</span>No vulnerabilities found — this image is clean</div>
     <div class="page-footer">
-      Generated from <code>scan-v1.36.1.rke2r1-1.md</code> &nbsp;·&nbsp; 2026-05-28 13:43 UTC
+      Generated from <code>scan-v1.36.1.rke2r1-1.md</code> &nbsp;·&nbsp; 2026-05-28 21:51 UTC
     </div>
   </main>
 </body>
