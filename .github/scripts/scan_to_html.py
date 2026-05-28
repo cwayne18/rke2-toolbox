@@ -123,6 +123,25 @@ h2 {
   font-size: 17px; font-weight: 600;
   margin-top: 36px; margin-bottom: 10px;
 }
+.anchored-heading {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.heading-anchor {
+  color: var(--muted);
+  text-decoration: none;
+  font-size: 12px;
+  opacity: 0;
+  transition: opacity .15s ease;
+}
+.anchored-heading:hover .heading-anchor,
+.anchored-heading:focus-within .heading-anchor {
+  opacity: 1;
+}
+.heading-anchor:hover {
+  color: var(--link);
+}
 h2 code {
   font-family: 'Roboto Mono', monospace;
   font-size: 13px;
@@ -207,6 +226,34 @@ ul.generic-list li code {
 }
 .report-table a:hover { text-decoration: underline; }
 .report-table .num { text-align: center; font-variant-numeric: tabular-nums; }
+.table-wrap { margin: 8px 0 14px; }
+.table-collapsible {
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--body-bg);
+  overflow: hidden;
+}
+.table-collapsible summary {
+  cursor: pointer;
+  list-style: none;
+  font-family: 'Poppins', sans-serif;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--muted);
+  background: var(--table-header-bg);
+  border-bottom: 1px solid var(--border);
+  padding: 10px 14px;
+}
+.table-collapsible summary::-webkit-details-marker { display: none; }
+.table-collapsible .toggle-label::before {
+  content: "▾";
+  display: inline-block;
+  margin-right: 8px;
+  transition: transform .15s ease;
+}
+.table-collapsible:not([open]) .toggle-label::before {
+  transform: rotate(-90deg);
+}
 
 /* vuln count colouring */
 .vuln-count { font-weight: 700; }
@@ -546,6 +593,36 @@ def render_inline(text):
     return escaped
 
 
+def _slugify_heading(text):
+    clean = re.sub(r"`([^`]+)`", r"\1", text)
+    slug = re.sub(r"[^a-z0-9]+", "-", clean.lower()).strip("-")
+    return slug or "section"
+
+
+def _render_heading(level, title, heading_ids):
+    base = _slugify_heading(title)
+    count = heading_ids.get(base, 0) + 1
+    heading_ids[base] = count
+    hid = base if count == 1 else f"{base}-{count}"
+    return (
+        f'<h{level} id="{esc(hid)}" class="anchored-heading">'
+        f"{render_inline(title)}"
+        f'<a class="heading-anchor" href="#{esc(hid)}" aria-label="Link to section">#</a>'
+        f"</h{level}>"
+    )
+
+
+def _render_collapsible_table(table_html, label, row_count):
+    return (
+        '<div class="table-wrap">'
+        '<details class="table-collapsible" open>'
+        f'<summary><span class="toggle-label">{esc(label)} ({row_count} rows)</span></summary>'
+        f"{table_html}"
+        "</details>"
+        "</div>"
+    )
+
+
 def _severity_badge(severity):
     s = severity.strip().upper()
     css = s if s in ("CRITICAL", "HIGH", "MEDIUM", "LOW") else "UNKNOWN"
@@ -624,7 +701,7 @@ def render_table(headers, rows):
         out.append("</tr>")
 
     out.append("</tbody></table>")
-    return "\n".join(out)
+    return _render_collapsible_table("\n".join(out), "Scan Findings", len(rows))
 
 
 def render_md_table(headers, rows):
@@ -668,7 +745,7 @@ def render_md_table(headers, rows):
         out.append("</tr>")
 
     out.append("</tbody></table>")
-    return "\n".join(out)
+    return _render_collapsible_table("\n".join(out), "Table", len(rows))
 
 def _process_trivy_block(content):
     """
@@ -742,6 +819,7 @@ def _convert_markdown(md):
     in_pipe_table = False
     pipe_table_lines = []
     in_scan_result = False  # True while inside a "## Scan Results: `…`" section
+    heading_ids = {}
 
     def close_ul():
         nonlocal in_ul, in_images_list
@@ -817,17 +895,17 @@ def _convert_markdown(md):
         if line.startswith("# "):
             close_ul()
             in_scan_result = False
-            out.append(f"<h1>{render_inline(line[2:].strip())}</h1>")
+            out.append(_render_heading(1, line[2:].strip(), heading_ids))
         elif line.startswith("## "):
             close_ul()
             title = line[3:].strip()
-            out.append(f"<h2>{render_inline(title)}</h2>")
+            out.append(_render_heading(2, title, heading_ids))
             in_images_list = title.lower().startswith("images scanned")
             in_scan_result = bool(re.match(r"Scan Results:\s*`[^`]+`", title))
         elif line.startswith("### "):
             close_ul()
             in_scan_result = False
-            out.append(f"<h3>{render_inline(line[4:].strip())}</h3>")
+            out.append(_render_heading(3, line[4:].strip(), heading_ids))
 
         # ---- bullet list ----
         elif re.match(r"^[-*] ", line):
@@ -1538,7 +1616,10 @@ def _render_vex_candidates(candidates):
     rows_html = "\n".join(rows)
     return (
         '<section class="vex-candidates">'
-        "<h2>Potential VEX Candidates (Automated Recommendations)</h2>"
+        '<h2 id="potential-vex-candidates-automated-recommendations" class="anchored-heading">'
+        "Potential VEX Candidates (Automated Recommendations)"
+        '<a class="heading-anchor" href="#potential-vex-candidates-automated-recommendations" aria-label="Link to section">#</a>'
+        "</h2>"
         '<p class="vex-intro">'
         "The following CVEs may be suitable for "
         '<a href="https://openvex.dev/" target="_blank" rel="noopener noreferrer">OpenVEX</a> '
@@ -1548,7 +1629,9 @@ def _render_vex_candidates(candidates):
         '<a href="https://github.com/rancher/image-scanning" target="_blank" rel="noopener noreferrer">'
         "rancher/image-scanning</a>."
         "</p>"
-        "<table>"
+        '<div class="table-wrap"><details class="table-collapsible" open>'
+        f'<summary><span class="toggle-label">Potential VEX Candidates ({len(candidates)} rows)</span></summary>'
+        '<table class="report-table">'
         "<thead><tr>"
         "<th>CVE</th>"
         "<th>Image</th>"
@@ -1559,6 +1642,7 @@ def _render_vex_candidates(candidates):
         "</tr></thead>"
         f"<tbody>{rows_html}</tbody>"
         "</table>"
+        "</details></div>"
         "</section>"
     )
 
