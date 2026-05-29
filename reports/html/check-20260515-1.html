@@ -110,6 +110,25 @@ h2 {
   font-size: 17px; font-weight: 600;
   margin-top: 36px; margin-bottom: 10px;
 }
+.anchored-heading {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.heading-anchor {
+  color: var(--muted);
+  text-decoration: none;
+  font-size: 12px;
+  opacity: 0;
+  transition: opacity .15s ease;
+}
+.anchored-heading:hover .heading-anchor,
+.anchored-heading:focus-within .heading-anchor {
+  opacity: 1;
+}
+.heading-anchor:hover {
+  color: var(--link);
+}
 h2 code {
   font-family: 'Roboto Mono', monospace;
   font-size: 13px;
@@ -194,6 +213,34 @@ ul.generic-list li code {
 }
 .report-table a:hover { text-decoration: underline; }
 .report-table .num { text-align: center; font-variant-numeric: tabular-nums; }
+.table-wrap { margin: 8px 0 14px; }
+.table-collapsible {
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--body-bg);
+  overflow: hidden;
+}
+.table-collapsible summary {
+  cursor: pointer;
+  list-style: none;
+  font-family: 'Poppins', sans-serif;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--muted);
+  background: var(--table-header-bg);
+  border-bottom: 1px solid var(--border);
+  padding: 10px 14px;
+}
+.table-collapsible summary::-webkit-details-marker { display: none; }
+.table-collapsible .toggle-label::before {
+  content: "▾";
+  display: inline-block;
+  margin-right: 8px;
+  transition: transform .15s ease;
+}
+.table-collapsible:not([open]) .toggle-label::before {
+  transform: rotate(-90deg);
+}
 
 /* vuln count colouring */
 .vuln-count { font-weight: 700; }
@@ -318,6 +365,57 @@ code {
 .suggested-actions li {
   margin-bottom: 8px;
 }
+
+/* ---- VEX candidates ---- */
+.vex-candidates {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: #F5FFF8;
+  padding: 18px 20px 12px;
+  margin-bottom: 22px;
+}
+.vex-candidates h2 {
+  margin: 0 0 4px;
+}
+.vex-candidates .vex-intro {
+  color: var(--muted);
+  font-size: 13px;
+  margin-bottom: 12px;
+}
+.vex-candidates .vex-intro a {
+  color: var(--link);
+}
+.vex-candidates table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+.vex-candidates th {
+  background: var(--table-header-bg);
+  text-align: left;
+  padding: 6px 10px;
+  border: 1px solid var(--border);
+  font-family: 'Poppins', sans-serif;
+  font-size: 12px;
+}
+.vex-candidates td {
+  padding: 6px 10px;
+  border: 1px solid var(--border);
+  vertical-align: top;
+}
+.vex-candidates tr:nth-child(even) td {
+  background: var(--box-bg);
+}
+.vex-status {
+  display: inline-block;
+  padding: 2px 7px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 600;
+  background: #D4EDDA;
+  color: #155724;
+  border: 1px solid #C3E6CB;
+}
 </style>
 </head>
 <body>
@@ -329,13 +427,13 @@ code {
     <span class="subtitle">— Check Images Report</span>
   </header>
   <main class="page-content">
-    <h1>Image update check report</h1>
+    <h1 id="image-update-check-report" class="anchored-heading">Image update check report<a class="heading-anchor" href="#image-update-check-report" aria-label="Link to section">#</a></h1>
 <ul class="generic-list">
 <li>Source: branch &#x27;master&#x27;</li>
 <li>Generated: 2026-05-15T17:59:34Z</li>
 </ul>
 <div class="scan-card">
-<table class="report-table">
+<div class="table-wrap"><details class="table-collapsible" open><summary><span class="toggle-label">Table (18 rows)</span></summary><table class="report-table">
 <thead><tr>
 <th>Image</th>
 <th>Current Tag</th>
@@ -488,9 +586,9 @@ code {
 <td>v1.26.3b1</td>
 <td><span class="status status-NEEDS_UPDATE">NEEDS_UPDATE</span></td>
 </tr>
-</tbody></table>
+</tbody></table></details></div>
 </div>
-<h2>Summary</h2>
+<h2 id="summary" class="anchored-heading">Summary<a class="heading-anchor" href="#summary" aria-label="Link to section">#</a></h2>
 <ul class="generic-list">
 <li>Total images: 18</li>
 <li>Needs update: 1</li>
@@ -498,7 +596,7 @@ code {
 <li>Unknown mapping/latest tag: 1</li>
 </ul>
     <div class="page-footer">
-      Generated from <code>check-20260515-1.md</code> &nbsp;·&nbsp; 2026-05-28 07:13 UTC
+      Generated from <code>check-20260515-1.md</code> &nbsp;·&nbsp; 2026-05-29 07:14 UTC
     </div>
   </main>
 </body>
