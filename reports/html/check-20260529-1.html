@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>RKE2 Toolbox — Reports</title>
+  <title>Image update check report</title>
   <style>
 @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&family=Lato:ital,wght@0,400;0,700;1,400&family=Roboto+Mono:wght@400;500&display=swap');
 
@@ -416,63 +416,6 @@ code {
   color: #155724;
   border: 1px solid #C3E6CB;
 }
-
-/* ---- Index card grid ---- */
-.index-intro {
-  color: var(--muted);
-  margin-bottom: 32px;
-  font-size: 14px;
-}
-.reports-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-  gap: 16px;
-  margin-top: 16px;
-}
-.report-card {
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  background: var(--body-bg);
-  padding: 20px 22px;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  transition: box-shadow .15s, border-color .15s;
-  text-decoration: none;
-  color: inherit;
-}
-.report-card:hover {
-  box-shadow: 0 4px 16px rgba(0,0,0,.10);
-  border-color: var(--link);
-}
-.report-card .rc-name {
-  font-family: 'Roboto Mono', monospace;
-  font-size: 13px;
-  font-weight: 500;
-  color: var(--link);
-  word-break: break-all;
-}
-.report-card .rc-date {
-  font-size: 12px;
-  color: var(--muted);
-}
-.report-card .rc-arrow {
-  margin-left: auto;
-  color: var(--muted);
-  font-size: 16px;
-  align-self: flex-start;
-}
-.rc-header {
-  display: flex;
-  align-items: flex-start;
-  gap: 8px;
-}
-.empty-state {
-  color: var(--muted);
-  font-size: 14px;
-  padding: 48px 0;
-  text-align: center;
-}
 </style>
 </head>
 <body>
@@ -481,38 +424,180 @@ code {
       <svg viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="16" cy="16" r="14" fill="#2F68DF"/><path d="M9 16.5l4.5 4.5 9.5-9.5" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
       RKE2 Toolbox
     </div>
-    <span class="subtitle">— Reports</span>
+    <span class="subtitle">— Check Images Report</span>
   </header>
   <main class="page-content">
-    <h1>RKE2 Toolbox Reports</h1>
-<h2>Trivy Scan Reports</h2><p class="index-intro">18 reports available</p><div class="reports-grid">
-<a class="report-card" href="scan-20260527-3.html">  <div class="rc-header">    <div>      <div class="rc-name">scan-20260527-3</div>      <div class="rc-date">May 27, 2026</div>    </div>    <span class="rc-arrow">&#8594;</span>  </div></a>
-<a class="report-card" href="scan-20260527-2.html">  <div class="rc-header">    <div>      <div class="rc-name">scan-20260527-2</div>      <div class="rc-date">May 27, 2026</div>    </div>    <span class="rc-arrow">&#8594;</span>  </div></a>
-<a class="report-card" href="scan-20260522-2.html">  <div class="rc-header">    <div>      <div class="rc-name">scan-20260522-2</div>      <div class="rc-date">May 22, 2026</div>    </div>    <span class="rc-arrow">&#8594;</span>  </div></a>
-<a class="report-card" href="scan-20260522-1.html">  <div class="rc-header">    <div>      <div class="rc-name">scan-20260522-1</div>      <div class="rc-date">May 22, 2026</div>    </div>    <span class="rc-arrow">&#8594;</span>  </div></a>
-<a class="report-card" href="scan-20260521-2.html">  <div class="rc-header">    <div>      <div class="rc-name">scan-20260521-2</div>      <div class="rc-date">May 21, 2026</div>    </div>    <span class="rc-arrow">&#8594;</span>  </div></a>
-<a class="report-card" href="scan-20260521-1.html">  <div class="rc-header">    <div>      <div class="rc-name">scan-20260521-1</div>      <div class="rc-date">May 21, 2026</div>    </div>    <span class="rc-arrow">&#8594;</span>  </div></a>
-<a class="report-card" href="scan-20260519-1.html">  <div class="rc-header">    <div>      <div class="rc-name">scan-20260519-1</div>      <div class="rc-date">May 19, 2026</div>    </div>    <span class="rc-arrow">&#8594;</span>  </div></a>
-<a class="report-card" href="scan-20260517-1.html">  <div class="rc-header">    <div>      <div class="rc-name">scan-20260517-1</div>      <div class="rc-date">May 17, 2026</div>    </div>    <span class="rc-arrow">&#8594;</span>  </div></a>
-<a class="report-card" href="scan-20260516-1.html">  <div class="rc-header">    <div>      <div class="rc-name">scan-20260516-1</div>      <div class="rc-date">May 16, 2026</div>    </div>    <span class="rc-arrow">&#8594;</span>  </div></a>
-<a class="report-card" href="scan-20260515-4.html">  <div class="rc-header">    <div>      <div class="rc-name">scan-20260515-4</div>      <div class="rc-date">May 15, 2026</div>    </div>    <span class="rc-arrow">&#8594;</span>  </div></a>
-<a class="report-card" href="scan-20260515-3.html">  <div class="rc-header">    <div>      <div class="rc-name">scan-20260515-3</div>      <div class="rc-date">May 15, 2026</div>    </div>    <span class="rc-arrow">&#8594;</span>  </div></a>
-<a class="report-card" href="scan-20260515-1.html">  <div class="rc-header">    <div>      <div class="rc-name">scan-20260515-1</div>      <div class="rc-date">May 15, 2026</div>    </div>    <span class="rc-arrow">&#8594;</span>  </div></a>
-<a class="report-card" href="scan-v1.36.1.rke2r2-1.html">  <div class="rc-header">    <div>      <div class="rc-name">scan-v1.36.1.rke2r2-1</div>    </div>    <span class="rc-arrow">&#8594;</span>  </div></a>
-<a class="report-card" href="scan-v1.36.1.rke2r1-1.html">  <div class="rc-header">    <div>      <div class="rc-name">scan-v1.36.1.rke2r1-1</div>    </div>    <span class="rc-arrow">&#8594;</span>  </div></a>
-<a class="report-card" href="scan-v1.36.1-rc3.rke2r2-3.html">  <div class="rc-header">    <div>      <div class="rc-name">scan-v1.36.1-rc3.rke2r2-3</div>    </div>    <span class="rc-arrow">&#8594;</span>  </div></a>
-<a class="report-card" href="scan-v1.36.1-rc3.rke2r2-2.html">  <div class="rc-header">    <div>      <div class="rc-name">scan-v1.36.1-rc3.rke2r2-2</div>    </div>    <span class="rc-arrow">&#8594;</span>  </div></a>
-<a class="report-card" href="scan-v1.36.1-rc3.rke2r2-1.html">  <div class="rc-header">    <div>      <div class="rc-name">scan-v1.36.1-rc3.rke2r2-1</div>    </div>    <span class="rc-arrow">&#8594;</span>  </div></a>
-<a class="report-card" href="scan-v1.36.1-rc2-rke2r2-1.html">  <div class="rc-header">    <div>      <div class="rc-name">scan-v1.36.1-rc2-rke2r2-1</div>    </div>    <span class="rc-arrow">&#8594;</span>  </div></a>
+    <h1 id="image-update-check-report" class="anchored-heading">Image update check report<a class="heading-anchor" href="#image-update-check-report" aria-label="Link to section">#</a></h1>
+<ul class="generic-list">
+<li>Source: branch &#x27;master&#x27;</li>
+<li>Generated: 2026-05-29T07:13:29Z</li>
+</ul>
+<div class="scan-card">
+<div class="table-wrap"><details class="table-collapsible" open><summary><span class="toggle-label">Table (18 rows)</span></summary><table class="report-table">
+<thead><tr>
+<th>Image</th>
+<th>Current Tag</th>
+<th>Build Repo</th>
+<th>Latest Tag</th>
+<th>Go (hardened-build-base)</th>
+<th>Status</th>
+</tr></thead><tbody>
+<tr>
+<td><code style="font-size:11px;word-break:break-all">docker.io/rancher/hardened-addon-resizer:1.8.23-build20260511</code></td>
+<td>1.8.23-build20260511</td>
+<td><a href="https://github.com/rancher/image-build-addon-resizer" target="_blank" rel="noopener noreferrer">image-build-addon-resizer</a></td>
+<td>1.8.23-build20260511</td>
+<td>v1.25.10b1</td>
+<td><span class="status status-UP_TO_DATE">UP_TO_DATE</span></td>
+</tr>
+<tr>
+<td><code style="font-size:11px;word-break:break-all">docker.io/rancher/hardened-calico:v3.32.0-build20260511</code></td>
+<td>v3.32.0-build20260511</td>
+<td><a href="https://github.com/rancher/image-build-calico" target="_blank" rel="noopener noreferrer">image-build-calico</a></td>
+<td>v3.32.0-build20260511</td>
+<td>v1.25.10b1</td>
+<td><span class="status status-UP_TO_DATE">UP_TO_DATE</span></td>
+</tr>
+<tr>
+<td><code style="font-size:11px;word-break:break-all">docker.io/rancher/hardened-cluster-autoscaler:v1.10.3-build20260511</code></td>
+<td>v1.10.3-build20260511</td>
+<td><a href="https://github.com/rancher/image-build-cluster-proportional-autoscaler" target="_blank" rel="noopener noreferrer">image-build-cluster-proportional-autoscaler</a></td>
+<td>v1.10.3-build20260511</td>
+<td>v1.25.10b1</td>
+<td><span class="status status-UP_TO_DATE">UP_TO_DATE</span></td>
+</tr>
+<tr>
+<td><code style="font-size:11px;word-break:break-all">docker.io/rancher/hardened-cni-plugins:v1.9.1-build20260511</code></td>
+<td>v1.9.1-build20260511</td>
+<td><a href="https://github.com/rancher/image-build-cni-plugins" target="_blank" rel="noopener noreferrer">image-build-cni-plugins</a></td>
+<td>v1.9.1-build20260511</td>
+<td>v1.25.10b1</td>
+<td><span class="status status-UP_TO_DATE">UP_TO_DATE</span></td>
+</tr>
+<tr>
+<td><code style="font-size:11px;word-break:break-all">docker.io/rancher/hardened-coredns:v1.14.3-build20260511</code></td>
+<td>v1.14.3-build20260511</td>
+<td><a href="https://github.com/rancher/image-build-coredns" target="_blank" rel="noopener noreferrer">image-build-coredns</a></td>
+<td>v1.14.3-build20260511</td>
+<td>v1.25.10b1</td>
+<td><span class="status status-UP_TO_DATE">UP_TO_DATE</span></td>
+</tr>
+<tr>
+<td><code style="font-size:11px;word-break:break-all">docker.io/rancher/hardened-csi-snapshotter:v8.5.0-build20260513</code></td>
+<td>v8.5.0-build20260513</td>
+<td>N/A</td>
+<td>N/A</td>
+<td>N/A</td>
+<td><span class="status status-UNKNOWN">UNKNOWN</span></td>
+</tr>
+<tr>
+<td><code style="font-size:11px;word-break:break-all">docker.io/rancher/hardened-dns-node-cache:1.26.8-build20260511</code></td>
+<td>1.26.8-build20260511</td>
+<td><a href="https://github.com/rancher/image-build-dns-nodecache" target="_blank" rel="noopener noreferrer">image-build-dns-nodecache</a></td>
+<td>1.26.8-build20260511</td>
+<td>v1.25.10b1</td>
+<td><span class="status status-UP_TO_DATE">UP_TO_DATE</span></td>
+</tr>
+<tr>
+<td><code style="font-size:11px;word-break:break-all">docker.io/rancher/hardened-etcd:v3.6.7-k3s1-build20260512</code></td>
+<td>v3.6.7-k3s1-build20260512</td>
+<td><a href="https://github.com/rancher/image-build-etcd" target="_blank" rel="noopener noreferrer">image-build-etcd</a></td>
+<td>v3.6.7-k3s1-build20260512</td>
+<td>v1.25.10b1</td>
+<td><span class="status status-UP_TO_DATE">UP_TO_DATE</span></td>
+</tr>
+<tr>
+<td><code style="font-size:11px;word-break:break-all">docker.io/rancher/hardened-flannel:v0.28.4-build20260511</code></td>
+<td>v0.28.4-build20260511</td>
+<td><a href="https://github.com/rancher/image-build-flannel" target="_blank" rel="noopener noreferrer">image-build-flannel</a></td>
+<td>v0.28.4-build20260511</td>
+<td>v1.25.10b1</td>
+<td><span class="status status-UP_TO_DATE">UP_TO_DATE</span></td>
+</tr>
+<tr>
+<td><code style="font-size:11px;word-break:break-all">docker.io/rancher/hardened-k8s-metrics-server:v0.8.1-build20260513</code></td>
+<td>v0.8.1-build20260513</td>
+<td><a href="https://github.com/rancher/image-build-k8s-metrics-server" target="_blank" rel="noopener noreferrer">image-build-k8s-metrics-server</a></td>
+<td>v0.8.1-build20260513</td>
+<td>v1.26.3b1</td>
+<td><span class="status status-UP_TO_DATE">UP_TO_DATE</span></td>
+</tr>
+<tr>
+<td><code style="font-size:11px;word-break:break-all">docker.io/rancher/hardened-snapshot-controller:v8.5.0-build20260513</code></td>
+<td>v8.5.0-build20260513</td>
+<td><a href="https://github.com/rancher/image-build-external-snapshotter" target="_blank" rel="noopener noreferrer">image-build-external-snapshotter</a></td>
+<td>v8.5.0-build20260513</td>
+<td>v1.26.3b1</td>
+<td><span class="status status-UP_TO_DATE">UP_TO_DATE</span></td>
+</tr>
+<tr>
+<td><code style="font-size:11px;word-break:break-all">docker.io/rancher/hardened-traefik:v3.6.16-build20260512</code></td>
+<td>v3.6.16-build20260512</td>
+<td><a href="https://github.com/rancher/image-build-traefik" target="_blank" rel="noopener noreferrer">image-build-traefik</a></td>
+<td>v3.7.1-build20260528</td>
+<td>v1.25.10b1</td>
+<td><span class="status status-NEEDS_UPDATE">NEEDS_UPDATE</span></td>
+</tr>
+<tr>
+<td><code style="font-size:11px;word-break:break-all">docker.io/rancher/hardened-whereabouts:v0.9.3-build20260511</code></td>
+<td>v0.9.3-build20260511</td>
+<td><a href="https://github.com/rancher/image-build-whereabouts" target="_blank" rel="noopener noreferrer">image-build-whereabouts</a></td>
+<td>v0.9.3-build20260511</td>
+<td>v1.25.10b1</td>
+<td><span class="status status-UP_TO_DATE">UP_TO_DATE</span></td>
+</tr>
+<tr>
+<td><code style="font-size:11px;word-break:break-all">docker.io/rancher/klipper-helm:v0.10.0-build20260513</code></td>
+<td>v0.10.0-build20260513</td>
+<td><a href="https://github.com/k3s-io/klipper-helm" target="_blank" rel="noopener noreferrer">k3s-io/klipper-helm</a></td>
+<td>v0.10.0-build20260513</td>
+<td>N/A</td>
+<td><span class="status status-UP_TO_DATE">UP_TO_DATE</span></td>
+</tr>
+<tr>
+<td><code style="font-size:11px;word-break:break-all">docker.io/rancher/klipper-lb:v0.4.17</code></td>
+<td>v0.4.17</td>
+<td><a href="https://github.com/k3s-io/klipper-lb" target="_blank" rel="noopener noreferrer">k3s-io/klipper-lb</a></td>
+<td>v0.4.17</td>
+<td>N/A</td>
+<td><span class="status status-UP_TO_DATE">UP_TO_DATE</span></td>
+</tr>
+<tr>
+<td><code style="font-size:11px;word-break:break-all">docker.io/rancher/kube-webhook-certgen:v1.14.5-prime7</code></td>
+<td>v1.14.5-prime7</td>
+<td><a href="https://github.com/rancher/ingress-nginx" target="_blank" rel="noopener noreferrer">rancher/ingress-nginx</a></td>
+<td>v1.14.5-prime7</td>
+<td>1.26.3</td>
+<td><span class="status status-UP_TO_DATE">UP_TO_DATE</span></td>
+</tr>
+<tr>
+<td><code style="font-size:11px;word-break:break-all">docker.io/rancher/nginx-ingress-controller:v1.14.5-prime7</code></td>
+<td>v1.14.5-prime7</td>
+<td><a href="https://github.com/rancher/ingress-nginx" target="_blank" rel="noopener noreferrer">rancher/ingress-nginx</a></td>
+<td>v1.14.5-prime7</td>
+<td>1.26.3</td>
+<td><span class="status status-UP_TO_DATE">UP_TO_DATE</span></td>
+</tr>
+<tr>
+<td><code style="font-size:11px;word-break:break-all">docker.io/rancher/rke2-cloud-provider:v1.36.0-rc2.0.20260427154526-d239025e2a23-build20260429</code></td>
+<td>v1.36.0-rc2.0.20260427154526-d239025e2a23-build20260429</td>
+<td><a href="https://github.com/rancher/image-build-rke2-cloud-provider" target="_blank" rel="noopener noreferrer">image-build-rke2-cloud-provider</a></td>
+<td>v1.36.1-0.20260508014929-7bbbf7c9b258-build20260515</td>
+<td>v1.26.3b1</td>
+<td><span class="status status-NEEDS_UPDATE">NEEDS_UPDATE</span></td>
+</tr>
+</tbody></table></details></div>
 </div>
-<h2>Check Images Reports</h2><p class="index-intro">5 reports available</p><div class="reports-grid">
-<a class="report-card" href="check-20260530-1.html">  <div class="rc-header">    <div>      <div class="rc-name">check-20260530-1</div>      <div class="rc-date">May 30, 2026</div>    </div>    <span class="rc-arrow">&#8594;</span>  </div></a>
-<a class="report-card" href="check-20260529-1.html">  <div class="rc-header">    <div>      <div class="rc-name">check-20260529-1</div>      <div class="rc-date">May 29, 2026</div>    </div>    <span class="rc-arrow">&#8594;</span>  </div></a>
-<a class="report-card" href="check-20260521-1.html">  <div class="rc-header">    <div>      <div class="rc-name">check-20260521-1</div>      <div class="rc-date">May 21, 2026</div>    </div>    <span class="rc-arrow">&#8594;</span>  </div></a>
-<a class="report-card" href="check-20260519-1.html">  <div class="rc-header">    <div>      <div class="rc-name">check-20260519-1</div>      <div class="rc-date">May 19, 2026</div>    </div>    <span class="rc-arrow">&#8594;</span>  </div></a>
-<a class="report-card" href="check-20260515-1.html">  <div class="rc-header">    <div>      <div class="rc-name">check-20260515-1</div>      <div class="rc-date">May 15, 2026</div>    </div>    <span class="rc-arrow">&#8594;</span>  </div></a>
-</div>
-<div class="page-footer">Index generated &nbsp;·&nbsp; 2026-05-31 07:14 UTC</div>
+<h2 id="summary" class="anchored-heading">Summary<a class="heading-anchor" href="#summary" aria-label="Link to section">#</a></h2>
+<ul class="generic-list">
+<li>Total images: 18</li>
+<li>Needs update: 2</li>
+<li>Up to date: 15</li>
+<li>Unknown mapping/latest tag: 1</li>
+</ul>
+    <div class="page-footer">
+      Generated from <code>check-20260529-1.md</code> &nbsp;·&nbsp; 2026-05-31 07:14 UTC
+    </div>
   </main>
 </body>
 </html>
