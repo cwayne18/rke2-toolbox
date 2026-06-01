@@ -1041,6 +1041,21 @@ def _count_binaries_with_findings(md):
     return len(re.findall(r"(?im)^\s*.+\((?:go)?binary\)\s*$", md))
 
 
+def _count_binaries_from_summary_tables(md):
+    """Count all gobinary/binary targets in Trivy 'Report Summary' ASCII tables.
+
+    Older reports embed a full 'Report Summary' box-drawing table per image that
+    lists every scanned target (including those with 0 vulnerabilities) with its
+    type.  Counting rows whose type cell is 'gobinary' or 'binary' gives the true
+    total number of binaries scanned, equivalent to the value scan.sh writes into
+    the ``### Scan Coverage`` section of newer reports.
+
+    Returns 0 when no such tables are present (e.g. reports that already carry a
+    ``### Scan Coverage`` section, or reports in the findings-only format).
+    """
+    return len(re.findall(r"│[^│\n]+│\s*(?:go)?binary\s*│[^│\n]+│", md))
+
+
 def _metrics_db_path(input_path):
     """Resolve the metrics DB location."""
     script_dir = os.path.dirname(os.path.abspath(__file__))
@@ -1127,16 +1142,20 @@ def _augment_scan_summary(md, input_path):
 
     if "### Scan Coverage" not in summary_text:
         image_count = _count_images_scanned(md)
-        add_lines.extend(
-            [
-                "### Scan Coverage",
-                "",
-                "| Metric | Count |",
-                "| --- | ---: |",
-                f"| Images scanned | {image_count} |",
-                "",
-            ]
-        )
+        binary_count = _count_binaries_from_summary_tables(md)
+        coverage_rows = [
+            "### Scan Coverage",
+            "",
+            "| Metric | Count |",
+            "| --- | ---: |",
+            f"| Images scanned | {image_count} |",
+        ]
+        if binary_count:
+            total = image_count + binary_count
+            coverage_rows.append(f"| Binaries scanned | {binary_count} |")
+            coverage_rows.append(f"| **Total scanned targets** | **{total}** |")
+        coverage_rows.append("")
+        add_lines.extend(coverage_rows)
 
     if not add_lines:
         return md
