@@ -1030,8 +1030,14 @@ def _count_images_scanned(md):
     return count
 
 
-def _count_scanned_binaries(md):
-    """Count gobinary/binary targets reported by Trivy scan output."""
+def _count_binaries_with_findings(md):
+    """Count gobinary/binary targets that have reported findings in Trivy scan output.
+
+    NOTE: This only counts binaries that appear in the severity-filtered Trivy
+    table output (i.e. binaries *with* CRITICAL/HIGH findings). It is NOT the
+    total number of binaries scanned. Use the value written by scan.sh into the
+    ``### Scan Coverage`` markdown section for the authoritative total.
+    """
     return len(re.findall(r"(?im)^\s*.+\((?:go)?binary\)\s*$", md))
 
 
@@ -1121,7 +1127,6 @@ def _augment_scan_summary(md, input_path):
 
     if "### Scan Coverage" not in summary_text:
         image_count = _count_images_scanned(md)
-        binary_count = _count_scanned_binaries(md)
         add_lines.extend(
             [
                 "### Scan Coverage",
@@ -1129,8 +1134,6 @@ def _augment_scan_summary(md, input_path):
                 "| Metric | Count |",
                 "| --- | ---: |",
                 f"| Images scanned | {image_count} |",
-                f"| Binaries scanned | {binary_count} |",
-                f"| **Total scanned targets** | **{image_count + binary_count}** |",
                 "",
             ]
         )
