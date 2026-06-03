@@ -427,10 +427,11 @@ code {
     <span class="subtitle">— Trivy Scan Report</span>
   </header>
   <main class="page-content">
-    <section class="suggested-actions"><h2>Suggested Actions</h2><ul><li>Update docker.io/rancher/rke2-runtime image to use containerd version 2.0.9 or later and rebuild the image</li>
-<li>Rebuild docker.io/rancher/rke2-runtime:v1.36.1-rke2r2 with containerd patched to version 2.2.4 or 2.3.1</li>
-<li>Update docker.io/rancher/klipper-helm image to use containerd version 1.7.32 or later and rebuild the image</li>
-<li>Rebuild docker.io/rancher/klipper-helm:v0.10.0-build20260513 with updated containerd dependency to fix CVE-2026-46680</li></ul></section><h1 id="trivy-scan-report" class="anchored-heading">Trivy Scan Report<a class="heading-anchor" href="#trivy-scan-report" aria-label="Link to section">#</a></h1>
+    <section class="suggested-actions"><h2>Suggested Actions</h2><ul><li>Rebuild docker.io/rancher/rke2-runtime:v1.36.1-rke2r2 with github.com/containerd/containerd/v2 updated to at least version 2.0.9</li>
+<li>Rebuild docker.io/rancher/rke2-runtime:v1.36.1-rke2r2 with github.com/containerd/containerd/v2 updated to at least version 2.2.4 or 2.3.1</li>
+<li>Rebuild docker.io/rancher/klipper-helm:v0.10.0-build20260513 with github.com/containerd/containerd updated to version 1.7.32</li>
+<li>Verify and test updated images for stability before deployment</li>
+<li>Deploy updated images to production to mitigate CVE-2026-46680</li></ul></section><h1 id="trivy-scan-report" class="anchored-heading">Trivy Scan Report<a class="heading-anchor" href="#trivy-scan-report" aria-label="Link to section">#</a></h1>
 <h2 id="summary" class="anchored-heading">Summary<a class="heading-anchor" href="#summary" aria-label="Link to section">#</a></h2>
 <h3 id="cves-by-severity" class="anchored-heading">CVEs by Severity<a class="heading-anchor" href="#cves-by-severity" aria-label="Link to section">#</a></h3>
 <div class="scan-card">
@@ -540,7 +541,7 @@ code {
 </tr></thead><tbody>
 <tr>
 <td>Previous scan CVEs</td>
-<td>17</td>
+<td>21</td>
 </tr>
 <tr>
 <td>Current scan CVEs</td>
@@ -548,7 +549,7 @@ code {
 </tr>
 <tr>
 <td><strong>Delta</strong></td>
-<td><strong>-5</strong></td>
+<td><strong>-9</strong></td>
 </tr>
 </tbody></table></details></div>
 </div>
@@ -859,7 +860,7 @@ Total: 1 (UNKNOWN: 0, LOW: 0, MEDIUM: 0, HIGH: 1, CRITICAL: 0)</pre>
 </tr>
 </tbody></table></details></div></div>
     <div class="page-footer">
-      Generated from <code>scan-v1.36.1.rke2r2-3.md</code> &nbsp;·&nbsp; 2026-06-02 07:40 UTC
+      Generated from <code>scan-v1.36.1.rke2r2-3.md</code> &nbsp;·&nbsp; 2026-06-03 07:42 UTC
     </div>
   </main>
 </body>
