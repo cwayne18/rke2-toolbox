@@ -427,10 +427,10 @@ code {
     <span class="subtitle">— Trivy Scan Report</span>
   </header>
   <main class="page-content">
-    <section class="suggested-actions"><h2>Suggested Actions</h2><ul><li>Rebuild docker.io/rancher/rke2-runtime:v1.36.1-rke2r2 with github.com/containerd/containerd/v2 updated to version 2.3.1 or later</li>
-<li>Rebuild docker.io/rancher/klipper-helm:v0.10.0-build20260513 with github.com/containerd/containerd updated to version 1.7.32 or later</li>
-<li>Verify no other dependencies require updates after containerd version bumps</li>
-<li>Test updated images for functionality before deployment</li></ul></section><h1 id="trivy-scan-report" class="anchored-heading">Trivy Scan Report<a class="heading-anchor" href="#trivy-scan-report" aria-label="Link to section">#</a></h1>
+    <section class="suggested-actions"><h2>Suggested Actions</h2><ul><li>Rebuild docker.io/rancher/rke2-runtime:v1.36.1-rke2r2 with github.com/containerd/containerd/v2 updated to version 2.0.9 or later</li>
+<li>Rebuild docker.io/rancher/klipper-helm:v0.10.0-build20260513 with github.com/containerd/containerd updated to version 1.7.32</li>
+<li>Verify no other dependencies require containerd versions below the fixed versions to prevent CVE-2026-46680</li>
+<li>Test updated images for stability and redeploy to production</li></ul></section><h1 id="trivy-scan-report" class="anchored-heading">Trivy Scan Report<a class="heading-anchor" href="#trivy-scan-report" aria-label="Link to section">#</a></h1>
 <h2 id="summary" class="anchored-heading">Summary<a class="heading-anchor" href="#summary" aria-label="Link to section">#</a></h2>
 <h3 id="cves-by-severity" class="anchored-heading">CVEs by Severity<a class="heading-anchor" href="#cves-by-severity" aria-label="Link to section">#</a></h3>
 <div class="scan-card">
@@ -507,7 +507,7 @@ code {
 </tr></thead><tbody>
 <tr>
 <td>Previous scan CVEs</td>
-<td>11</td>
+<td>30</td>
 </tr>
 <tr>
 <td>Current scan CVEs</td>
@@ -515,7 +515,7 @@ code {
 </tr>
 <tr>
 <td><strong>Delta</strong></td>
-<td><strong>+0</strong></td>
+<td><strong>-19</strong></td>
 </tr>
 </tbody></table></details></div>
 </div>
@@ -791,7 +791,7 @@ Total: 1 (UNKNOWN: 0, LOW: 0, MEDIUM: 0, HIGH: 1, CRITICAL: 0)</pre>
 <h2 id="scan-results-docker-io-rancher-hardened-flannel-v0-28-4-build20260511" class="anchored-heading">Scan Results: <code>docker.io/rancher/hardened-flannel:v0.28.4-build20260511</code><a class="heading-anchor" href="#scan-results-docker-io-rancher-hardened-flannel-v0-28-4-build20260511" aria-label="Link to section">#</a></h2>
 <div class="all-clean-banner"><span class="all-clean-icon">✓</span>No vulnerabilities found — this image is clean</div>
     <div class="page-footer">
-      Generated from <code>scan-v1.36.1.rke2r2-4.md</code> &nbsp;·&nbsp; 2026-06-05 07:31 UTC
+      Generated from <code>scan-v1.36.1.rke2r2-4.md</code> &nbsp;·&nbsp; 2026-06-06 07:06 UTC
     </div>
   </main>
 </body>
