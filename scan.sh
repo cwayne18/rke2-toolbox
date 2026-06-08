@@ -264,6 +264,7 @@ EOF
     find "$work_dir/build" -maxdepth 1 -type f -name 'images-*.txt' ! -name 'images.txt' -print0 \
         | xargs -0 cat \
         | grep -vE "$exclude_pattern" \
+        | awk 'NF && !seen[$0]++' \
         > images.txt
 fi
 
