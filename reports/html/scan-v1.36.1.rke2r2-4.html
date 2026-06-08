@@ -429,8 +429,8 @@ code {
   <main class="page-content">
     <section class="suggested-actions"><h2>Suggested Actions</h2><ul><li>Rebuild docker.io/rancher/rke2-runtime:v1.36.1-rke2r2 with github.com/containerd/containerd/v2 updated to version 2.3.1 or later</li>
 <li>Rebuild docker.io/rancher/klipper-helm:v0.10.0-build20260513 with github.com/containerd/containerd updated to version 1.7.32 or later</li>
-<li>Verify that the updated images no longer contain CVE-2026-46680 before deployment</li></ul></section><section class="vex-candidates"><h2 id="potential-vex-candidates-automated-recommendations" class="anchored-heading">Potential VEX Candidates (Automated Recommendations)<a class="heading-anchor" href="#potential-vex-candidates-automated-recommendations" aria-label="Link to section">#</a></h2><p class="vex-intro">The following CVEs may be suitable for <a href="https://openvex.dev/" target="_blank" rel="noopener noreferrer">OpenVEX</a> <code>not_affected</code> statements based on workload characteristics. Review each entry before submitting a formal VEX statement. Inspired by the <em>auto-vex-*</em> workflows in <a href="https://github.com/rancher/image-scanning" target="_blank" rel="noopener noreferrer">rancher/image-scanning</a>.</p><div class="table-wrap"><details class="table-collapsible" open><summary><span class="toggle-label">Potential VEX Candidates (2 rows)</span></summary><table class="report-table"><thead><tr><th>CVE</th><th>Image</th><th>Library</th><th>Proposed Status</th><th>Justification</th><th>Note</th></tr></thead><tbody><tr><td><a href="https://avd.aquasec.com/nvd/cve-2026-46680" target="_blank" rel="noopener noreferrer">CVE-2026-46680</a></td><td><code style="font-size:11px;word-break:break-all">docker.io/rancher/klipper-helm:v0.10.0-build20260513</code></td><td><code>github.com/containerd/containerd</code></td><td><span class="vex-status">not_affected</span></td><td>vulnerable_code_not_in_execute_path</td><td>klipper-helm is a statically compiled Go binary; containerd library code is present but not in execution path, so CVE is not exploitable.</td></tr>
-<tr><td><a href="https://avd.aquasec.com/nvd/cve-2026-46680" target="_blank" rel="noopener noreferrer">CVE-2026-46680</a></td><td><code style="font-size:11px;word-break:break-all">docker.io/rancher/rke2-runtime:v1.36.1-rke2r2</code></td><td><code>github.com/containerd/containerd/v2</code></td><td><span class="vex-status">affected</span></td><td>under_investigation</td><td>rke2-runtime uses containerd as a core component; vulnerability may be exploitable, requires further investigation.</td></tr></tbody></table></details></div></section><h1 id="trivy-scan-report" class="anchored-heading">Trivy Scan Report<a class="heading-anchor" href="#trivy-scan-report" aria-label="Link to section">#</a></h1>
+<li>Verify no other dependencies require updates after containerd version bumps</li>
+<li>Retest images with Trivy scan to confirm CVE-2026-46680 is resolved</li></ul></section><h1 id="trivy-scan-report" class="anchored-heading">Trivy Scan Report<a class="heading-anchor" href="#trivy-scan-report" aria-label="Link to section">#</a></h1>
 <h2 id="summary" class="anchored-heading">Summary<a class="heading-anchor" href="#summary" aria-label="Link to section">#</a></h2>
 <h3 id="cves-by-severity" class="anchored-heading">CVEs by Severity<a class="heading-anchor" href="#cves-by-severity" aria-label="Link to section">#</a></h3>
 <div class="scan-card">
@@ -507,7 +507,7 @@ code {
 </tr></thead><tbody>
 <tr>
 <td>Previous scan CVEs</td>
-<td>29</td>
+<td>12</td>
 </tr>
 <tr>
 <td>Current scan CVEs</td>
@@ -515,7 +515,7 @@ code {
 </tr>
 <tr>
 <td><strong>Delta</strong></td>
-<td><strong>-18</strong></td>
+<td><strong>-1</strong></td>
 </tr>
 </tbody></table></details></div>
 </div>
@@ -791,7 +791,7 @@ Total: 1 (UNKNOWN: 0, LOW: 0, MEDIUM: 0, HIGH: 1, CRITICAL: 0)</pre>
 <h2 id="scan-results-docker-io-rancher-hardened-flannel-v0-28-4-build20260511" class="anchored-heading">Scan Results: <code>docker.io/rancher/hardened-flannel:v0.28.4-build20260511</code><a class="heading-anchor" href="#scan-results-docker-io-rancher-hardened-flannel-v0-28-4-build20260511" aria-label="Link to section">#</a></h2>
 <div class="all-clean-banner"><span class="all-clean-icon">✓</span>No vulnerabilities found — this image is clean</div>
     <div class="page-footer">
-      Generated from <code>scan-v1.36.1.rke2r2-4.md</code> &nbsp;·&nbsp; 2026-06-08 16:25 UTC
+      Generated from <code>scan-v1.36.1.rke2r2-4.md</code> &nbsp;·&nbsp; 2026-06-08 21:44 UTC
     </div>
   </main>
 </body>
