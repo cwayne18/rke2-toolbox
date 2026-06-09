@@ -3,7 +3,7 @@ name: Deploy Scan Reports to GitHub Pages
 on:
   workflow_run:
     workflows:
-      - Convert Scan Report to HTML
+      - Trivy Scan Report
       - Convert Check Images Report to HTML
     types:
       - completed
