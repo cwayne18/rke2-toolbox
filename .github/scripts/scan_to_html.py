@@ -314,6 +314,97 @@ ul.generic-list li code {
   line-height: 1;
 }
 
+/* ---- Optional (non-default) add-on images section ---- */
+.optional-section {
+  margin-top: 36px;
+  border: 1px solid var(--border);
+  border-left: 4px solid #B8860B;
+  border-radius: 8px;
+  background: #FBF8EF;
+  padding: 18px 20px 8px;
+}
+/* The toggle checkbox is visually hidden; the styled label/switch drives it. */
+.optional-toggle-input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  pointer-events: none;
+}
+.optional-banner {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+.optional-toggle-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 14px;
+  color: #7A5C00;
+  user-select: none;
+  width: fit-content;
+}
+.optional-switch {
+  position: relative;
+  flex: 0 0 auto;
+  width: 40px;
+  height: 22px;
+  border-radius: 999px;
+  background: #C9CBD6;
+  transition: background .15s ease;
+}
+.optional-switch::after {
+  content: "";
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: #FFFFFF;
+  box-shadow: 0 1px 2px rgba(0,0,0,.25);
+  transition: transform .15s ease;
+}
+.optional-toggle-input:checked ~ .optional-banner .optional-switch {
+  background: #1A7A41;
+}
+.optional-toggle-input:checked ~ .optional-banner .optional-switch::after {
+  transform: translateX(18px);
+}
+.optional-toggle-input:focus-visible ~ .optional-banner .optional-switch {
+  outline: 2px solid var(--link);
+  outline-offset: 2px;
+}
+.optional-note {
+  margin: 0;
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.5;
+}
+.optional-body {
+  border-top: 1px dashed var(--border);
+  padding-top: 4px;
+}
+.optional-toggle-input:not(:checked) ~ .optional-body {
+  display: none;
+}
+
+/* ---- Blockquote / callout ---- */
+blockquote.callout {
+  margin: 0 0 16px;
+  padding: 10px 14px;
+  border-left: 3px solid var(--link);
+  background: var(--box-bg);
+  border-radius: 0 6px 6px 0;
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
 /* ---- Pre / fallback ---- */
 pre.raw-output {
   background: var(--box-bg);
@@ -806,6 +897,28 @@ def _process_trivy_block(content):
 # Markdown-format converter
 # ---------------------------------------------------------------------------
 
+_OPTIONAL_START_MARKER = "<!--OPTIONAL-START-->"
+_OPTIONAL_END_MARKER = "<!--OPTIONAL-END-->"
+
+_OPTIONAL_SECTION_OPEN = (
+    '<section class="optional-section" id="optional-images">'
+    '<input type="checkbox" id="optional-toggle" class="optional-toggle-input" checked>'
+    '<div class="optional-banner">'
+    '<label class="optional-toggle-label" for="optional-toggle">'
+    '<span class="optional-switch" aria-hidden="true"></span>'
+    '<span>Show non-default (add-on) images</span>'
+    '</label>'
+    '<p class="optional-note">These images ship with optional RKE2 add-ons '
+    '(Cilium, Calico, vSphere, Multus, Harvester) and are <strong>not</strong> '
+    'part of the default airgap tarball. Toggle off to view only the default '
+    'images.</p>'
+    '</div>'
+    '<div class="optional-body">'
+)
+
+_OPTIONAL_SECTION_CLOSE = "</div></section>"
+
+
 def _convert_markdown(md):
     """Convert the structured scan/check-images markdown to an HTML body string."""
     lines = md.split("\n")
@@ -880,6 +993,22 @@ def _convert_markdown(md):
             i += 1
             continue
 
+        # ---- optional (non-default) add-on section markers ----
+        if line.strip() == _OPTIONAL_START_MARKER:
+            close_ul()
+            close_pipe_table()
+            in_scan_result = False
+            out.append(_OPTIONAL_SECTION_OPEN)
+            i += 1
+            continue
+        if line.strip() == _OPTIONAL_END_MARKER:
+            close_ul()
+            close_pipe_table()
+            in_scan_result = False
+            out.append(_OPTIONAL_SECTION_CLOSE)
+            i += 1
+            continue
+
         # ---- markdown pipe table ----
         if line.strip().startswith("|"):
             close_ul()
@@ -906,6 +1035,12 @@ def _convert_markdown(md):
             close_ul()
             in_scan_result = False
             out.append(_render_heading(3, line[4:].strip(), heading_ids))
+
+        # ---- blockquote / callout ----
+        elif line.lstrip().startswith(">"):
+            close_ul()
+            quote = line.lstrip()[1:].strip()
+            out.append(f'<blockquote class="callout">{render_inline(quote)}</blockquote>')
 
         # ---- bullet list ----
         elif re.match(r"^[-*] ", line):

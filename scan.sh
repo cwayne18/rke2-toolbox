@@ -129,6 +129,7 @@ fi
 # Clear files if they already exist
 rm -f "$output_file"
 rm -f images.txt
+rm -f images-optional.txt
 
 echo "Scanning using ${source_desc} (${ref_path:-release tag $release_tag})"
 
@@ -259,36 +260,80 @@ EOF
     fi
 
 
-    exclude_pattern="multus|harvester|mirrored"
+    # Optional (non-default) image groups. These add-on images are NOT shipped in
+    # the default RKE2 airgap tarball (images-core + images-canal), but we still
+    # want to scan them. They are reported in a separate, clearly delineated
+    # section so it is obvious they are not part of the default install.
+    optional_groups="cilium calico vsphere multus harvester"
 
-    find "$work_dir/build" -maxdepth 1 -type f -name 'images-*.txt' ! -name 'images.txt' -print0 \
+    optional_files=()
+    find_default_exclude=( ! -name 'images.txt' )
+    for grp in $optional_groups; do
+        grp_file="$work_dir/build/images-${grp}.txt"
+        [[ -f "$grp_file" ]] && optional_files+=("$grp_file")
+        # Exclude the optional group's list file from the default image list so
+        # those images are reported only in the optional section. Matching is by
+        # file name (not image reference) so default images such as
+        # hardened-calico in images-canal.txt are not accidentally dropped.
+        find_default_exclude+=( ! -name "images-${grp}.txt" )
+    done
+
+    # Default image list: every generated list EXCEPT the optional group files.
+    # The historical "mirrored-" passthrough exclusion is preserved so the
+    # default report keeps reflecting the default install set.
+    find "$work_dir/build" -maxdepth 1 -type f -name 'images-*.txt' \
+        "${find_default_exclude[@]}" -print0 \
         | xargs -0 cat \
-        | grep -vE "$exclude_pattern" \
+        | grep -vE 'mirrored' \
         | awk 'NF && !seen[$0]++' \
         > images.txt
+
+    # Optional image list: the union of the optional group files, de-duplicated
+    # and with any image already present in the default list removed so nothing
+    # is scanned twice.
+    : > images-optional.txt
+    if (( ${#optional_files[@]} > 0 )); then
+        cat "${optional_files[@]}" \
+            | awk 'NF && !seen[$0]++' \
+            | { grep -vxF -f images.txt || true; } \
+            > images-optional.txt
+    fi
 fi
+
+# Ensure the optional list exists even in release mode (no per-group breakdown
+# is available for a published release tarball, so it stays empty).
+[[ -f images-optional.txt ]] || : > images-optional.txt
 
 # When --prime is set, rewrite image references to use registry.suse.com instead
 # of docker.io (or no registry prefix, which implicitly means docker.io).
 if [[ "$use_prime_ingress" == "true" ]]; then
-    awk '
-        {
-            line = $0
-            if (line == "") { print; next }
-            sub(/^docker\.io\//, "registry.suse.com/", line)
-            # If still has no registry (no "." or ":" in the first path segment), prepend.
-            n = index(line, "/")
-            first = (n > 0) ? substr(line, 1, n - 1) : line
-            if (first !~ /[.:]/) {
-                line = "registry.suse.com/" line
+    rewrite_registry_prime() {
+        local target="$1"
+        [[ -s "$target" ]] || return 0
+        awk '
+            {
+                line = $0
+                if (line == "") { print; next }
+                sub(/^docker\.io\//, "registry.suse.com/", line)
+                # If still has no registry (no "." or ":" in the first path segment), prepend.
+                n = index(line, "/")
+                first = (n > 0) ? substr(line, 1, n - 1) : line
+                if (first !~ /[.:]/) {
+                    line = "registry.suse.com/" line
+                }
+                print line
             }
-            print line
-        }
-    ' images.txt > images.txt.tmp && mv images.txt.tmp images.txt
+        ' "$target" > "${target}.tmp" && mv "${target}.tmp" "$target"
+    }
+
+    rewrite_registry_prime images.txt
+    rewrite_registry_prime images-optional.txt
 fi
 
 # Input file containing the list of Docker images
 input_file="./images.txt"
+# Input file containing the list of optional (non-default) add-on images
+optional_input_file="./images-optional.txt"
 
 # If a PR was specified, download and load the rke2-runtime image from the PR's CI artifact
 pr_runtime_images=""
@@ -444,13 +489,19 @@ fi
     echo ""
 } >> "$output_file"
 
-# Track per-image CVE counts for the summary section
+# Track per-image CVE counts for the default-images summary section
 total_critical=0
 total_high=0
 images_with_cves=()
 images_clean=()
 
-# Track bundle-level metrics for sqlite persistence (images list only).
+# Track per-image CVE counts for the optional (non-default) add-on summary
+optional_total_critical=0
+optional_total_high=0
+optional_images_with_cves=()
+optional_images_clean=()
+
+# Track bundle-level metrics for sqlite persistence (default images list only).
 bundle_total_critical=0
 bundle_total_high=0
 bundle_images_with_cves=0
@@ -459,11 +510,14 @@ bundle_go_module_cves=0
 bundle_base_image_cves=0
 bundle_images_scanned=0
 
-# tally_severities <display-name> <scan-output-file>
+# tally_severities <display-name> <scan-output-file> [scope]
 # Parses trivy "Total: N (HIGH: x, CRITICAL: y)" lines and updates summary state.
+# scope defaults to "default"; pass "optional" to accumulate into the optional
+# add-on summary counters instead.
 tally_severities() {
     local display_name="$1"
     local scan_file="$2"
+    local scope="${3:-default}"
     local img_critical=0 img_high=0 h c
 
     while IFS= read -r line; do
@@ -472,6 +526,18 @@ tally_severities() {
         [[ -n "$h" ]] && img_high=$((img_high + h))
         [[ -n "$c" ]] && img_critical=$((img_critical + c))
     done < <(grep -E '^Total: [0-9]+ \(' "$scan_file")
+
+    if [[ "$scope" == "optional" ]]; then
+        optional_total_high=$((optional_total_high + img_high))
+        optional_total_critical=$((optional_total_critical + img_critical))
+
+        if (( img_high + img_critical > 0 )); then
+            optional_images_with_cves+=("${display_name}|${img_critical}|${img_high}")
+        else
+            optional_images_clean+=("$display_name")
+        fi
+        return
+    fi
 
     total_high=$((total_high + img_high))
     total_critical=$((total_critical + img_critical))
@@ -673,6 +739,96 @@ if [[ -n "$pr_runtime_tar" ]]; then
     if [[ -n "$keep_artifact_dir" ]]; then
         rm -rf "$keep_artifact_dir"
     fi
+fi
+
+# Scan optional (non-default) add-on images, if any, into a clearly delineated
+# section. The HTML converter wraps everything between the OPTIONAL-START and
+# OPTIONAL-END markers in a show/hide toggle (enabled by default).
+optional_count=0
+if [[ -s "$optional_input_file" ]]; then
+    opt_results_md=$(mktemp)
+
+    while IFS= read -r image; do
+        image="${image#"${image%%[![:space:]]*}"}"
+        image="${image%"${image##*[![:space:]]}"}"
+        if [[ -z "$image" || "$image" == \#* ]]; then
+            continue
+        fi
+
+        echo "Scanning optional add-on image: $image"
+        optional_count=$((optional_count + 1))
+        scan_tmp=$(mktemp)
+        scan_json_tmp=$(mktemp)
+        trivy image "$image" $vex_flag --severity CRITICAL,HIGH --format json > "$scan_json_tmp" 2>/dev/null
+        trivy convert --format table "$scan_json_tmp" > "$scan_tmp" 2>/dev/null
+        {
+            echo "## Scan Results: \`$image\`"
+            echo ""
+            echo '```text'
+            cat "$scan_tmp"
+            echo '```'
+            echo ""
+        } >> "$opt_results_md"
+        tally_severities "$image" "$scan_tmp" "optional"
+        rm -f "$scan_tmp"
+        rm -f "$scan_json_tmp"
+    done < "$optional_input_file"
+fi
+
+if (( optional_count > 0 )); then
+    {
+        echo "<!--OPTIONAL-START-->"
+        echo ""
+        echo "## Optional Add-on Images (Not in Default Tarball)"
+        echo ""
+        echo "> ⚠️ The images in this section are **not** part of the default RKE2 airgap tarball (\`images-core\` + \`images-canal\`). They ship with optional add-ons — Cilium, Calico, vSphere, Multus, and Harvester. Use the toggle above to show or hide them."
+        echo ""
+
+        echo "### Optional CVEs by Severity"
+        echo ""
+        echo "| Severity | Count |"
+        echo "| --- | ---: |"
+        echo "| CRITICAL | ${optional_total_critical} |"
+        echo "| HIGH | ${optional_total_high} |"
+        echo "| **Total** | **$((optional_total_critical + optional_total_high))** |"
+        echo ""
+
+        echo "### Optional Images with CVEs (${#optional_images_with_cves[@]})"
+        echo ""
+        if (( ${#optional_images_with_cves[@]} == 0 )); then
+            echo "_None_"
+        else
+            echo "| Image | CRITICAL | HIGH |"
+            echo "| --- | ---: | ---: |"
+            for entry in "${optional_images_with_cves[@]}"; do
+                name="${entry%%|*}"
+                rest="${entry#*|}"
+                crit="${rest%%|*}"
+                high="${rest#*|}"
+                printf '| `%s` | %d | %d |\n' "$name" "$crit" "$high"
+            done
+        fi
+        echo ""
+
+        echo "### Images Scanned (Optional)"
+        echo ""
+        while IFS= read -r image; do
+            [[ -n "$image" ]] || continue
+            printf -- '- `%s`\n' "$image"
+        done < "$optional_input_file"
+        echo ""
+    } >> "$output_file"
+
+    cat "$opt_results_md" >> "$output_file"
+
+    {
+        echo "<!--OPTIONAL-END-->"
+        echo ""
+    } >> "$output_file"
+fi
+
+if [[ -n "${opt_results_md:-}" ]]; then
+    rm -f "$opt_results_md"
 fi
 
 # Append a markdown summary section to the end of the report
