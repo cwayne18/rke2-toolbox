@@ -301,6 +301,97 @@ ul.generic-list li code {
   line-height: 1;
 }
 
+/* ---- Optional (non-default) add-on images section ---- */
+.optional-section {
+  margin-top: 36px;
+  border: 1px solid var(--border);
+  border-left: 4px solid #B8860B;
+  border-radius: 8px;
+  background: #FBF8EF;
+  padding: 18px 20px 8px;
+}
+/* The toggle checkbox is visually hidden; the styled label/switch drives it. */
+.optional-toggle-input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  pointer-events: none;
+}
+.optional-banner {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+.optional-toggle-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 14px;
+  color: #7A5C00;
+  user-select: none;
+  width: fit-content;
+}
+.optional-switch {
+  position: relative;
+  flex: 0 0 auto;
+  width: 40px;
+  height: 22px;
+  border-radius: 999px;
+  background: #C9CBD6;
+  transition: background .15s ease;
+}
+.optional-switch::after {
+  content: "";
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: #FFFFFF;
+  box-shadow: 0 1px 2px rgba(0,0,0,.25);
+  transition: transform .15s ease;
+}
+.optional-toggle-input:checked ~ .optional-banner .optional-switch {
+  background: #1A7A41;
+}
+.optional-toggle-input:checked ~ .optional-banner .optional-switch::after {
+  transform: translateX(18px);
+}
+.optional-toggle-input:focus-visible ~ .optional-banner .optional-switch {
+  outline: 2px solid var(--link);
+  outline-offset: 2px;
+}
+.optional-note {
+  margin: 0;
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.5;
+}
+.optional-body {
+  border-top: 1px dashed var(--border);
+  padding-top: 4px;
+}
+.optional-toggle-input:not(:checked) ~ .optional-body {
+  display: none;
+}
+
+/* ---- Blockquote / callout ---- */
+blockquote.callout {
+  margin: 0 0 16px;
+  padding: 10px 14px;
+  border-left: 3px solid var(--link);
+  background: var(--box-bg);
+  border-radius: 0 6px 6px 0;
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
 /* ---- Pre / fallback ---- */
 pre.raw-output {
   background: var(--box-bg);
@@ -485,7 +576,8 @@ code {
   </header>
   <main class="page-content">
     <h1>RKE2 Toolbox Reports</h1>
-<h2>Trivy Scan Reports</h2><p class="index-intro">24 reports available</p><div class="reports-grid">
+<h2>Trivy Scan Reports</h2><p class="index-intro">26 reports available</p><div class="reports-grid">
+<a class="report-card" href="scan-20260609-3.html">  <div class="rc-header">    <div>      <div class="rc-name">scan-20260609-3</div>      <div class="rc-date">June 09, 2026</div>    </div>    <span class="rc-arrow">&#8594;</span>  </div></a>
 <a class="report-card" href="scan-20260609-2.html">  <div class="rc-header">    <div>      <div class="rc-name">scan-20260609-2</div>      <div class="rc-date">June 09, 2026</div>    </div>    <span class="rc-arrow">&#8594;</span>  </div></a>
 <a class="report-card" href="scan-20260608-2.html">  <div class="rc-header">    <div>      <div class="rc-name">scan-20260608-2</div>      <div class="rc-date">June 08, 2026</div>    </div>    <span class="rc-arrow">&#8594;</span>  </div></a>
 <a class="report-card" href="scan-20260608-1.html">  <div class="rc-header">    <div>      <div class="rc-name">scan-20260608-1</div>      <div class="rc-date">June 08, 2026</div>    </div>    <span class="rc-arrow">&#8594;</span>  </div></a>
@@ -510,6 +602,7 @@ code {
 <a class="report-card" href="scan-v1.36.1-rc3.rke2r2-2.html">  <div class="rc-header">    <div>      <div class="rc-name">scan-v1.36.1-rc3.rke2r2-2</div>    </div>    <span class="rc-arrow">&#8594;</span>  </div></a>
 <a class="report-card" href="scan-v1.36.1-rc3.rke2r2-1.html">  <div class="rc-header">    <div>      <div class="rc-name">scan-v1.36.1-rc3.rke2r2-1</div>    </div>    <span class="rc-arrow">&#8594;</span>  </div></a>
 <a class="report-card" href="scan-v1.36.1-rc2-rke2r2-1.html">  <div class="rc-header">    <div>      <div class="rc-name">scan-v1.36.1-rc2-rke2r2-1</div>    </div>    <span class="rc-arrow">&#8594;</span>  </div></a>
+<a class="report-card" href="scan-sample-optional.html">  <div class="rc-header">    <div>      <div class="rc-name">scan-sample-optional</div>    </div>    <span class="rc-arrow">&#8594;</span>  </div></a>
 </div>
 <h2>Check Images Reports</h2><p class="index-intro">8 reports available</p><div class="reports-grid">
 <a class="report-card" href="check-20260609-2.html">  <div class="rc-header">    <div>      <div class="rc-name">check-20260609-2</div>      <div class="rc-date">June 09, 2026</div>    </div>    <span class="rc-arrow">&#8594;</span>  </div></a>
@@ -521,7 +614,7 @@ code {
 <a class="report-card" href="check-20260519-1.html">  <div class="rc-header">    <div>      <div class="rc-name">check-20260519-1</div>      <div class="rc-date">May 19, 2026</div>    </div>    <span class="rc-arrow">&#8594;</span>  </div></a>
 <a class="report-card" href="check-20260515-1.html">  <div class="rc-header">    <div>      <div class="rc-name">check-20260515-1</div>      <div class="rc-date">May 15, 2026</div>    </div>    <span class="rc-arrow">&#8594;</span>  </div></a>
 </div>
-<div class="page-footer">Index generated &nbsp;·&nbsp; 2026-06-09 16:43 UTC</div>
+<div class="page-footer">Index generated &nbsp;·&nbsp; 2026-06-09 18:12 UTC</div>
   </main>
 </body>
 </html>
