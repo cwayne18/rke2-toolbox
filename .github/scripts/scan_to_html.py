@@ -6,6 +6,7 @@ import sys
 import os
 import re
 import json
+import math
 import sqlite3
 import html as html_lib
 import urllib.request
@@ -519,6 +520,116 @@ code {
   background: #D4EDDA;
   color: #155724;
   border: 1px solid #C3E6CB;
+}
+
+/* ---- CVE trend line chart ---- */
+.cve-trend {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--body-bg);
+  padding: 18px 20px 14px;
+  margin: 8px 0 22px;
+}
+.cve-trend h3 {
+  margin: 0 0 4px;
+}
+.cve-trend .chart-subtitle {
+  margin: 0 0 12px;
+  font-size: 12px;
+  color: var(--muted);
+}
+.cve-trend-figure {
+  position: relative;
+}
+.cve-trend-svg {
+  width: 100%;
+  height: auto;
+  display: block;
+  overflow: visible;
+  font-family: 'Lato', sans-serif;
+}
+.cve-trend-svg .grid-line {
+  stroke: var(--border);
+  stroke-width: 1;
+}
+.cve-trend-svg .axis-line {
+  stroke: var(--border);
+  stroke-width: 1;
+}
+.cve-trend-svg .axis-label {
+  fill: var(--muted);
+  font-size: 10px;
+}
+.cve-trend-svg .series-line {
+  fill: none;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.cve-trend-svg .series-point {
+  cursor: pointer;
+  transition: r .1s ease;
+}
+.cve-trend-svg .series-point:hover {
+  r: 6;
+}
+.cve-trend-svg .series-hidden {
+  display: none;
+}
+.cve-trend-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 16px;
+  margin-top: 12px;
+}
+.cve-trend-legend .legend-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--body-text);
+  cursor: pointer;
+  user-select: none;
+  padding: 2px 4px;
+  border-radius: 4px;
+}
+.cve-trend-legend .legend-item.legend-off {
+  color: var(--muted);
+  opacity: .55;
+}
+.cve-trend-legend .legend-swatch {
+  width: 14px;
+  height: 3px;
+  border-radius: 2px;
+  display: inline-block;
+}
+.cve-trend-tooltip {
+  position: absolute;
+  pointer-events: none;
+  background: var(--body-text);
+  color: #FFFFFF;
+  font-size: 11px;
+  line-height: 1.5;
+  padding: 6px 9px;
+  border-radius: 6px;
+  white-space: nowrap;
+  transform: translate(-50%, -115%);
+  opacity: 0;
+  transition: opacity .1s ease;
+  z-index: 5;
+  box-shadow: 0 2px 8px rgba(0,0,0,.18);
+}
+.cve-trend-tooltip.visible {
+  opacity: 1;
+}
+.cve-trend-tooltip .tt-date {
+  font-weight: 700;
+  margin-bottom: 2px;
+}
+.cve-trend-empty {
+  color: var(--muted);
+  font-size: 13px;
+  padding: 12px 0;
 }
 """
 
@@ -1242,6 +1353,286 @@ def _recent_cve_totals_from_db(input_path):
         return []
 
 
+# ---------------------------------------------------------------------------
+# CVE trend chart (interactive SVG line graph)
+# ---------------------------------------------------------------------------
+
+# Number of most-recent scans plotted on the trend chart.
+_TREND_HISTORY_LIMIT = 30
+
+
+def _cve_trend_history_from_db(input_path, limit=_TREND_HISTORY_LIMIT):
+    """Return recent CVE history from the metrics DB, oldest first.
+
+    Each entry is a dict with ``scanned_at`` (ISO timestamp), ``source_desc``
+    (human label such as ``branch 'master'``), ``critical``, ``high`` and
+    ``total`` (critical + high) counts. Returns an empty list when the DB is
+    missing or unreadable so the caller can skip the chart gracefully.
+    """
+    db_path = _metrics_db_path(input_path)
+    if not db_path:
+        return []
+    try:
+        with sqlite3.connect(db_path) as conn:
+            cur = conn.cursor()
+            cur.execute(
+                """
+                SELECT scanned_at, source_desc, critical_cves, high_cves
+                FROM scan_metrics
+                ORDER BY scanned_at DESC, id DESC
+                LIMIT ?
+                """,
+                (int(limit),),
+            )
+            rows = cur.fetchall()
+    except sqlite3.Error:
+        return []
+
+    history = []
+    # rows come newest-first; reverse so the chart reads left-to-right in time.
+    for scanned_at, source_desc, critical, high in reversed(rows):
+        try:
+            crit = int(critical)
+            hi = int(high)
+        except (TypeError, ValueError):
+            continue
+        history.append(
+            {
+                "scanned_at": scanned_at or "",
+                "source_desc": source_desc or "",
+                "critical": crit,
+                "high": hi,
+                "total": crit + hi,
+            }
+        )
+    return history
+
+
+def _format_trend_date(iso_ts):
+    """Format an ISO timestamp for axis/tooltip display (YYYY-MM-DD)."""
+    if not iso_ts:
+        return ""
+    try:
+        return datetime.strptime(iso_ts[:10], "%Y-%m-%d").strftime("%Y-%m-%d")
+    except ValueError:
+        return iso_ts[:10]
+
+
+# Series plotted on the trend chart: (key, label, colour).
+_TREND_SERIES = (
+    ("total", "Total (Critical + High)", "#1F67DB"),
+    ("critical", "Critical", "#B13333"),
+    ("high", "High", "#E45C1E"),
+)
+
+
+def render_cve_trend_chart(history, chart_id="cve-trend"):
+    """Render an interactive SVG line chart of CVE counts over time.
+
+    *history* is the list returned by :func:`_cve_trend_history_from_db`
+    (oldest first). The returned markup is fully self-contained: an inline SVG
+    with one polyline per severity series, hover tooltips, and a clickable
+    legend that toggles series visibility. Styling relies on the shared report
+    CSS so the chart matches the rest of the dashboard.
+    """
+    heading = (
+        '<h3 id="cve-trend-over-time" class="anchored-heading">'
+        "CVE Trend Over Time"
+        '<a class="heading-anchor" href="#cve-trend-over-time" '
+        'aria-label="Link to section">#</a></h3>'
+    )
+
+    if not history:
+        return (
+            f'<section class="cve-trend" id="{esc(chart_id)}">'
+            f"{heading}"
+            '<p class="cve-trend-empty">No historical scan metrics are '
+            "available yet to plot a trend.</p>"
+            "</section>"
+        )
+
+    # --- geometry -----------------------------------------------------------
+    width, height = 760, 300
+    pad_left, pad_right = 48, 20
+    pad_top, pad_bottom = 24, 56
+    plot_w = width - pad_left - pad_right
+    plot_h = height - pad_top - pad_bottom
+
+    n = len(history)
+    max_val = max((pt["total"] for pt in history), default=0)
+    if max_val <= 0:
+        max_val = 1
+    # Round the axis maximum up to a "nice" number for readable gridlines.
+    step = max(1, int(math.ceil(max_val / 4.0)))
+    y_max = step * 4
+
+    def x_for(idx):
+        if n == 1:
+            return pad_left + plot_w / 2.0
+        return pad_left + plot_w * idx / (n - 1)
+
+    def y_for(val):
+        return pad_top + plot_h * (1 - (val / y_max))
+
+    # --- axes & gridlines ---------------------------------------------------
+    svg = [
+        f'<svg class="cve-trend-svg" viewBox="0 0 {width} {height}" '
+        f'role="img" aria-label="CVE counts over recent scans" '
+        'preserveAspectRatio="xMidYMid meet">'
+    ]
+
+    for tick in range(5):
+        val = y_max - step * tick
+        y = y_for(val)
+        svg.append(
+            f'<line class="grid-line" x1="{pad_left}" y1="{y:.1f}" '
+            f'x2="{pad_left + plot_w}" y2="{y:.1f}"></line>'
+        )
+        svg.append(
+            f'<text class="axis-label" x="{pad_left - 8}" y="{y + 3:.1f}" '
+            f'text-anchor="end">{val}</text>'
+        )
+
+    # X axis baseline.
+    base_y = y_for(0)
+    svg.append(
+        f'<line class="axis-line" x1="{pad_left}" y1="{base_y:.1f}" '
+        f'x2="{pad_left + plot_w}" y2="{base_y:.1f}"></line>'
+    )
+
+    # X axis labels: show a limited number of evenly-spaced date ticks so they
+    # do not overlap when many scans are present.
+    max_ticks = 8
+    tick_every = max(1, int(math.ceil(n / float(max_ticks))))
+    for idx, pt in enumerate(history):
+        if idx % tick_every and idx != n - 1:
+            continue
+        x = x_for(idx)
+        label = _format_trend_date(pt["scanned_at"])
+        svg.append(
+            f'<text class="axis-label" x="{x:.1f}" y="{base_y + 16:.1f}" '
+            f'text-anchor="middle" transform="rotate(0 {x:.1f} '
+            f'{base_y + 16:.1f})">{esc(label)}</text>'
+        )
+
+    # --- series -------------------------------------------------------------
+    for key, _label, colour in _TREND_SERIES:
+        points = [(x_for(idx), y_for(pt[key])) for idx, pt in enumerate(history)]
+        if len(points) >= 2:
+            d = " ".join(f"{x:.1f},{y:.1f}" for x, y in points)
+            svg.append(
+                f'<polyline class="series-line series-{key}" '
+                f'data-series="{key}" points="{d}" stroke="{colour}"></polyline>'
+            )
+        for idx, (x, y) in enumerate(points):
+            pt = history[idx]
+            date_label = _format_trend_date(pt["scanned_at"])
+            source = pt.get("source_desc", "")
+            tip = f"{date_label} · {source}".strip(" ·") if source else date_label
+            svg.append(
+                f'<circle class="series-point series-{key}" '
+                f'data-series="{key}" cx="{x:.1f}" cy="{y:.1f}" r="3.5" '
+                f'fill="{colour}" data-label="{esc(tip)}" '
+                f'data-series-name="{esc(_label)}" '
+                f'data-value="{pt[key]}"></circle>'
+            )
+
+    svg.append("</svg>")
+
+    # --- legend -------------------------------------------------------------
+    legend_items = []
+    for key, label, colour in _TREND_SERIES:
+        legend_items.append(
+            f'<span class="legend-item" data-series="{key}" role="button" '
+            f'tabindex="0" aria-pressed="true">'
+            f'<span class="legend-swatch" style="background:{colour}"></span>'
+            f"{esc(label)}</span>"
+        )
+    legend = '<div class="cve-trend-legend">' + "".join(legend_items) + "</div>"
+
+    subtitle = (
+        f'<p class="chart-subtitle">Critical &amp; High CVE counts across the '
+        f"last {n} recorded scan{'s' if n != 1 else ''}. Hover a point for "
+        f"details; click a legend entry to toggle a series.</p>"
+    )
+
+    return (
+        f'<section class="cve-trend" id="{esc(chart_id)}">'
+        f"{heading}"
+        f"{subtitle}"
+        '<div class="cve-trend-figure">'
+        f"{''.join(svg)}"
+        '<div class="cve-trend-tooltip" aria-hidden="true"></div>'
+        "</div>"
+        f"{legend}"
+        f"{_CVE_TREND_SCRIPT}"
+        "</section>"
+    )
+
+
+# Inline behaviour for the trend chart: hover tooltips and legend toggling.
+# Scoped per-section so multiple charts on one page do not interfere.
+_CVE_TREND_SCRIPT = """<script>
+(function () {
+  function initTrend(section) {
+    if (section.dataset.trendReady) return;
+    section.dataset.trendReady = "1";
+    var figure = section.querySelector(".cve-trend-figure");
+    var svg = section.querySelector(".cve-trend-svg");
+    var tip = section.querySelector(".cve-trend-tooltip");
+    if (!figure || !svg || !tip) return;
+
+    section.querySelectorAll(".series-point").forEach(function (pt) {
+      pt.addEventListener("mouseenter", function () {
+        var name = pt.getAttribute("data-series-name") || "";
+        var value = pt.getAttribute("data-value") || "";
+        var label = pt.getAttribute("data-label") || "";
+        tip.innerHTML =
+          '<div class="tt-date">' + label + "</div>" +
+          name + ": " + value;
+        var fr = figure.getBoundingClientRect();
+        var pr = pt.getBoundingClientRect();
+        tip.style.left = (pr.left - fr.left + pr.width / 2) + "px";
+        tip.style.top = (pr.top - fr.top) + "px";
+        tip.classList.add("visible");
+      });
+      pt.addEventListener("mouseleave", function () {
+        tip.classList.remove("visible");
+      });
+    });
+
+    function toggle(item) {
+      var key = item.getAttribute("data-series");
+      var off = item.classList.toggle("legend-off");
+      item.setAttribute("aria-pressed", off ? "false" : "true");
+      section
+        .querySelectorAll('[data-series="' + key + '"].series-line, ' +
+                          '[data-series="' + key + '"].series-point')
+        .forEach(function (el) { el.classList.toggle("series-hidden", off); });
+    }
+
+    section.querySelectorAll(".legend-item").forEach(function (item) {
+      item.addEventListener("click", function () { toggle(item); });
+      item.addEventListener("keydown", function (e) {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          toggle(item);
+        }
+      });
+    });
+  }
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", function () {
+      document.querySelectorAll(".cve-trend").forEach(initTrend);
+    });
+  } else {
+    document.querySelectorAll(".cve-trend").forEach(initTrend);
+  }
+})();
+</script>"""
+
+
 def _augment_scan_summary(md, input_path):
     """Add extra scan metrics sections into the markdown Summary section."""
     lines = md.split("\n")
@@ -1865,6 +2256,30 @@ def build_html(title, body_html, source_filename, subtitle="— Report"):
 # Entry point
 # ---------------------------------------------------------------------------
 
+def _insert_cve_trend_chart(body_html, input_path):
+    """Insert the interactive CVE trend chart into a converted scan report.
+
+    The chart is placed immediately before the ``CVE Delta vs Previous Scan``
+    section (both live in the Summary block) so the historical trend sits next
+    to the single-step delta. When that heading is absent the chart is appended
+    after the first ``</h1>`` so it still appears near the top of the report.
+    """
+    history = _cve_trend_history_from_db(input_path)
+    chart = render_cve_trend_chart(history)
+
+    anchor = '<h3 id="cve-delta-vs-previous-scan"'
+    idx = body_html.find(anchor)
+    if idx != -1:
+        return body_html[:idx] + chart + body_html[idx:]
+
+    h1_end = body_html.find("</h1>")
+    if h1_end != -1:
+        h1_end += len("</h1>")
+        return body_html[:h1_end] + chart + body_html[h1_end:]
+
+    return chart + body_html
+
+
 def convert(input_path, output_path=None):
     with open(input_path, encoding="utf-8") as fh:
         content = fh.read()
@@ -1890,6 +2305,7 @@ def convert(input_path, output_path=None):
         title_match = re.search(r"^# (.+)$", content, re.MULTILINE)
         title = title_match.group(1).strip() if title_match else "Report"
         if basename.startswith("scan-"):
+            body_html = _insert_cve_trend_chart(body_html, input_path)
             findings_by_image = _extract_scan_findings(content)
             suggested_actions = _copilot_suggested_actions(title, findings_by_image)
             vex_candidates = _copilot_vex_candidates(title, findings_by_image)
