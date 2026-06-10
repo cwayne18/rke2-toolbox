@@ -1132,13 +1132,29 @@ def _move_summary_to_top(md):
 
 
 def _extract_summary_total_cves(md):
-    """Extract total CVEs from the markdown summary table."""
-    m = re.search(r"^\|\s*\*\*Total\*\*\s*\|\s*\*\*(\d+)\*\*\s*\|", md, re.MULTILINE)
+    """Extract total CVEs from the markdown summary table.
+
+    Only the default-image ``### CVEs by Severity`` section is considered. The
+    optional add-on ``### Optional CVEs by Severity`` section is deliberately
+    excluded so that the CVE delta tracks the default tarball numbers and stays
+    consistent with the ``CVEs by Severity`` summary.
+    """
+    # Restrict the search to the default-image "CVEs by Severity" section so the
+    # optional add-on counts (which live under "Optional CVEs by Severity") do
+    # not leak into the delta calculation.
+    section = re.search(
+        r"^###\s+CVEs by Severity\s*$(.*?)(?=^###?\s|\Z)",
+        md,
+        re.MULTILINE | re.DOTALL,
+    )
+    scope = section.group(1) if section else md
+
+    m = re.search(r"^\|\s*\*\*Total\*\*\s*\|\s*\*\*(\d+)\*\*\s*\|", scope, re.MULTILINE)
     if m:
         return int(m.group(1))
 
-    critical = re.search(r"^\|\s*CRITICAL\s*\|\s*(\d+)\s*\|", md, re.MULTILINE)
-    high = re.search(r"^\|\s*HIGH\s*\|\s*(\d+)\s*\|", md, re.MULTILINE)
+    critical = re.search(r"^\|\s*CRITICAL\s*\|\s*(\d+)\s*\|", scope, re.MULTILINE)
+    high = re.search(r"^\|\s*HIGH\s*\|\s*(\d+)\s*\|", scope, re.MULTILINE)
     if critical and high:
         return int(critical.group(1)) + int(high.group(1))
     return None
