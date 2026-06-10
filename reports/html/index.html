@@ -508,6 +508,116 @@ code {
   border: 1px solid #C3E6CB;
 }
 
+/* ---- CVE trend line chart ---- */
+.cve-trend {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--body-bg);
+  padding: 18px 20px 14px;
+  margin: 8px 0 22px;
+}
+.cve-trend h3 {
+  margin: 0 0 4px;
+}
+.cve-trend .chart-subtitle {
+  margin: 0 0 12px;
+  font-size: 12px;
+  color: var(--muted);
+}
+.cve-trend-figure {
+  position: relative;
+}
+.cve-trend-svg {
+  width: 100%;
+  height: auto;
+  display: block;
+  overflow: visible;
+  font-family: 'Lato', sans-serif;
+}
+.cve-trend-svg .grid-line {
+  stroke: var(--border);
+  stroke-width: 1;
+}
+.cve-trend-svg .axis-line {
+  stroke: var(--border);
+  stroke-width: 1;
+}
+.cve-trend-svg .axis-label {
+  fill: var(--muted);
+  font-size: 10px;
+}
+.cve-trend-svg .series-line {
+  fill: none;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.cve-trend-svg .series-point {
+  cursor: pointer;
+  transition: r .1s ease;
+}
+.cve-trend-svg .series-point:hover {
+  r: 6;
+}
+.cve-trend-svg .series-hidden {
+  display: none;
+}
+.cve-trend-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 16px;
+  margin-top: 12px;
+}
+.cve-trend-legend .legend-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--body-text);
+  cursor: pointer;
+  user-select: none;
+  padding: 2px 4px;
+  border-radius: 4px;
+}
+.cve-trend-legend .legend-item.legend-off {
+  color: var(--muted);
+  opacity: .55;
+}
+.cve-trend-legend .legend-swatch {
+  width: 14px;
+  height: 3px;
+  border-radius: 2px;
+  display: inline-block;
+}
+.cve-trend-tooltip {
+  position: absolute;
+  pointer-events: none;
+  background: var(--body-text);
+  color: #FFFFFF;
+  font-size: 11px;
+  line-height: 1.5;
+  padding: 6px 9px;
+  border-radius: 6px;
+  white-space: nowrap;
+  transform: translate(-50%, -115%);
+  opacity: 0;
+  transition: opacity .1s ease;
+  z-index: 5;
+  box-shadow: 0 2px 8px rgba(0,0,0,.18);
+}
+.cve-trend-tooltip.visible {
+  opacity: 1;
+}
+.cve-trend-tooltip .tt-date {
+  font-weight: 700;
+  margin-bottom: 2px;
+}
+.cve-trend-empty {
+  color: var(--muted);
+  font-size: 13px;
+  padding: 12px 0;
+}
+
 /* ---- Index card grid ---- */
 .index-intro {
   color: var(--muted);
@@ -576,7 +686,8 @@ code {
   </header>
   <main class="page-content">
     <h1>RKE2 Toolbox Reports</h1>
-<h2>Trivy Scan Reports</h2><p class="index-intro">27 reports available</p><div class="reports-grid">
+<h2>Trivy Scan Reports</h2><p class="index-intro">28 reports available</p><div class="reports-grid">
+<a class="report-card" href="scan-20260610-2.html">  <div class="rc-header">    <div>      <div class="rc-name">scan-20260610-2</div>      <div class="rc-date">June 10, 2026</div>    </div>    <span class="rc-arrow">&#8594;</span>  </div></a>
 <a class="report-card" href="scan-20260610-1.html">  <div class="rc-header">    <div>      <div class="rc-name">scan-20260610-1</div>      <div class="rc-date">June 10, 2026</div>    </div>    <span class="rc-arrow">&#8594;</span>  </div></a>
 <a class="report-card" href="scan-20260609-3.html">  <div class="rc-header">    <div>      <div class="rc-name">scan-20260609-3</div>      <div class="rc-date">June 09, 2026</div>    </div>    <span class="rc-arrow">&#8594;</span>  </div></a>
 <a class="report-card" href="scan-20260609-2.html">  <div class="rc-header">    <div>      <div class="rc-name">scan-20260609-2</div>      <div class="rc-date">June 09, 2026</div>    </div>    <span class="rc-arrow">&#8594;</span>  </div></a>
@@ -616,7 +727,7 @@ code {
 <a class="report-card" href="check-20260519-1.html">  <div class="rc-header">    <div>      <div class="rc-name">check-20260519-1</div>      <div class="rc-date">May 19, 2026</div>    </div>    <span class="rc-arrow">&#8594;</span>  </div></a>
 <a class="report-card" href="check-20260515-1.html">  <div class="rc-header">    <div>      <div class="rc-name">check-20260515-1</div>      <div class="rc-date">May 15, 2026</div>    </div>    <span class="rc-arrow">&#8594;</span>  </div></a>
 </div>
-<div class="page-footer">Index generated &nbsp;·&nbsp; 2026-06-10 07:35 UTC</div>
+<div class="page-footer">Index generated &nbsp;·&nbsp; 2026-06-10 14:27 UTC</div>
   </main>
 </body>
 </html>
