@@ -256,6 +256,30 @@ ul.generic-list li code {
   transform: rotate(-90deg);
 }
 
+/* scan target box used as the collapsible header */
+.scan-collapsible summary.scan-summary {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  padding: 0;
+  background: var(--box-bg);
+  border-bottom: none;
+}
+.scan-collapsible[open] summary.scan-summary {
+  border-bottom: 1px solid var(--border);
+}
+.scan-collapsible summary.scan-summary .toggle-label {
+  padding: 14px 0 0 14px;
+  color: var(--muted);
+}
+.scan-collapsible summary.scan-summary .toggle-label::before {
+  margin-right: 0;
+}
+.scan-collapsible summary.scan-summary pre.raw-output {
+  flex: 1;
+  padding-left: 6px;
+}
+
 /* vuln count colouring */
 .vuln-count { font-weight: 700; }
 .vuln-count.has-vulns { color: #B13333; }
@@ -825,6 +849,21 @@ def _render_collapsible_table(table_html, label, row_count):
     )
 
 
+def _render_scan_collapsible(table_html, header_text, row_count):
+    """Collapsible whose summary is the Trivy target box (image name + Total line)."""
+    return (
+        '<div class="table-wrap">'
+        '<details class="table-collapsible scan-collapsible" open>'
+        '<summary class="scan-summary">'
+        '<span class="toggle-label" aria-hidden="true"></span>'
+        f'<pre class="raw-output">{esc(header_text)}</pre>'
+        "</summary>"
+        f"{table_html}"
+        "</details>"
+        "</div>"
+    )
+
+
 def _severity_badge(severity):
     s = severity.strip().upper()
     css = s if s in ("CRITICAL", "HIGH", "MEDIUM", "LOW") else "UNKNOWN"
@@ -865,7 +904,7 @@ def _render_title_cell(text):
     return "<br>".join(rendered)
 
 
-def render_table(headers, rows):
+def render_table(headers, rows, header_text=None):
     """Render (headers, rows) as an HTML table."""
     if not headers or not rows:
         return ""
@@ -903,7 +942,10 @@ def render_table(headers, rows):
         out.append("</tr>")
 
     out.append("</tbody></table>")
-    return _render_collapsible_table("\n".join(out), "Scan Findings", len(rows))
+    table_html = "\n".join(out)
+    if header_text:
+        return _render_scan_collapsible(table_html, header_text, len(rows))
+    return _render_collapsible_table(table_html, "Scan Findings", len(rows))
 
 
 def render_md_table(headers, rows):
@@ -963,11 +1005,17 @@ def _process_trivy_block(content):
     in_table = False
     legend_lines = []
 
-    def flush_non_table():
+    def take_non_table():
         text = "\n".join(non_table_buf).strip()
         non_table_buf.clear()
+        return text
+
+    def flush_non_table():
+        text = take_non_table()
         if text:
             html_parts.append(f'<pre class="raw-output">{esc(text)}</pre>')
+
+    pending_header = None
 
     for line in lines:
         # Legend lines (outside tables)
@@ -977,7 +1025,9 @@ def _process_trivy_block(content):
 
         if not in_table:
             if line.startswith("┌"):
-                flush_non_table()
+                # Capture the target box (image name / ==== / Total) that
+                # immediately precedes this table; it becomes the collapsible header.
+                pending_header = take_non_table()
                 in_table = True
                 table_buf = [line]
             else:
@@ -989,11 +1039,14 @@ def _process_trivy_block(content):
                 headers, rows = parse_ascii_table(table_buf)
                 table_buf = []
                 if headers:
-                    html_parts.append(render_table(headers, rows))
-                else:
-                    flush_non_table()
+                    html_parts.append(render_table(headers, rows, header_text=pending_header or None))
+                elif pending_header:
+                    html_parts.append(f'<pre class="raw-output">{esc(pending_header)}</pre>')
+                pending_header = None
 
     if table_buf:
+        if pending_header:
+            non_table_buf.insert(0, pending_header)
         non_table_buf.extend(table_buf)
     flush_non_table()
 
