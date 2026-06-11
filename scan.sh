@@ -304,7 +304,7 @@ fi
 # is available for a published release tarball, so it stays empty).
 [[ -f images-optional.txt ]] || : > images-optional.txt
 
-# When --prime is set, rewrite image references to use registry.suse.com instead
+# When --prime is set, rewrite image references to use registry.rancher.com instead
 # of docker.io (or no registry prefix, which implicitly means docker.io).
 if [[ "$use_prime_ingress" == "true" ]]; then
     rewrite_registry_prime() {
@@ -314,12 +314,12 @@ if [[ "$use_prime_ingress" == "true" ]]; then
             {
                 line = $0
                 if (line == "") { print; next }
-                sub(/^docker\.io\//, "registry.suse.com/", line)
+                sub(/^docker\.io\//, "registry.rancher.com/", line)
                 # If still has no registry (no "." or ":" in the first path segment), prepend.
                 n = index(line, "/")
                 first = (n > 0) ? substr(line, 1, n - 1) : line
                 if (first !~ /[.:]/) {
-                    line = "registry.suse.com/" line
+                    line = "registry.rancher.com/" line
                 }
                 print line
             }
