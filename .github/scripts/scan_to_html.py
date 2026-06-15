@@ -226,6 +226,16 @@ ul.generic-list li code {
   text-decoration: none;
 }
 .report-table a:hover { text-decoration: underline; }
+.report-table a.image-scan-link { display: inline-block; }
+.report-table a.image-scan-link code {
+  color: var(--link);
+  cursor: pointer;
+  transition: border-color .15s, background .15s;
+}
+.report-table a.image-scan-link:hover code {
+  border-color: var(--link);
+  text-decoration: underline;
+}
 .report-table .num { text-align: center; font-variant-numeric: tabular-nums; }
 .table-wrap { margin: 8px 0 14px; }
 .table-collapsible {
@@ -825,6 +835,28 @@ def _slugify_heading(text):
     return slug or "section"
 
 
+def _collect_scan_anchors(md):
+    """Map each scanned image name to the HTML id of its ``## Scan Results`` heading.
+
+    The ids mirror exactly what :func:`_render_heading` produces (same base slug
+    and duplicate-suffix counter), so links built from this map resolve to the
+    corresponding scan section even when the table is rendered before the heading.
+    """
+    anchors = {}
+    counts = {}
+    for line in md.split("\n"):
+        m = re.match(r"##\s+Scan Results:\s*`([^`]+)`\s*$", line)
+        if not m:
+            continue
+        image = m.group(1).strip()
+        base = _slugify_heading(f"Scan Results: `{image}`")
+        count = counts.get(base, 0) + 1
+        counts[base] = count
+        hid = base if count == 1 else f"{base}-{count}"
+        anchors.setdefault(image, hid)
+    return anchors
+
+
 def _render_heading(level, title, heading_ids):
     base = _slugify_heading(title)
     count = heading_ids.get(base, 0) + 1
@@ -948,8 +980,12 @@ def render_table(headers, rows, header_text=None):
     return _render_collapsible_table(table_html, "Scan Findings", len(rows))
 
 
-def render_md_table(headers, rows):
-    """Render a parsed markdown pipe table as HTML with check-images aware styling."""
+def render_md_table(headers, rows, scan_anchors=None):
+    """Render a parsed markdown pipe table as HTML with check-images aware styling.
+
+    When *scan_anchors* maps an image name to the id of its ``## Scan Results``
+    section, the Image cell is rendered as a link to that section.
+    """
     if not headers or not rows:
         return ""
 
@@ -963,7 +999,14 @@ def render_md_table(headers, rows):
             clean = val.strip()
             if clean.startswith("`") and clean.endswith("`") and len(clean) > 1:
                 clean = clean[1:-1]
-            return f'<code style="font-size:11px;word-break:break-all">{esc(clean)}</code>'
+            code_html = f'<code style="font-size:11px;word-break:break-all">{esc(clean)}</code>'
+            if scan_anchors and clean in scan_anchors:
+                href = "#" + scan_anchors[clean]
+                return (
+                    f'<a class="image-scan-link" href="{esc(href)}" '
+                    f'title="Jump to scan results for {esc(clean)}">{code_html}</a>'
+                )
+            return code_html
         if h_norm in ("buildrepo",):
             repo = val.strip()
             if repo and repo != "N/A":
@@ -1097,6 +1140,7 @@ def _convert_markdown(md):
     pipe_table_lines = []
     in_scan_result = False  # True while inside a "## Scan Results: `…`" section
     heading_ids = {}
+    scan_anchors = _collect_scan_anchors(md)
 
     def close_ul():
         nonlocal in_ul, in_images_list
@@ -1111,7 +1155,7 @@ def _convert_markdown(md):
             headers, rows = parse_md_table(pipe_table_lines)
             if headers and rows:
                 out.append('<div class="scan-card">')
-                out.append(render_md_table(headers, rows))
+                out.append(render_md_table(headers, rows, scan_anchors))
                 out.append("</div>")
             in_pipe_table = False
             pipe_table_lines = []
