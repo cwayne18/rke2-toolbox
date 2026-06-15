@@ -585,6 +585,10 @@ CREATE TABLE IF NOT EXISTS scan_metrics (
     go_stdlib_cves INTEGER NOT NULL,
     go_module_cves INTEGER NOT NULL,
     base_image_cves INTEGER NOT NULL,
+    optional_total_images INTEGER NOT NULL DEFAULT 0,
+    optional_images_with_cves INTEGER NOT NULL DEFAULT 0,
+    optional_critical_cves INTEGER NOT NULL DEFAULT 0,
+    optional_high_cves INTEGER NOT NULL DEFAULT 0,
     created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))
 );
 CREATE INDEX IF NOT EXISTS idx_scan_metrics_scanned_at ON scan_metrics(scanned_at);
@@ -603,6 +607,17 @@ CREATE UNIQUE INDEX IF NOT EXISTS uq_scan_metrics_run_signature
         base_image_cves
     );
 SQL
+
+    # Backfill optional-image columns on databases created before these metrics
+    # existed. CREATE TABLE IF NOT EXISTS will not add columns to an existing
+    # table, so add any that are missing (idempotent).
+    local existing_cols col
+    existing_cols="$(sqlite3 "$db_file" "SELECT name FROM pragma_table_info('scan_metrics');" 2>/dev/null)"
+    for col in optional_total_images optional_images_with_cves optional_critical_cves optional_high_cves; do
+        if ! grep -qx "$col" <<<"$existing_cols"; then
+            sqlite3 "$db_file" "ALTER TABLE scan_metrics ADD COLUMN ${col} INTEGER NOT NULL DEFAULT 0;"
+        fi
+    done
 }
 
 classify_cve_sources() {
@@ -891,7 +906,11 @@ INSERT OR IGNORE INTO scan_metrics (
     high_cves,
     go_stdlib_cves,
     go_module_cves,
-    base_image_cves
+    base_image_cves,
+    optional_total_images,
+    optional_images_with_cves,
+    optional_critical_cves,
+    optional_high_cves
 ) VALUES (
     '${scanned_at}',
     '${source_desc_db}',
@@ -902,7 +921,11 @@ INSERT OR IGNORE INTO scan_metrics (
     ${total_high},
     ${bundle_go_stdlib_cves},
     ${bundle_go_module_cves},
-    ${bundle_base_image_cves}
+    ${bundle_base_image_cves},
+    ${optional_count},
+    ${#optional_images_with_cves[@]},
+    ${optional_total_critical},
+    ${optional_total_high}
 );
 SQL
     if [[ "$(sqlite3 "$db_file" 'SELECT changes();')" -gt 0 ]]; then
