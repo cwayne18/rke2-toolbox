@@ -126,6 +126,11 @@ else
     source_desc="branch '${branch}'"
 fi
 
+# Canonical source reference recorded with the scan. Used both for the metrics
+# DB row and for the metadata comment embedded in the report so HTML rendering
+# can group the CVE trend chart by scan type (branch / release / PR).
+source_ref="${ref_path:-release:${release_tag}}"
+
 # Clear files if they already exist
 rm -f "$output_file"
 rm -f images.txt
@@ -475,6 +480,8 @@ fi
 {
     echo "# Trivy Scan Report"
     echo ""
+    echo "<!-- scan-source-ref: ${source_ref} -->"
+    echo "<!-- scan-source-desc: ${source_desc} -->"
     echo "## Images Scanned"
     echo ""
     while IFS= read -r image; do
@@ -893,7 +900,7 @@ echo "Trivy scan completed. Reports are saved in $output_file."
 if init_metrics_db; then
     scanned_at="$(date -u '+%Y-%m-%dT%H:%M:%SZ')"
     source_desc_db="$(sqlite_escape "$source_desc")"
-    source_ref_db="$(sqlite_escape "${ref_path:-release:${release_tag}}")"
+    source_ref_db="$(sqlite_escape "${source_ref}")"
 
     sqlite3 "$db_file" <<SQL
 INSERT OR IGNORE INTO scan_metrics (

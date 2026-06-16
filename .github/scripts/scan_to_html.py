@@ -1457,14 +1457,102 @@ def _recent_cve_totals_from_db(input_path):
 # Number of most-recent scans plotted on the trend chart.
 _TREND_HISTORY_LIMIT = 30
 
+# Metadata comment scan.sh embeds in the report header so the converter can
+# recover the scan's source (branch / release tag / PR) and filter the trend
+# chart to comparable scans.
+_SOURCE_REF_RE = re.compile(r"<!--\s*scan-source-ref:\s*(.*?)\s*-->")
+_SCAN_METADATA_RE = re.compile(
+    r"^[ \t]*<!--\s*scan-source-(?:ref|desc):.*?-->[ \t]*\n?",
+    re.MULTILINE,
+)
 
-def _cve_trend_history_from_db(input_path, limit=_TREND_HISTORY_LIMIT):
-    """Return recent CVE history from the metrics DB, oldest first.
 
-    Each entry is a dict with ``scanned_at`` (ISO timestamp), ``source_desc``
-    (human label such as ``branch 'master'``), ``critical``, ``high`` and
-    ``total`` (critical + high) counts. Returns an empty list when the DB is
-    missing or unreadable so the caller can skip the chart gracefully.
+def _scan_source_group(source_ref):
+    """Map a scan ``source_ref`` to a ``(group_key, human_label)`` tuple.
+
+    Scans are bucketed so the trend chart only plots comparable history:
+
+    * release tags are grouped by minor version, e.g. every ``v1.36.x`` release
+      shares one bucket;
+    * branch scans are grouped per branch (``master``, ``release-1.32``, ...);
+    * PR scans are grouped per PR number.
+
+    Returns ``(None, None)`` when the ref is empty or unrecognised so the caller
+    falls back to the global (unfiltered) trend.
+    """
+    ref = (source_ref or "").strip()
+    if not ref:
+        return None, None
+
+    if ref.startswith("release:"):
+        version = ref[len("release:"):]
+        m = re.match(r"v?(\d+)\.(\d+)", version)
+        if m:
+            minor = f"v{m.group(1)}.{m.group(2)}"
+            return f"release-minor:{minor}", f"{minor} release"
+        return f"release:{version}", f"release {version}"
+
+    m = re.match(r"refs/pull/(\d+)/head", ref)
+    if m:
+        return f"pr:{m.group(1)}", f"PR #{m.group(1)}"
+
+    m = re.match(r"refs/heads/(.+)", ref)
+    if m:
+        branch = m.group(1)
+        return f"branch:{branch}", f"branch '{branch}'"
+
+    return f"ref:{ref}", ref
+
+
+def _extract_source_ref_from_md(md):
+    """Return the ``scan-source-ref`` value embedded in *md*, or ``None``."""
+    m = _SOURCE_REF_RE.search(md or "")
+    return m.group(1).strip() if m else None
+
+
+def _infer_source_ref_from_filename(basename):
+    """Best-effort source ref for reports that predate embedded metadata.
+
+    ``pr-<num>`` and release-tagged ``scan-<token>-<n>`` filenames carry enough
+    information to bucket the report. Date-based scheduled filenames
+    (``scan-<YYYYMMDD>-<n>``) do not encode their branch, so ``None`` is
+    returned and the caller falls back to the global trend.
+    """
+    name = os.path.splitext(os.path.basename(basename))[0]
+
+    m = re.match(r"pr-(\d+)$", name)
+    if m:
+        return f"refs/pull/{m.group(1)}/head"
+
+    m = re.match(r"scan-(.+)-\d+$", name)
+    if m:
+        token = m.group(1)
+        if re.fullmatch(r"\d{8}", token):
+            return None
+        return f"release:{token}"
+
+    return None
+
+
+def _resolve_scan_source(md, input_path):
+    """Resolve the ``(group_key, label)`` for the report being converted."""
+    source_ref = _extract_source_ref_from_md(md)
+    if not source_ref:
+        source_ref = _infer_source_ref_from_filename(os.path.basename(input_path))
+    return _scan_source_group(source_ref)
+
+
+def _strip_scan_metadata(md):
+    """Remove embedded ``scan-source-*`` comment lines from report markdown."""
+    return _SCAN_METADATA_RE.sub("", md or "")
+
+
+def _trend_history_rows(input_path, crit_col, high_col, source_group, limit):
+    """Fetch trend history rows, optionally filtered to a single source group.
+
+    *crit_col* / *high_col* are column names baked into the query from code (not
+    user input). When *source_group* is ``None`` the global most-recent history
+    is returned, preserving the original cross-source behaviour.
     """
     db_path = _metrics_db_path(input_path)
     if not db_path:
@@ -1473,21 +1561,24 @@ def _cve_trend_history_from_db(input_path, limit=_TREND_HISTORY_LIMIT):
         with sqlite3.connect(db_path) as conn:
             cur = conn.cursor()
             cur.execute(
-                """
-                SELECT scanned_at, source_desc, critical_cves, high_cves
+                f"""
+                SELECT scanned_at, source_ref, source_desc, {crit_col}, {high_col}
                 FROM scan_metrics
                 ORDER BY scanned_at DESC, id DESC
-                LIMIT ?
-                """,
-                (int(limit),),
+                """
             )
             rows = cur.fetchall()
     except sqlite3.Error:
         return []
 
     history = []
-    # rows come newest-first; reverse so the chart reads left-to-right in time.
-    for scanned_at, source_desc, critical, high in reversed(rows):
+    # rows come newest-first; collect up to *limit* matches then reverse so the
+    # chart reads left-to-right in time.
+    for scanned_at, source_ref, source_desc, critical, high in rows:
+        if source_group is not None:
+            grp, _label = _scan_source_group(source_ref)
+            if grp != source_group:
+                continue
         try:
             crit = int(critical)
             hi = int(high)
@@ -1502,10 +1593,28 @@ def _cve_trend_history_from_db(input_path, limit=_TREND_HISTORY_LIMIT):
                 "total": crit + hi,
             }
         )
+        if len(history) >= limit:
+            break
+    history.reverse()
     return history
 
 
-def _optional_cve_trend_history_from_db(input_path, limit=_TREND_HISTORY_LIMIT):
+def _cve_trend_history_from_db(input_path, source_group=None, limit=_TREND_HISTORY_LIMIT):
+    """Return recent CVE history from the metrics DB, oldest first.
+
+    Each entry is a dict with ``scanned_at`` (ISO timestamp), ``source_desc``
+    (human label such as ``branch 'master'``), ``critical``, ``high`` and
+    ``total`` (critical + high) counts. When *source_group* is provided only
+    scans in that group are included (see :func:`_scan_source_group`). Returns
+    an empty list when the DB is missing or unreadable so the caller can skip
+    the chart gracefully.
+    """
+    return _trend_history_rows(
+        input_path, "critical_cves", "high_cves", source_group, int(limit)
+    )
+
+
+def _optional_cve_trend_history_from_db(input_path, source_group=None, limit=_TREND_HISTORY_LIMIT):
     """Return recent optional add-on CVE history from the metrics DB, oldest first.
 
     Mirrors :func:`_cve_trend_history_from_db` but reads the
@@ -1514,44 +1623,13 @@ def _optional_cve_trend_history_from_db(input_path, limit=_TREND_HISTORY_LIMIT):
     missing, unreadable, or predates the optional-image columns so the caller
     can skip the chart gracefully.
     """
-    db_path = _metrics_db_path(input_path)
-    if not db_path:
-        return []
-    try:
-        with sqlite3.connect(db_path) as conn:
-            cur = conn.cursor()
-            cur.execute(
-                """
-                SELECT scanned_at, source_desc,
-                       optional_critical_cves, optional_high_cves
-                FROM scan_metrics
-                ORDER BY scanned_at DESC, id DESC
-                LIMIT ?
-                """,
-                (int(limit),),
-            )
-            rows = cur.fetchall()
-    except sqlite3.Error:
-        return []
-
-    history = []
-    # rows come newest-first; reverse so the chart reads left-to-right in time.
-    for scanned_at, source_desc, critical, high in reversed(rows):
-        try:
-            crit = int(critical)
-            hi = int(high)
-        except (TypeError, ValueError):
-            continue
-        history.append(
-            {
-                "scanned_at": scanned_at or "",
-                "source_desc": source_desc or "",
-                "critical": crit,
-                "high": hi,
-                "total": crit + hi,
-            }
-        )
-    return history
+    return _trend_history_rows(
+        input_path,
+        "optional_critical_cves",
+        "optional_high_cves",
+        source_group,
+        int(limit),
+    )
 
 
 def _format_trend_date(iso_ts):
@@ -1579,6 +1657,7 @@ def render_cve_trend_chart(
     heading_anchor="cve-trend-over-time",
     subtitle_subject="Critical &amp; High CVE counts",
     empty_message="No historical scan metrics are available yet to plot a trend.",
+    scope_label=None,
 ):
     """Render an interactive SVG line chart of CVE counts over time.
 
@@ -1707,9 +1786,10 @@ def render_cve_trend_chart(
         )
     legend = '<div class="cve-trend-legend">' + "".join(legend_items) + "</div>"
 
+    scan_noun = f"{esc(scope_label)} scan" if scope_label else "recorded scan"
     subtitle = (
         f'<p class="chart-subtitle">{subtitle_subject} across the '
-        f"last {n} recorded scan{'s' if n != 1 else ''}. Hover a point for "
+        f"last {n} {scan_noun}{'s' if n != 1 else ''}. Hover a point for "
         f"details; click a legend entry to toggle a series.</p>"
     )
 
@@ -2413,16 +2493,19 @@ def build_html(title, body_html, source_filename, subtitle="— Report"):
 # Entry point
 # ---------------------------------------------------------------------------
 
-def _insert_cve_trend_chart(body_html, input_path):
+def _insert_cve_trend_chart(body_html, input_path, source_group=None, scope_label=None):
     """Insert the interactive CVE trend chart into a converted scan report.
 
     The chart is placed immediately before the ``CVE Delta vs Previous Scan``
     section (both live in the Summary block) so the historical trend sits next
     to the single-step delta. When that heading is absent the chart is appended
     after the first ``</h1>`` so it still appears near the top of the report.
+
+    When *source_group* is provided the trend is filtered to scans of that same
+    type (branch / release minor version / PR) instead of all recent scans.
     """
-    history = _cve_trend_history_from_db(input_path)
-    chart = render_cve_trend_chart(history)
+    history = _cve_trend_history_from_db(input_path, source_group=source_group)
+    chart = render_cve_trend_chart(history, scope_label=scope_label)
 
     anchor = '<h3 id="cve-delta-vs-previous-scan"'
     idx = body_html.find(anchor)
@@ -2437,18 +2520,21 @@ def _insert_cve_trend_chart(body_html, input_path):
     return chart + body_html
 
 
-def _insert_optional_cve_trend_chart(body_html, input_path):
+def _insert_optional_cve_trend_chart(body_html, input_path, source_group=None, scope_label=None):
     """Insert the optional add-on CVE trend chart into the optional section.
 
     The chart mirrors the default-image trend chart but plots the optional
     add-on CVE counts. It is placed immediately before the ``Optional CVEs by
     Severity`` heading so the historical trend sits at the top of the optional
     section. When the optional section is absent the body is returned unchanged.
+
+    When *source_group* is provided the trend is filtered to scans of that same
+    type instead of all recent scans.
     """
     if 'id="optional-images"' not in body_html:
         return body_html
 
-    history = _optional_cve_trend_history_from_db(input_path)
+    history = _optional_cve_trend_history_from_db(input_path, source_group=source_group)
     chart = render_cve_trend_chart(
         history,
         chart_id="optional-cve-trend",
@@ -2459,6 +2545,7 @@ def _insert_optional_cve_trend_chart(body_html, input_path):
             "No historical optional add-on scan metrics are available yet to "
             "plot a trend."
         ),
+        scope_label=scope_label,
     )
 
     anchor = '<h3 id="optional-cves-by-severity"'
@@ -2493,6 +2580,8 @@ def convert(input_path, output_path=None):
     is_markdown = first_line.startswith("#")
 
     if is_markdown:
+        source_group, scope_label = _resolve_scan_source(content, input_path)
+        content = _strip_scan_metadata(content)
         if basename.startswith("scan-"):
             content = _augment_scan_summary(content, input_path)
         if not basename.startswith("check-"):
@@ -2501,8 +2590,12 @@ def convert(input_path, output_path=None):
         title_match = re.search(r"^# (.+)$", content, re.MULTILINE)
         title = title_match.group(1).strip() if title_match else "Report"
         if basename.startswith("scan-"):
-            body_html = _insert_cve_trend_chart(body_html, input_path)
-            body_html = _insert_optional_cve_trend_chart(body_html, input_path)
+            body_html = _insert_cve_trend_chart(
+                body_html, input_path, source_group=source_group, scope_label=scope_label
+            )
+            body_html = _insert_optional_cve_trend_chart(
+                body_html, input_path, source_group=source_group, scope_label=scope_label
+            )
             findings_by_image = _extract_scan_findings(content)
             suggested_actions = _copilot_suggested_actions(title, findings_by_image)
             vex_candidates = _copilot_vex_candidates(title, findings_by_image)
