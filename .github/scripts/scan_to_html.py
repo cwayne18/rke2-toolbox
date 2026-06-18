@@ -2843,6 +2843,82 @@ _INDEX_CSS_EXTRA = """
   display: none;
 }
 .no-results.visible { display: block; }
+
+/* ---- Resolved (fixed) CVE stats + mini bar graph ---- */
+.trend-resolved {
+  margin-top: 18px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
+}
+.trend-resolved-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+.trend-resolved-head h3 {
+  font-family: 'Poppins', sans-serif;
+  font-size: 14px;
+  font-weight: 600;
+  margin: 0;
+}
+.trend-resolved-head .chart-subtitle { margin: 0; }
+.resolved-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 12px;
+  margin-bottom: 14px;
+}
+.resolved-stat {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--box-bg);
+  padding: 12px 14px;
+}
+.resolved-stat .rs-value {
+  font-family: 'Poppins', sans-serif;
+  font-size: 26px;
+  font-weight: 600;
+  line-height: 1.1;
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+}
+.resolved-stat .rs-label {
+  font-size: 12px;
+  color: var(--muted);
+  margin-top: 4px;
+}
+.resolved-stat.stat-resolved .rs-value { color: var(--status-ok-bg); }
+.resolved-stat.stat-introduced .rs-value { color: var(--sev-high-bg); }
+.resolved-stat .rs-trend { font-size: 13px; font-weight: 600; }
+.rs-trend.trend-down { color: var(--status-ok-bg); }
+.rs-trend.trend-up { color: var(--sev-critical-bg); }
+.rs-trend.trend-flat { color: var(--muted); }
+.resolved-bars-figure { position: relative; }
+.resolved-bars-svg {
+  width: 100%;
+  height: auto;
+  display: block;
+  overflow: visible;
+  font-family: 'Lato', sans-serif;
+}
+.resolved-bars-svg .grid-line { stroke: var(--border); stroke-width: 1; }
+.resolved-bars-svg .axis-line { stroke: var(--border); stroke-width: 1; }
+.resolved-bars-svg .axis-label { fill: var(--muted); font-size: 10px; }
+.resolved-bars-svg .resolved-bar {
+  fill: var(--status-ok-bg);
+  cursor: pointer;
+  transition: fill .1s ease;
+}
+.resolved-bars-svg .resolved-bar:hover { fill: var(--status-ok-border); }
+.resolved-bars-empty {
+  color: var(--muted);
+  font-size: 13px;
+  padding: 10px 0;
+}
 """
 
 
@@ -2997,6 +3073,17 @@ def _render_index_trend_section(dataset):
         '<div class="cve-trend-tooltip" aria-hidden="true"></div>'
         "</div>"
         '<div class="cve-trend-legend">' + "".join(legend_items) + "</div>"
+        '<div class="trend-resolved">'
+        '<div class="trend-resolved-head">'
+        '<h3 id="cves-resolved">CVEs Resolved</h3>'
+        '<p class="chart-subtitle" id="resolved-subtitle"></p>'
+        "</div>"
+        '<div class="resolved-stats" id="resolved-stats"></div>'
+        '<div class="resolved-bars-figure">'
+        '<div class="resolved-bars-canvas"></div>'
+        '<div class="cve-trend-tooltip" id="resolved-tooltip" aria-hidden="true"></div>'
+        "</div>"
+        "</div>"
         f'<script type="application/json" id="index-trend-data">{data_json}</script>'
         f"{_INDEX_TREND_SCRIPT}"
         "</section>"
@@ -3093,6 +3180,76 @@ _INDEX_TREND_SCRIPT = """<script>
     return out.join("");
   }
 
+  function total(p) { return p[2] + p[3]; }
+
+  // Derive "resolved" CVEs from the drop in Critical+High between consecutive
+  // scans. resolved sums the per-step decreases, introduced sums the increases,
+  // and net is the overall change across the window (positive = net reduction).
+  function computeResolved(points) {
+    var resolved = 0, introduced = 0, events = [];
+    for (var i = 1; i < points.length; i++) {
+      var delta = total(points[i - 1]) - total(points[i]);
+      if (delta > 0) resolved += delta;
+      else if (delta < 0) introduced += -delta;
+      events.push({ point: points[i], fixed: delta > 0 ? delta : 0 });
+    }
+    var net = points.length ? total(points[0]) - total(points[points.length - 1]) : 0;
+    return { resolved: resolved, introduced: introduced, net: net, events: events };
+  }
+
+  function buildResolvedBars(events) {
+    if (!events.length) {
+      return '<p class="resolved-bars-empty">Need at least two scans in this ' +
+        'range to chart resolved CVEs.</p>';
+    }
+    var W = 760, H = 150, pl = 48, pr = 20, pt = 16, pb = 40;
+    var pw = W - pl - pr, ph = H - pt - pb, n = events.length;
+    var maxVal = 0;
+    events.forEach(function (e) { if (e.fixed > maxVal) maxVal = e.fixed; });
+    if (maxVal <= 0) maxVal = 1;
+    var step = Math.max(1, Math.ceil(maxVal / 4));
+    var yMax = step * 4;
+    var slot = pw / n;
+    var bw = Math.max(2, Math.min(22, slot * 0.6));
+    function yFor(v) { return pt + ph * (1 - v / yMax); }
+
+    var out = ['<svg class="resolved-bars-svg" viewBox="0 0 ' + W + ' ' + H +
+      '" role="img" aria-label="CVEs resolved per scan" ' +
+      'preserveAspectRatio="xMidYMid meet">'];
+    for (var k = 0; k < 5; k++) {
+      var val = yMax - step * k, y = yFor(val);
+      out.push('<line class="grid-line" x1="' + pl + '" y1="' + y.toFixed(1) +
+        '" x2="' + (pl + pw) + '" y2="' + y.toFixed(1) + '"></line>');
+      out.push('<text class="axis-label" x="' + (pl - 8) + '" y="' +
+        (y + 3).toFixed(1) + '" text-anchor="end">' + val + "</text>");
+    }
+    var baseY = yFor(0);
+    out.push('<line class="axis-line" x1="' + pl + '" y1="' + baseY.toFixed(1) +
+      '" x2="' + (pl + pw) + '" y2="' + baseY.toFixed(1) + '"></line>');
+
+    var every = Math.max(1, Math.ceil(n / 8));
+    events.forEach(function (e, i) {
+      var cx = pl + slot * (i + 0.5);
+      if (e.fixed > 0) {
+        var y = yFor(e.fixed);
+        var src = e.point[1] || "";
+        var tipTxt = fmtDate(e.point[0]) + (src ? " \\u00b7 " + src : "");
+        out.push('<rect class="resolved-bar" x="' + (cx - bw / 2).toFixed(1) +
+          '" y="' + y.toFixed(1) + '" width="' + bw.toFixed(1) +
+          '" height="' + (baseY - y).toFixed(1) + '" rx="2" ' +
+          'data-label="' + esc(tipTxt) + '" data-value="' + e.fixed +
+          '"></rect>');
+      }
+      if (i % every === 0 || i === n - 1) {
+        out.push('<text class="axis-label" x="' + cx.toFixed(1) + '" y="' +
+          (baseY + 15).toFixed(1) + '" text-anchor="middle">' +
+          esc(fmtDate(e.point[0])) + "</text>");
+      }
+    });
+    out.push("</svg>");
+    return out.join("");
+  }
+
   function initIndexTrend(section) {
     var dataEl = document.getElementById("index-trend-data");
     if (!dataEl) return;
@@ -3108,6 +3265,11 @@ _INDEX_TREND_SCRIPT = """<script>
     var figure = section.querySelector(".cve-trend-figure");
     var tip = section.querySelector(".cve-trend-tooltip");
     var subtitle = section.querySelector("#index-trend-subtitle");
+    var resolvedStats = section.querySelector("#resolved-stats");
+    var resolvedCanvas = section.querySelector(".resolved-bars-canvas");
+    var resolvedFigure = section.querySelector(".resolved-bars-figure");
+    var resolvedTip = section.querySelector("#resolved-tooltip");
+    var resolvedSubtitle = section.querySelector("#resolved-subtitle");
     if (!select || !canvas || !figure || !tip) return;
 
     var hidden = { total: false, critical: false, high: false };
@@ -3133,6 +3295,60 @@ _INDEX_TREND_SCRIPT = """<script>
       });
     }
 
+    function attachResolvedTips() {
+      if (!resolvedFigure || !resolvedTip) return;
+      section.querySelectorAll(".resolved-bar").forEach(function (bar) {
+        bar.addEventListener("mouseenter", function () {
+          var v = bar.getAttribute("data-value") || "0";
+          resolvedTip.innerHTML = '<div class="tt-date">' +
+            (bar.getAttribute("data-label") || "") + "</div>" +
+            v + " resolved";
+          var fr = resolvedFigure.getBoundingClientRect();
+          var br = bar.getBoundingClientRect();
+          resolvedTip.style.left = (br.left - fr.left + br.width / 2) + "px";
+          resolvedTip.style.top = (br.top - fr.top) + "px";
+          resolvedTip.classList.add("visible");
+        });
+        bar.addEventListener("mouseleave", function () {
+          resolvedTip.classList.remove("visible");
+        });
+      });
+    }
+
+    function renderResolved(pts, label) {
+      if (!resolvedStats || !resolvedCanvas) return;
+      var stats = computeResolved(pts);
+      var netCls, netArrow, netText;
+      if (stats.net > 0) {
+        netCls = "trend-down"; netArrow = "\\u2193";
+        netText = stats.net + " fewer";
+      } else if (stats.net < 0) {
+        netCls = "trend-up"; netArrow = "\\u2191";
+        netText = (-stats.net) + " more";
+      } else {
+        netCls = "trend-flat"; netArrow = "\\u2192"; netText = "no change";
+      }
+      resolvedStats.innerHTML =
+        '<div class="resolved-stat stat-resolved"><div class="rs-value">' +
+          stats.resolved + '</div><div class="rs-label">CVEs resolved ' +
+          '(Critical + High)</div></div>' +
+        '<div class="resolved-stat stat-introduced"><div class="rs-value">' +
+          stats.introduced + '</div><div class="rs-label">New CVEs ' +
+          'introduced</div></div>' +
+        '<div class="resolved-stat"><div class="rs-value">' +
+          '<span class="rs-trend ' + netCls + '">' + netArrow + '</span>' +
+          Math.abs(stats.net) + '</div><div class="rs-label">Net change ' +
+          '(' + netText + ')</div></div>';
+      resolvedCanvas.innerHTML = buildResolvedBars(stats.events);
+      attachResolvedTips();
+      if (resolvedSubtitle) {
+        resolvedSubtitle.textContent = pts.length > 1
+          ? "Resolved per scan for " + label +
+            ", derived from drops in Critical + High counts between scans."
+          : "";
+      }
+    }
+
     function render() {
       var group = byKey[current] || data.groups[0];
       var pts = filterPoints(group.points, range.mode, range.value);
@@ -3140,6 +3356,12 @@ _INDEX_TREND_SCRIPT = """<script>
         canvas.innerHTML = '<p class="cve-trend-empty">' +
           'No scans for this source in the selected range.</p>';
         if (subtitle) subtitle.textContent = "";
+        if (resolvedStats) resolvedStats.innerHTML = "";
+        if (resolvedCanvas) {
+          resolvedCanvas.innerHTML = '<p class="resolved-bars-empty">' +
+            'No scans for this source in the selected range.</p>';
+        }
+        if (resolvedSubtitle) resolvedSubtitle.textContent = "";
         return;
       }
       canvas.innerHTML = buildSvg(pts, hidden);
@@ -3150,6 +3372,7 @@ _INDEX_TREND_SCRIPT = """<script>
           (pts.length === 1 ? "" : "s") +
           ". Hover a point for details; click a legend entry to toggle a series.";
       }
+      renderResolved(pts, group.label);
     }
 
     select.addEventListener("change", function () {
