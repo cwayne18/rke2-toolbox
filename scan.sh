@@ -613,6 +613,30 @@ CREATE UNIQUE INDEX IF NOT EXISTS uq_scan_metrics_run_signature
         go_module_cves,
         base_image_cves
     );
+
+-- Per-CVE identities captured per scan run. Enables precise fix tracking:
+-- a CVE present for a source in one scan but absent in the next was resolved
+-- on the later scan's date. Linked to the aggregate row via scan_id.
+CREATE TABLE IF NOT EXISTS scan_cves (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    scan_id INTEGER NOT NULL REFERENCES scan_metrics(id),
+    scanned_at TEXT NOT NULL,
+    source_ref TEXT NOT NULL,
+    scope TEXT NOT NULL DEFAULT 'default',
+    image TEXT NOT NULL,
+    cve_id TEXT NOT NULL,
+    severity TEXT NOT NULL,
+    package TEXT NOT NULL DEFAULT '',
+    installed_version TEXT NOT NULL DEFAULT '',
+    fixed_version TEXT NOT NULL DEFAULT '',
+    created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))
+);
+CREATE INDEX IF NOT EXISTS idx_scan_cves_scan_id ON scan_cves(scan_id);
+CREATE INDEX IF NOT EXISTS idx_scan_cves_cve_id ON scan_cves(cve_id);
+CREATE INDEX IF NOT EXISTS idx_scan_cves_source_ref_scanned_at
+    ON scan_cves(source_ref, scanned_at);
+CREATE UNIQUE INDEX IF NOT EXISTS uq_scan_cves_identity
+    ON scan_cves(scan_id, image, cve_id, package, installed_version);
 SQL
 
     # Backfill optional-image columns on databases created before these metrics
@@ -694,6 +718,76 @@ PY
     echo "$result"
 }
 
+# Accumulator file for per-CVE rows captured across every scan path. Populated by
+# collect_cve_rows and flushed into the scan_cves table alongside scan_metrics.
+cve_rows_file="$(mktemp)"
+
+# collect_cve_rows <scan-json> <image> [scope]
+# Appends one tab-separated row per CRITICAL/HIGH vulnerability found in the
+# Trivy JSON to $cve_rows_file. Columns: scope, image, cve_id, severity,
+# package, installed_version, fixed_version. Tabs/newlines inside values are
+# stripped so each CVE stays on a single, parseable line. No-op when python3 is
+# unavailable or the JSON is missing/empty (mirrors classify_cve_sources).
+collect_cve_rows() {
+    local scan_json="$1"
+    local image="$2"
+    local scope="${3:-default}"
+
+    if (( source_attribution_python_enabled == 0 )); then
+        return
+    fi
+
+    if [[ ! -s "$scan_json" ]]; then
+        return
+    fi
+
+    python3 - "$scan_json" "$image" "$scope" >> "$cve_rows_file" <<'PY'
+import json
+import sys
+
+scan_json, image, scope = sys.argv[1], sys.argv[2], sys.argv[3]
+
+try:
+    with open(scan_json, "r", encoding="utf-8") as f:
+        data = json.load(f)
+except (FileNotFoundError, json.JSONDecodeError):
+    sys.exit(0)
+
+
+def clean(value):
+    return str(value or "").replace("\t", " ").replace("\n", " ").replace("\r", " ")
+
+
+seen = set()
+for result in data.get("Results", []):
+    for vuln in result.get("Vulnerabilities") or []:
+        severity = vuln.get("Severity")
+        if severity not in {"HIGH", "CRITICAL"}:
+            continue
+
+        cve_id = clean(vuln.get("VulnerabilityID"))
+        if not cve_id:
+            continue
+
+        package = clean(vuln.get("PkgName"))
+        installed = clean(vuln.get("InstalledVersion"))
+
+        # Collapse duplicate findings (same CVE/package/version reported more
+        # than once for an image) to match the table's unique-identity index.
+        key = (cve_id, package, installed)
+        if key in seen:
+            continue
+        seen.add(key)
+
+        fixed = clean(vuln.get("FixedVersion"))
+        print(
+            "\t".join(
+                [clean(scope), clean(image), cve_id, clean(severity), package, installed, fixed]
+            )
+        )
+PY
+}
+
 # Loop through each image in the input file
 while IFS= read -r image; do
     image="${image#"${image%%[![:space:]]*}"}"
@@ -718,6 +812,7 @@ while IFS= read -r image; do
     } >> "$output_file"
     tally_severities "$image" "$scan_tmp"
     source_breakdown=$(classify_cve_sources "$scan_json_tmp")
+    collect_cve_rows "$scan_json_tmp" "$image" "default"
     IFS='|' read -r img_go_stdlib img_go_module img_base_image <<< "$source_breakdown"
 
     bundle_go_stdlib_cves=$((bundle_go_stdlib_cves + img_go_stdlib))
@@ -754,6 +849,7 @@ if [[ -n "$pr_runtime_tar" ]]; then
     } >> "$output_file"
     tally_severities "$tarball_label" "$scan_tmp"
     source_breakdown=$(classify_cve_sources "$scan_json_tmp")
+    collect_cve_rows "$scan_json_tmp" "$tarball_label" "default"
     rm -f "$scan_tmp"
     rm -f "$scan_json_tmp"
 
@@ -792,6 +888,7 @@ if [[ -s "$optional_input_file" ]]; then
             echo ""
         } >> "$opt_results_md"
         tally_severities "$image" "$scan_tmp" "optional"
+        collect_cve_rows "$scan_json_tmp" "$image" "optional"
         rm -f "$scan_tmp"
         rm -f "$scan_json_tmp"
     done < "$optional_input_file"
@@ -940,7 +1037,66 @@ SQL
     else
         echo "Scan metrics already recorded for this run signature; skipped duplicate insert"
     fi
+
+    # Persist the individual CVE identities captured during the scan, linked to
+    # this run's scan_metrics row. Idempotent via uq_scan_cves_identity; a
+    # duplicate run signature reuses the existing scan_id and inserts nothing
+    # new. No-op when no rows were collected (e.g. python3 unavailable).
+    if [[ -s "$cve_rows_file" ]]; then
+        scan_id="$(sqlite3 "$db_file" \
+            "SELECT id FROM scan_metrics WHERE scanned_at='${scanned_at}' AND source_ref='${source_ref_db}' ORDER BY id DESC LIMIT 1;")"
+        if [[ -n "$scan_id" ]] && command -v python3 >/dev/null 2>&1; then
+            if python3 - "$cve_rows_file" "$scan_id" "$scanned_at" "$source_ref" <<'PY' | sqlite3 "$db_file"
+import sys
+
+rows_file, scan_id, scanned_at, source_ref = sys.argv[1], sys.argv[2], sys.argv[3], sys.argv[4]
+
+
+def q(value):
+    return "'" + str(value).replace("'", "''") + "'"
+
+
+with open(rows_file, "r", encoding="utf-8") as f:
+    for line in f:
+        line = line.rstrip("\n")
+        if not line:
+            continue
+        fields = line.split("\t")
+        if len(fields) != 7:
+            continue
+        scope, image, cve_id, severity, package, installed, fixed = fields
+        print(
+            "INSERT OR IGNORE INTO scan_cves "
+            "(scan_id, scanned_at, source_ref, scope, image, cve_id, severity, "
+            "package, installed_version, fixed_version) VALUES ("
+            + ", ".join(
+                [
+                    str(int(scan_id)),
+                    q(scanned_at),
+                    q(source_ref),
+                    q(scope),
+                    q(image),
+                    q(cve_id),
+                    q(severity),
+                    q(package),
+                    q(installed),
+                    q(fixed),
+                ]
+            )
+            + ");"
+        )
+PY
+            then
+                cve_row_count="$(sqlite3 "$db_file" "SELECT count(*) FROM scan_cves WHERE scan_id=${scan_id};")"
+                echo "Recorded ${cve_row_count} per-CVE rows for scan ${scan_id} in $db_file"
+            else
+                echo "Warning: failed to persist per-CVE rows to $db_file" >&2
+            fi
+        fi
+    fi
 fi
+
+rm -f "$cve_rows_file"
 
 if [[ -n "$gist_title" ]]; then
     echo "Uploading results to GitHub Gist..."
