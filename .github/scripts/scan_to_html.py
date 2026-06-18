@@ -2682,6 +2682,243 @@ _INDEX_CSS_EXTRA = """
   padding: 48px 0;
   text-align: center;
 }
+
+/* ---- Interactive index trend chart controls ---- */
+.index-trend {
+  margin-top: 8px;
+}
+.trend-controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 16px 24px;
+  margin: 4px 0 16px;
+}
+.trend-control {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.trend-control-label {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: .03em;
+}
+.trend-select {
+  font-family: 'Lato', sans-serif;
+  font-size: 13px;
+  color: var(--body-text);
+  background: var(--body-bg);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 6px 28px 6px 10px;
+  cursor: pointer;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%236C6C76' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 10px center;
+}
+.trend-select:hover { border-color: var(--link); }
+.trend-range {
+  display: inline-flex;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  overflow: hidden;
+}
+.trend-range-btn {
+  font-family: 'Lato', sans-serif;
+  font-size: 12px;
+  color: var(--body-text);
+  background: var(--body-bg);
+  border: none;
+  border-left: 1px solid var(--border);
+  padding: 6px 12px;
+  cursor: pointer;
+  transition: background .12s, color .12s;
+}
+.trend-range-btn:first-child { border-left: none; }
+.trend-range-btn:hover { background: var(--box-bg); }
+.trend-range-btn.active {
+  background: var(--link);
+  color: #FFFFFF;
+}
+
+/* ---- Index toolbar (search) ---- */
+.index-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 28px 0 4px;
+}
+.index-search {
+  position: relative;
+  flex: 1;
+  max-width: 420px;
+}
+.index-search input {
+  width: 100%;
+  font-family: 'Lato', sans-serif;
+  font-size: 14px;
+  color: var(--body-text);
+  background: var(--body-bg);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 9px 12px 9px 36px;
+}
+.index-search input:focus {
+  outline: none;
+  border-color: var(--link);
+  box-shadow: 0 0 0 3px rgba(31,103,219,.12);
+}
+.index-search svg {
+  position: absolute;
+  left: 11px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 16px;
+  height: 16px;
+  pointer-events: none;
+}
+.search-count {
+  font-size: 12px;
+  color: var(--muted);
+  white-space: nowrap;
+}
+
+/* ---- Report subsections / badges / collapse ---- */
+.report-subsection { margin-top: 22px; }
+.report-subsection.is-empty { display: none; }
+.report-subhead {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  margin: 0 0 8px;
+}
+.report-subhead h3 {
+  font-family: 'Poppins', sans-serif;
+  font-size: 14px;
+  font-weight: 600;
+  margin: 0;
+}
+.report-subhead .sub-count {
+  font-size: 12px;
+  color: var(--muted);
+}
+.report-card .rc-badge {
+  display: inline-block;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .04em;
+  padding: 2px 7px;
+  border-radius: 999px;
+  margin-top: 2px;
+  align-self: flex-start;
+}
+.rc-badge.badge-scheduled { background: var(--sev-low-bg); color: var(--sev-low-text); }
+.rc-badge.badge-release { background: var(--status-ok-bg); color: var(--status-ok-text); }
+.rc-badge.badge-pr { background: var(--sev-medium-bg); color: var(--sev-medium-text); }
+.rc-badge.badge-check { background: var(--box-bg); color: var(--muted); }
+.report-card.rc-hidden { display: none; }
+.reports-grid .rc-extra { display: none; }
+.reports-grid.show-all .rc-extra { display: flex; }
+.show-more-btn {
+  font-family: 'Lato', sans-serif;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--link);
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 10px 2px 0;
+}
+.show-more-btn:hover { text-decoration: underline; }
+.show-more-btn.is-hidden { display: none; }
+.no-results {
+  color: var(--muted);
+  font-size: 14px;
+  padding: 24px 0;
+  display: none;
+}
+.no-results.visible { display: block; }
+
+/* ---- Resolved (fixed) CVE stats + mini bar graph ---- */
+.trend-resolved {
+  margin-top: 18px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
+}
+.trend-resolved-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+.trend-resolved-head h3 {
+  font-family: 'Poppins', sans-serif;
+  font-size: 14px;
+  font-weight: 600;
+  margin: 0;
+}
+.trend-resolved-head .chart-subtitle { margin: 0; }
+.resolved-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 12px;
+  margin-bottom: 14px;
+}
+.resolved-stat {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--box-bg);
+  padding: 12px 14px;
+}
+.resolved-stat .rs-value {
+  font-family: 'Poppins', sans-serif;
+  font-size: 26px;
+  font-weight: 600;
+  line-height: 1.1;
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+}
+.resolved-stat .rs-label {
+  font-size: 12px;
+  color: var(--muted);
+  margin-top: 4px;
+}
+.resolved-stat.stat-resolved .rs-value { color: var(--status-ok-bg); }
+.resolved-stat.stat-introduced .rs-value { color: var(--sev-high-bg); }
+.resolved-stat .rs-trend { font-size: 13px; font-weight: 600; }
+.rs-trend.trend-down { color: var(--status-ok-bg); }
+.rs-trend.trend-up { color: var(--sev-critical-bg); }
+.rs-trend.trend-flat { color: var(--muted); }
+.resolved-bars-figure { position: relative; }
+.resolved-bars-svg {
+  width: 100%;
+  height: auto;
+  display: block;
+  overflow: visible;
+  font-family: 'Lato', sans-serif;
+}
+.resolved-bars-svg .grid-line { stroke: var(--border); stroke-width: 1; }
+.resolved-bars-svg .axis-line { stroke: var(--border); stroke-width: 1; }
+.resolved-bars-svg .axis-label { fill: var(--muted); font-size: 10px; }
+.resolved-bars-svg .resolved-bar {
+  fill: var(--status-ok-bg);
+  cursor: pointer;
+  transition: fill .1s ease;
+}
+.resolved-bars-svg .resolved-bar:hover { fill: var(--status-ok-border); }
+.resolved-bars-empty {
+  color: var(--muted);
+  font-size: 13px;
+  padding: 10px 0;
+}
 """
 
 
@@ -2699,11 +2936,578 @@ def _parse_date_from_filename(name):
     return datetime.min
 
 
+# Range presets offered by the interactive index chart. ``count`` keeps the
+# last N scans (matching the per-report chart's default); ``days`` keeps scans
+# within N days of the selected series' most recent scan.
+_INDEX_TREND_RANGES = (
+    ("30", "Last 30 scans", "count", 30, True),
+    ("1m", "1M", "days", 30, False),
+    ("3m", "3M", "days", 90, False),
+    ("6m", "6M", "days", 180, False),
+    ("1y", "1Y", "days", 365, False),
+)
+
+
+def _index_trend_dataset(html_dir):
+    """Build the per-source CVE history dataset embedded in the index page.
+
+    Reads every row from the metrics DB and buckets it by source group (see
+    :func:`_scan_source_group`) so the client-side chart can switch between
+    branches / release lines. Returns ``None`` when the DB is missing/unreadable
+    or holds no usable rows. The returned structure is intentionally compact::
+
+        {"default": "branch:master",
+         "groups": [{"key": ..., "label": ..., "points": [[iso, desc, crit, high], ...]}]}
+
+    ``points`` are oldest-first so the chart reads left-to-right in time.
+    """
+    db_path = _metrics_db_path(os.path.join(html_dir, "index.html"))
+    if not db_path:
+        return None
+    try:
+        with sqlite3.connect(db_path) as conn:
+            cur = conn.cursor()
+            cur.execute(
+                """
+                SELECT scanned_at, source_ref, source_desc, critical_cves, high_cves
+                FROM scan_metrics
+                ORDER BY scanned_at ASC, id ASC
+                """
+            )
+            rows = cur.fetchall()
+    except sqlite3.Error:
+        return None
+
+    groups = {}
+    order = []
+    for scanned_at, source_ref, source_desc, critical, high in rows:
+        grp, label = _scan_source_group(source_ref)
+        if grp is None:
+            grp, label = "other", "Other scans"
+        try:
+            crit = int(critical)
+            hi = int(high)
+        except (TypeError, ValueError):
+            continue
+        if grp not in groups:
+            groups[grp] = {"key": grp, "label": label or grp, "points": []}
+            order.append(grp)
+        groups[grp]["points"].append(
+            [scanned_at or "", source_desc or label or "", crit, hi]
+        )
+
+    if not order:
+        return None
+
+    # Default to the master branch when present, else the busiest series.
+    default_key = "branch:master" if "branch:master" in groups else max(
+        order, key=lambda k: len(groups[k]["points"])
+    )
+
+    # Default series first, then most-populated series, then alphabetical.
+    ordered = sorted(
+        (groups[k] for k in order),
+        key=lambda g: (g["key"] != default_key, -len(g["points"]), g["label"].lower()),
+    )
+    return {"default": default_key, "groups": ordered}
+
+
+def _render_index_trend_section(dataset):
+    """Render the interactive CVE trend section (controls + chart shell + data).
+
+    The chart itself is drawn client-side by :data:`_INDEX_TREND_SCRIPT` from
+    the embedded JSON so the source and history-range selectors can redraw it
+    without a page reload. Returns an empty string when no data is available so
+    the index simply omits the section.
+    """
+    if not dataset or not dataset.get("groups"):
+        return ""
+
+    options = []
+    for grp in dataset["groups"]:
+        sel = " selected" if grp["key"] == dataset["default"] else ""
+        options.append(
+            f'<option value="{esc(grp["key"])}"{sel}>{esc(grp["label"])}</option>'
+        )
+
+    range_btns = []
+    for rid, label, mode, value, active in _INDEX_TREND_RANGES:
+        cls = "trend-range-btn active" if active else "trend-range-btn"
+        range_btns.append(
+            f'<button type="button" class="{cls}" data-range="{esc(rid)}" '
+            f'data-mode="{mode}" data-value="{value}" '
+            f'aria-pressed="{"true" if active else "false"}">{esc(label)}</button>'
+        )
+
+    legend_items = []
+    for key, label, colour in _TREND_SERIES:
+        legend_items.append(
+            f'<span class="legend-item" data-series="{key}" role="button" '
+            f'tabindex="0" aria-pressed="true">'
+            f'<span class="legend-swatch" style="background:{colour}"></span>'
+            f"{esc(label)}</span>"
+        )
+
+    data_json = json.dumps(dataset, separators=(",", ":"))
+
+    return (
+        '<section class="cve-trend index-trend" id="index-cve-trend">'
+        '<h2 id="cve-trends" class="anchored-heading">CVE Trends'
+        '<a class="heading-anchor" href="#cve-trends" aria-label="Link to section">#</a>'
+        "</h2>"
+        '<p class="chart-subtitle" id="index-trend-subtitle"></p>'
+        '<div class="trend-controls">'
+        '<div class="trend-control">'
+        '<label class="trend-control-label" for="trend-source-select">Source</label>'
+        '<select class="trend-select" id="trend-source-select" '
+        'aria-label="Scan source">'
+        + "".join(options)
+        + "</select></div>"
+        '<div class="trend-control">'
+        '<span class="trend-control-label">History</span>'
+        '<div class="trend-range" role="group" aria-label="History range">'
+        + "".join(range_btns)
+        + "</div></div></div>"
+        '<div class="cve-trend-figure">'
+        '<div class="index-trend-canvas"></div>'
+        '<div class="cve-trend-tooltip" aria-hidden="true"></div>'
+        "</div>"
+        '<div class="cve-trend-legend">' + "".join(legend_items) + "</div>"
+        '<div class="trend-resolved">'
+        '<div class="trend-resolved-head">'
+        '<h3 id="cves-resolved">CVEs Resolved</h3>'
+        '<p class="chart-subtitle" id="resolved-subtitle"></p>'
+        "</div>"
+        '<div class="resolved-stats" id="resolved-stats"></div>'
+        '<div class="resolved-bars-figure">'
+        '<div class="resolved-bars-canvas"></div>'
+        '<div class="cve-trend-tooltip" id="resolved-tooltip" aria-hidden="true"></div>'
+        "</div>"
+        "</div>"
+        f'<script type="application/json" id="index-trend-data">{data_json}</script>'
+        f"{_INDEX_TREND_SCRIPT}"
+        "</section>"
+    )
+
+
+# Client-side renderer for the interactive index trend chart. Mirrors the
+# geometry of render_cve_trend_chart() but redraws on source/range changes.
+_INDEX_TREND_SCRIPT = """<script>
+(function () {
+  var SERIES = [
+    { key: "total",    name: "Total (Critical + High)", color: "#1F67DB",
+      val: function (p) { return p[2] + p[3]; } },
+    { key: "critical", name: "Critical", color: "#B13333",
+      val: function (p) { return p[2]; } },
+    { key: "high",     name: "High", color: "#E45C1E",
+      val: function (p) { return p[3]; } }
+  ];
+
+  function esc(s) {
+    return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+  }
+  function fmtDate(iso) { return iso ? String(iso).slice(0, 10) : ""; }
+  function dayMs(iso) { return Date.parse(String(iso).slice(0, 10) + "T00:00:00Z"); }
+
+  function filterPoints(all, mode, value) {
+    if (!all.length) return all;
+    if (mode === "count") return all.slice(Math.max(0, all.length - value));
+    var ref = dayMs(all[all.length - 1][0]);
+    var cutoff = ref - value * 86400000;
+    return all.filter(function (p) { return dayMs(p[0]) >= cutoff; });
+  }
+
+  function buildSvg(points, hidden) {
+    var W = 760, H = 300, pl = 48, pr = 20, pt = 24, pb = 56;
+    var pw = W - pl - pr, ph = H - pt - pb, n = points.length;
+    var maxVal = 0;
+    points.forEach(function (p) { var t = p[2] + p[3]; if (t > maxVal) maxVal = t; });
+    if (maxVal <= 0) maxVal = 1;
+    var step = Math.max(1, Math.ceil(maxVal / 4));
+    var yMax = step * 4;
+    function xFor(i) { return n === 1 ? pl + pw / 2 : pl + pw * i / (n - 1); }
+    function yFor(v) { return pt + ph * (1 - v / yMax); }
+
+    var out = ['<svg class="cve-trend-svg" viewBox="0 0 ' + W + ' ' + H +
+      '" role="img" aria-label="CVE counts over recent scans" ' +
+      'preserveAspectRatio="xMidYMid meet">'];
+
+    for (var k = 0; k < 5; k++) {
+      var val = yMax - step * k, y = yFor(val);
+      out.push('<line class="grid-line" x1="' + pl + '" y1="' + y.toFixed(1) +
+        '" x2="' + (pl + pw) + '" y2="' + y.toFixed(1) + '"></line>');
+      out.push('<text class="axis-label" x="' + (pl - 8) + '" y="' +
+        (y + 3).toFixed(1) + '" text-anchor="end">' + val + "</text>");
+    }
+    var baseY = yFor(0);
+    out.push('<line class="axis-line" x1="' + pl + '" y1="' + baseY.toFixed(1) +
+      '" x2="' + (pl + pw) + '" y2="' + baseY.toFixed(1) + '"></line>');
+
+    var maxTicks = 8, every = Math.max(1, Math.ceil(n / maxTicks));
+    points.forEach(function (p, i) {
+      if (i % every && i !== n - 1) return;
+      var x = xFor(i);
+      out.push('<text class="axis-label" x="' + x.toFixed(1) + '" y="' +
+        (baseY + 16).toFixed(1) + '" text-anchor="middle">' +
+        esc(fmtDate(p[0])) + "</text>");
+    });
+
+    SERIES.forEach(function (s) {
+      var off = hidden[s.key] ? " series-hidden" : "";
+      var pts = points.map(function (p, i) { return [xFor(i), yFor(s.val(p))]; });
+      if (pts.length >= 2) {
+        var d = pts.map(function (xy) {
+          return xy[0].toFixed(1) + "," + xy[1].toFixed(1);
+        }).join(" ");
+        out.push('<polyline class="series-line series-' + s.key + off +
+          '" data-series="' + s.key + '" points="' + d +
+          '" stroke="' + s.color + '"></polyline>');
+      }
+      pts.forEach(function (xy, i) {
+        var p = points[i];
+        var src = p[1] || "";
+        var tip = src ? fmtDate(p[0]) + " \\u00b7 " + src : fmtDate(p[0]);
+        out.push('<circle class="series-point series-' + s.key + off +
+          '" data-series="' + s.key + '" cx="' + xy[0].toFixed(1) +
+          '" cy="' + xy[1].toFixed(1) + '" r="3.5" fill="' + s.color +
+          '" data-label="' + esc(tip) + '" data-series-name="' + esc(s.name) +
+          '" data-value="' + s.val(p) + '"></circle>');
+      });
+    });
+
+    out.push("</svg>");
+    return out.join("");
+  }
+
+  function total(p) { return p[2] + p[3]; }
+
+  // Derive "resolved" CVEs from the drop in Critical+High between consecutive
+  // scans. resolved sums the per-step decreases, introduced sums the increases,
+  // and net is the overall change across the window (positive = net reduction).
+  function computeResolved(points) {
+    var resolved = 0, introduced = 0, events = [];
+    for (var i = 1; i < points.length; i++) {
+      var delta = total(points[i - 1]) - total(points[i]);
+      if (delta > 0) resolved += delta;
+      else if (delta < 0) introduced += -delta;
+      events.push({ point: points[i], fixed: delta > 0 ? delta : 0 });
+    }
+    var net = points.length ? total(points[0]) - total(points[points.length - 1]) : 0;
+    return { resolved: resolved, introduced: introduced, net: net, events: events };
+  }
+
+  function buildResolvedBars(events) {
+    if (!events.length) {
+      return '<p class="resolved-bars-empty">Need at least two scans in this ' +
+        'range to chart resolved CVEs.</p>';
+    }
+    var W = 760, H = 150, pl = 48, pr = 20, pt = 16, pb = 40;
+    var pw = W - pl - pr, ph = H - pt - pb, n = events.length;
+    var maxVal = 0;
+    events.forEach(function (e) { if (e.fixed > maxVal) maxVal = e.fixed; });
+    if (maxVal <= 0) maxVal = 1;
+    var step = Math.max(1, Math.ceil(maxVal / 4));
+    var yMax = step * 4;
+    var slot = pw / n;
+    var bw = Math.max(2, Math.min(22, slot * 0.6));
+    function yFor(v) { return pt + ph * (1 - v / yMax); }
+
+    var out = ['<svg class="resolved-bars-svg" viewBox="0 0 ' + W + ' ' + H +
+      '" role="img" aria-label="CVEs resolved per scan" ' +
+      'preserveAspectRatio="xMidYMid meet">'];
+    for (var k = 0; k < 5; k++) {
+      var val = yMax - step * k, y = yFor(val);
+      out.push('<line class="grid-line" x1="' + pl + '" y1="' + y.toFixed(1) +
+        '" x2="' + (pl + pw) + '" y2="' + y.toFixed(1) + '"></line>');
+      out.push('<text class="axis-label" x="' + (pl - 8) + '" y="' +
+        (y + 3).toFixed(1) + '" text-anchor="end">' + val + "</text>");
+    }
+    var baseY = yFor(0);
+    out.push('<line class="axis-line" x1="' + pl + '" y1="' + baseY.toFixed(1) +
+      '" x2="' + (pl + pw) + '" y2="' + baseY.toFixed(1) + '"></line>');
+
+    var every = Math.max(1, Math.ceil(n / 8));
+    events.forEach(function (e, i) {
+      var cx = pl + slot * (i + 0.5);
+      if (e.fixed > 0) {
+        var y = yFor(e.fixed);
+        var src = e.point[1] || "";
+        var tipTxt = fmtDate(e.point[0]) + (src ? " \\u00b7 " + src : "");
+        out.push('<rect class="resolved-bar" x="' + (cx - bw / 2).toFixed(1) +
+          '" y="' + y.toFixed(1) + '" width="' + bw.toFixed(1) +
+          '" height="' + (baseY - y).toFixed(1) + '" rx="2" ' +
+          'data-label="' + esc(tipTxt) + '" data-value="' + e.fixed +
+          '"></rect>');
+      }
+      if (i % every === 0 || i === n - 1) {
+        out.push('<text class="axis-label" x="' + cx.toFixed(1) + '" y="' +
+          (baseY + 15).toFixed(1) + '" text-anchor="middle">' +
+          esc(fmtDate(e.point[0])) + "</text>");
+      }
+    });
+    out.push("</svg>");
+    return out.join("");
+  }
+
+  function initIndexTrend(section) {
+    var dataEl = document.getElementById("index-trend-data");
+    if (!dataEl) return;
+    var data;
+    try { data = JSON.parse(dataEl.textContent); } catch (e) { return; }
+    var byKey = {};
+    data.groups.forEach(function (g) { byKey[g.key] = g; });
+
+    var select = section.querySelector("#trend-source-select");
+    var rangeBtns = Array.prototype.slice.call(
+      section.querySelectorAll(".trend-range-btn"));
+    var canvas = section.querySelector(".index-trend-canvas");
+    var figure = section.querySelector(".cve-trend-figure");
+    var tip = section.querySelector(".cve-trend-tooltip");
+    var subtitle = section.querySelector("#index-trend-subtitle");
+    var resolvedStats = section.querySelector("#resolved-stats");
+    var resolvedCanvas = section.querySelector(".resolved-bars-canvas");
+    var resolvedFigure = section.querySelector(".resolved-bars-figure");
+    var resolvedTip = section.querySelector("#resolved-tooltip");
+    var resolvedSubtitle = section.querySelector("#resolved-subtitle");
+    if (!select || !canvas || !figure || !tip) return;
+
+    var hidden = { total: false, critical: false, high: false };
+    var current = data.default;
+    var range = { mode: "count", value: 30 };
+
+    function attachTips() {
+      section.querySelectorAll(".series-point").forEach(function (point) {
+        point.addEventListener("mouseenter", function () {
+          tip.innerHTML = '<div class="tt-date">' +
+            (point.getAttribute("data-label") || "") + "</div>" +
+            (point.getAttribute("data-series-name") || "") + ": " +
+            (point.getAttribute("data-value") || "");
+          var fr = figure.getBoundingClientRect();
+          var pgr = point.getBoundingClientRect();
+          tip.style.left = (pgr.left - fr.left + pgr.width / 2) + "px";
+          tip.style.top = (pgr.top - fr.top) + "px";
+          tip.classList.add("visible");
+        });
+        point.addEventListener("mouseleave", function () {
+          tip.classList.remove("visible");
+        });
+      });
+    }
+
+    function attachResolvedTips() {
+      if (!resolvedFigure || !resolvedTip) return;
+      section.querySelectorAll(".resolved-bar").forEach(function (bar) {
+        bar.addEventListener("mouseenter", function () {
+          var v = bar.getAttribute("data-value") || "0";
+          resolvedTip.innerHTML = '<div class="tt-date">' +
+            (bar.getAttribute("data-label") || "") + "</div>" +
+            v + " resolved";
+          var fr = resolvedFigure.getBoundingClientRect();
+          var br = bar.getBoundingClientRect();
+          resolvedTip.style.left = (br.left - fr.left + br.width / 2) + "px";
+          resolvedTip.style.top = (br.top - fr.top) + "px";
+          resolvedTip.classList.add("visible");
+        });
+        bar.addEventListener("mouseleave", function () {
+          resolvedTip.classList.remove("visible");
+        });
+      });
+    }
+
+    function renderResolved(pts, label) {
+      if (!resolvedStats || !resolvedCanvas) return;
+      var stats = computeResolved(pts);
+      var netCls, netArrow, netText;
+      if (stats.net > 0) {
+        netCls = "trend-down"; netArrow = "\\u2193";
+        netText = stats.net + " fewer";
+      } else if (stats.net < 0) {
+        netCls = "trend-up"; netArrow = "\\u2191";
+        netText = (-stats.net) + " more";
+      } else {
+        netCls = "trend-flat"; netArrow = "\\u2192"; netText = "no change";
+      }
+      resolvedStats.innerHTML =
+        '<div class="resolved-stat stat-resolved"><div class="rs-value">' +
+          stats.resolved + '</div><div class="rs-label">CVEs resolved ' +
+          '(Critical + High)</div></div>' +
+        '<div class="resolved-stat stat-introduced"><div class="rs-value">' +
+          stats.introduced + '</div><div class="rs-label">New CVEs ' +
+          'introduced</div></div>' +
+        '<div class="resolved-stat"><div class="rs-value">' +
+          '<span class="rs-trend ' + netCls + '">' + netArrow + '</span>' +
+          Math.abs(stats.net) + '</div><div class="rs-label">Net change ' +
+          '(' + netText + ')</div></div>';
+      resolvedCanvas.innerHTML = buildResolvedBars(stats.events);
+      attachResolvedTips();
+      if (resolvedSubtitle) {
+        resolvedSubtitle.textContent = pts.length > 1
+          ? "Resolved per scan for " + label +
+            ", derived from drops in Critical + High counts between scans."
+          : "";
+      }
+    }
+
+    function render() {
+      var group = byKey[current] || data.groups[0];
+      var pts = filterPoints(group.points, range.mode, range.value);
+      if (!pts.length) {
+        canvas.innerHTML = '<p class="cve-trend-empty">' +
+          'No scans for this source in the selected range.</p>';
+        if (subtitle) subtitle.textContent = "";
+        if (resolvedStats) resolvedStats.innerHTML = "";
+        if (resolvedCanvas) {
+          resolvedCanvas.innerHTML = '<p class="resolved-bars-empty">' +
+            'No scans for this source in the selected range.</p>';
+        }
+        if (resolvedSubtitle) resolvedSubtitle.textContent = "";
+        return;
+      }
+      canvas.innerHTML = buildSvg(pts, hidden);
+      attachTips();
+      if (subtitle) {
+        subtitle.textContent = "Critical & High CVE counts for " + group.label +
+          " across the last " + pts.length + " scan" +
+          (pts.length === 1 ? "" : "s") +
+          ". Hover a point for details; click a legend entry to toggle a series.";
+      }
+      renderResolved(pts, group.label);
+    }
+
+    select.addEventListener("change", function () {
+      current = select.value;
+      render();
+    });
+
+    rangeBtns.forEach(function (btn) {
+      btn.addEventListener("click", function () {
+        rangeBtns.forEach(function (b) {
+          b.classList.remove("active");
+          b.setAttribute("aria-pressed", "false");
+        });
+        btn.classList.add("active");
+        btn.setAttribute("aria-pressed", "true");
+        range = {
+          mode: btn.getAttribute("data-mode"),
+          value: parseInt(btn.getAttribute("data-value"), 10)
+        };
+        render();
+      });
+    });
+
+    function toggleSeries(item) {
+      var key = item.getAttribute("data-series");
+      hidden[key] = !hidden[key];
+      item.classList.toggle("legend-off", hidden[key]);
+      item.setAttribute("aria-pressed", hidden[key] ? "false" : "true");
+      section.querySelectorAll('[data-series="' + key + '"].series-line, ' +
+        '[data-series="' + key + '"].series-point').forEach(function (el) {
+        el.classList.toggle("series-hidden", hidden[key]);
+      });
+    }
+    section.querySelectorAll(".legend-item").forEach(function (item) {
+      item.addEventListener("click", function () { toggleSeries(item); });
+      item.addEventListener("keydown", function (e) {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          toggleSeries(item);
+        }
+      });
+    });
+
+    render();
+  }
+
+  function boot() {
+    var section = document.getElementById("index-cve-trend");
+    if (section) initIndexTrend(section);
+  }
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", boot);
+  } else {
+    boot();
+  }
+})();
+</script>"""
+
+
+# Client-side search + collapse behaviour for the report card lists.
+_INDEX_LIST_SCRIPT = """<script>
+(function () {
+  var input = document.getElementById("report-search");
+  var countEl = document.getElementById("search-count");
+  var cards = Array.prototype.slice.call(document.querySelectorAll(".report-card"));
+  var subsections = Array.prototype.slice.call(
+    document.querySelectorAll(".report-subsection"));
+  var noResults = document.getElementById("no-results");
+
+  document.querySelectorAll(".reports-grid").forEach(function (grid) {
+    var limit = parseInt(grid.getAttribute("data-collapse") || "0", 10);
+    if (!limit) return;
+    var items = Array.prototype.slice.call(grid.querySelectorAll(".report-card"));
+    if (items.length <= limit) return;
+    items.slice(limit).forEach(function (c) { c.classList.add("rc-extra"); });
+    var btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "show-more-btn";
+    btn.textContent = "Show all " + items.length + " reports";
+    btn.addEventListener("click", function () {
+      var open = grid.classList.toggle("show-all");
+      btn.textContent = open ? "Show fewer reports"
+        : "Show all " + items.length + " reports";
+    });
+    grid.parentNode.insertBefore(btn, grid.nextSibling);
+    grid._showMoreBtn = btn;
+  });
+
+  function apply() {
+    var q = (input ? input.value : "").trim().toLowerCase();
+    var visible = 0;
+    cards.forEach(function (card) {
+      var hay = card.getAttribute("data-name") || "";
+      var match = !q || hay.indexOf(q) !== -1;
+      card.classList.toggle("rc-hidden", !match);
+      if (match) visible++;
+    });
+    subsections.forEach(function (sec) {
+      var any = sec.querySelectorAll(".report-card:not(.rc-hidden)").length > 0;
+      sec.classList.toggle("is-empty", !any);
+    });
+    // While searching, reveal collapsed matches and hide the toggles.
+    document.querySelectorAll(".reports-grid").forEach(function (grid) {
+      if (!grid._showMoreBtn) return;
+      if (q) {
+        grid.classList.add("show-all");
+        grid._showMoreBtn.classList.add("is-hidden");
+      } else {
+        grid.classList.remove("show-all");
+        grid._showMoreBtn.classList.remove("is-hidden");
+        grid._showMoreBtn.textContent = "Show all " +
+          grid.querySelectorAll(".report-card").length + " reports";
+      }
+    });
+    if (countEl) {
+      countEl.textContent = q
+        ? visible + " of " + cards.length + " match"
+        : cards.length + " reports";
+    }
+    if (noResults) noResults.classList.toggle("visible", q && visible === 0);
+  }
+
+  if (input) input.addEventListener("input", apply);
+  apply();
+})();
+</script>"""
+
+
 def generate_index(html_dir):
     """
-    Scan *html_dir* for *.html files (excluding index.html itself) and
-    write a styled index.html with two sections: Trivy Scan Reports and
-    Check Images Reports, each showing cards sorted most-recent first.
+    Scan *html_dir* for *.html files (excluding index.html itself) and write a
+    styled index.html. The page leads with an interactive CVE trend chart
+    (source- and history-range selectable, defaulting to the master branch and
+    the last 30 scans) followed by searchable, categorized report lists:
+    Trivy scan reports (scheduled / release / PR) and check-images reports.
 
     Returns the path of the written index file.
     """
@@ -2720,57 +3524,123 @@ def generate_index(html_dir):
 
     scan_entries = [f for f in all_entries if f.startswith("scan-")]
     check_entries = [f for f in all_entries if f.startswith("check-")]
+    pr_entries = [f for f in all_entries if re.match(r"pr-\d+", f)]
+
+    # Split Trivy scans by provenance so release lines aren't buried among the
+    # daily scheduled runs.
+    release_scans = [f for f in scan_entries if not re.match(r"scan-\d{8}-\d+", f)]
+    scheduled_scans = [f for f in scan_entries if re.match(r"scan-\d{8}-\d+", f)]
 
     now = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
 
-    def _make_cards(entries):
-        cards = []
-        for fname in entries:
-            m = re.search(r"(\d{8})", fname)
-            date_str = ""
-            if m:
-                try:
-                    date_str = datetime.strptime(m.group(1), "%Y%m%d").strftime(
-                        "%B %d, %Y"
-                    )
-                except ValueError:
-                    pass
+    _BADGES = {
+        "scheduled": ("badge-scheduled", "Scheduled"),
+        "release": ("badge-release", "Release"),
+        "pr": ("badge-pr", "PR"),
+        "check": ("badge-check", "Check"),
+    }
 
-            stem = os.path.splitext(fname)[0]
-            card = (
-                f'<a class="report-card" href="{esc(fname)}">'
-                f'  <div class="rc-header">'
-                f'    <div>'
-                f'      <div class="rc-name">{esc(stem)}</div>'
-                + (f'      <div class="rc-date">{esc(date_str)}</div>' if date_str else "")
-                + f"    </div>"
-                f'    <span class="rc-arrow">&#8594;</span>'
-                f"  </div>"
-                f"</a>"
-            )
-            cards.append(card)
-        return cards
+    def _make_card(fname, kind):
+        m = re.search(r"(\d{8})", fname)
+        date_str = ""
+        if m:
+            try:
+                date_str = datetime.strptime(m.group(1), "%Y%m%d").strftime(
+                    "%B %d, %Y"
+                )
+            except ValueError:
+                pass
 
-    def _section(title, entries, empty_msg):
-        if entries:
-            cards = _make_cards(entries)
-            grid = '<div class="reports-grid">\n' + "\n".join(cards) + "\n</div>"
-        else:
-            grid = f'<p class="empty-state">{esc(empty_msg)}</p>'
-        count = len(entries)
-        subtitle_text = f"{count} report{'s' if count != 1 else ''} available"
+        stem = os.path.splitext(fname)[0]
+        badge_cls, badge_label = _BADGES.get(kind, ("badge-check", kind.title()))
+        search_key = f"{stem} {date_str} {badge_label}".lower()
         return (
-            f'<h2>{esc(title)}</h2>'
-            f'<p class="index-intro">{esc(subtitle_text)}</p>'
-            f"{grid}"
+            f'<a class="report-card" href="{esc(fname)}" '
+            f'data-name="{esc(search_key)}">'
+            f'<div class="rc-header">'
+            f"<div>"
+            f'<div class="rc-name">{esc(stem)}</div>'
+            + (f'<div class="rc-date">{esc(date_str)}</div>' if date_str else "")
+            + f'<span class="rc-badge {badge_cls}">{esc(badge_label)}</span>'
+            f"</div>"
+            f'<span class="rc-arrow">&#8594;</span>'
+            f"</div>"
+            f"</a>"
         )
+
+    def _subsection(title, entries, kind, collapse=12):
+        if not entries:
+            return ""
+        cards = "\n".join(_make_card(f, kind) for f in entries)
+        count = len(entries)
+        attr = f' data-collapse="{collapse}"' if count > collapse else ""
+        return (
+            '<div class="report-subsection">'
+            '<div class="report-subhead">'
+            f"<h3>{esc(title)}</h3>"
+            f'<span class="sub-count">{count}</span>'
+            "</div>"
+            f'<div class="reports-grid"{attr}>\n{cards}\n</div>'
+            "</div>"
+        )
+
+    def _section(title, anchor, subsections, empty_msg):
+        inner = "".join(subsections)
+        if not inner.strip():
+            inner = f'<p class="empty-state">{esc(empty_msg)}</p>'
+        return (
+            f'<h2 id="{esc(anchor)}" class="anchored-heading">{esc(title)}'
+            f'<a class="heading-anchor" href="#{esc(anchor)}" '
+            'aria-label="Link to section">#</a></h2>'
+            f"{inner}"
+        )
+
+    total_reports = len(scan_entries) + len(check_entries) + len(pr_entries)
+
+    toolbar = (
+        '<div class="index-toolbar">'
+        '<div class="index-search">'
+        '<svg viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">'
+        '<circle cx="7" cy="7" r="5" stroke="#6C6C76" stroke-width="1.5"/>'
+        '<path d="M11 11l4 4" stroke="#6C6C76" stroke-width="1.5" '
+        'stroke-linecap="round"/></svg>'
+        '<input type="search" id="report-search" '
+        'placeholder="Filter reports by name, date, or type\u2026" '
+        'aria-label="Filter reports" autocomplete="off">'
+        "</div>"
+        f'<span class="search-count" id="search-count">{total_reports} reports</span>'
+        "</div>"
+        '<p class="no-results" id="no-results">No reports match your search.</p>'
+    )
+
+    trivy_section = _section(
+        "Trivy Scan Reports",
+        "trivy-scan-reports",
+        [
+            _subsection("Scheduled scans", scheduled_scans, "scheduled"),
+            _subsection("Release scans", release_scans, "release"),
+            _subsection("Pull request scans", pr_entries, "pr"),
+        ],
+        "No scan reports found yet.",
+    )
+    check_section = _section(
+        "Check Images Reports",
+        "check-images-reports",
+        [_subsection("Image update checks", check_entries, "check")],
+        "No check-images reports found yet.",
+    )
 
     body_html = (
         "<h1>RKE2 Toolbox Reports</h1>\n"
-        + _section("Trivy Scan Reports", scan_entries, "No scan reports found yet.")
+        + _render_index_trend_section(_index_trend_dataset(html_dir))
         + "\n"
-        + _section("Check Images Reports", check_entries, "No check-images reports found yet.")
+        + toolbar
+        + "\n"
+        + trivy_section
+        + "\n"
+        + check_section
         + f'\n<div class="page-footer">Index generated &nbsp;·&nbsp; {esc(now)}</div>'
+        + _INDEX_LIST_SCRIPT
     )
 
     full_html = f"""<!DOCTYPE html>
