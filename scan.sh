@@ -475,11 +475,8 @@ if [[ -n "$runtime_lookup_sha" || -n "$runtime_lookup_ref" ]]; then
                             # an empty "scanned" image; the tarball scan covers it.
                             for img_list in images.txt images-optional.txt; do
                                 [[ -f "$img_list" ]] || continue
-                                if grep -v '/rke2-runtime:' "$img_list" > "${img_list}.tmp" 2>/dev/null; then
-                                    mv "${img_list}.tmp" "$img_list"
-                                else
-                                    rm -f "${img_list}.tmp"
-                                fi
+                                sed -i.bak '/\/rke2-runtime:/d' "$img_list"
+                                rm -f "${img_list}.bak"
                             done
                         fi
                     else
