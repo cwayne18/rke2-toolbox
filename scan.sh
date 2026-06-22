@@ -340,32 +340,58 @@ input_file="./images.txt"
 # Input file containing the list of optional (non-default) add-on images
 optional_input_file="./images-optional.txt"
 
-# If a PR was specified, download and load the rke2-runtime image from the PR's CI artifact
-pr_runtime_images=""
+# The rke2-runtime image is only built and published during a real CI run; for an
+# unreleased build (a branch tip or a PR head) it never exists in a registry, so a
+# plain `trivy image rancher/rke2-runtime:<dev-version>` cannot pull anything. To
+# scan it we download the prebuilt image tarball from the source's latest CI run and
+# scan it directly. Release scans are skipped here because the runtime image is
+# published to the registry alongside the release and is scanned like any other image.
+#
+# Determine where to look for the runtime artifact: a PR head (SHA + branch) or, for a
+# plain branch scan, the branch tip on rancher/rke2.
 pr_runtime_tar=""
 keep_artifact_dir=""
+runtime_lookup_sha=""
+runtime_lookup_ref=""
+runtime_lookup_desc=""
 if [[ -n "$pr_number" ]]; then
-    echo "Fetching workflow runs for PR #${pr_number}..."
-    
-    if [[ -n "$pr_head_sha" ]]; then
-        # Get all completed runs matching this PR's head SHA
-        candidate_run_ids=$(gh run list -R rancher/rke2 -s completed --limit 100 --json databaseId,headSha,name --jq ".[] | select(.headSha==\"$pr_head_sha\") | .databaseId" 2>/dev/null)
-        
-        # Also try matching by branch name (covers cases where the SHA differs e.g. merge commit)
-        if [[ -n "$pr_head_ref" ]]; then
-            branch_run_ids=$(gh run list -R rancher/rke2 -s completed -b "$pr_head_ref" --limit 50 --json databaseId --jq '.[].databaseId' 2>/dev/null)
+    runtime_lookup_sha="$pr_head_sha"
+    runtime_lookup_ref="$pr_head_ref"
+    runtime_lookup_desc="PR #${pr_number}"
+elif [[ -z "$release_version" ]]; then
+    runtime_lookup_ref="$branch"
+    runtime_lookup_desc="branch '${branch}'"
+fi
+
+if [[ -n "$runtime_lookup_sha" || -n "$runtime_lookup_ref" ]]; then
+    echo "Fetching workflow runs for ${runtime_lookup_desc}..."
+
+    candidate_run_ids=""
+
+        # Get all completed runs matching the head SHA, when known.
+        if [[ -n "$runtime_lookup_sha" ]]; then
+            sha_run_ids=$(gh run list -R rancher/rke2 -s completed --limit 100 --json databaseId,headSha,name --jq ".[] | select(.headSha==\"$runtime_lookup_sha\") | .databaseId" 2>/dev/null)
+            candidate_run_ids="$candidate_run_ids $sha_run_ids"
+        fi
+
+        # Also try matching by branch name (covers branch scans and PR cases where the
+        # SHA differs, e.g. a merge commit).
+        if [[ -n "$runtime_lookup_ref" ]]; then
+            branch_run_ids=$(gh run list -R rancher/rke2 -s completed -b "$runtime_lookup_ref" --limit 50 --json databaseId --jq '.[].databaseId' 2>/dev/null)
             candidate_run_ids="$candidate_run_ids $branch_run_ids"
         fi
-        
-        # Also try associated workflow runs via the GitHub API (matches PR by event)
-        api_run_ids=$(gh api "repos/rancher/rke2/actions/runs?event=pull_request&per_page=100" --jq ".workflow_runs[] | select(.pull_requests[]?.number == ${pr_number}) | .id" 2>/dev/null)
-        candidate_run_ids="$candidate_run_ids $api_run_ids"
+
+        # For PRs, also try associated workflow runs via the GitHub API (matches PR by event).
+        if [[ -n "$pr_number" ]]; then
+            api_run_ids=$(gh api "repos/rancher/rke2/actions/runs?event=pull_request&per_page=100" --jq ".workflow_runs[] | select(.pull_requests[]?.number == ${pr_number}) | .id" 2>/dev/null)
+            candidate_run_ids="$candidate_run_ids $api_run_ids"
+        fi
         
         # De-duplicate
         candidate_run_ids=$(echo "$candidate_run_ids" | tr ' ' '\n' | grep -v '^$' | sort -u | tr '\n' ' ')
         
         if [[ -z "$candidate_run_ids" ]]; then
-            echo "Warning: No completed workflow runs found for SHA $pr_head_sha"
+            echo "Warning: No completed workflow runs found for ${runtime_lookup_desc}"
         else
             # Find a run that has an artifact containing rke2 runtime/images
             run_id=""
@@ -386,7 +412,7 @@ if [[ -n "$pr_number" ]]; then
             done
             
             if [[ -z "$run_id" ]]; then
-                echo "Warning: None of the workflow runs for PR #${pr_number} contain a matching rke2 artifact"
+                echo "Warning: None of the workflow runs for ${runtime_lookup_desc} contain a matching rke2 artifact"
                 echo "Checked runs: $candidate_run_ids"
                 echo ""
                 echo "Available artifacts across runs:"
@@ -438,7 +464,23 @@ if [[ -n "$pr_number" ]]; then
                             # Don't delete the artifact_dir until after scan
                             keep_artifact_dir="$artifact_dir"
                             artifact_dir=""
-                            echo "Will scan PR runtime tarball: $pr_runtime_tar"
+                            echo "Will scan runtime tarball: $pr_runtime_tar"
+
+                            # The runtime image reference generated by build-images
+                            # (e.g. rancher/rke2-runtime:<dev-version>) is never
+                            # pushed to a registry for an unreleased build, so a
+                            # registry scan of it always comes back empty. Now that
+                            # we have the real image tarball, drop that unpullable
+                            # reference from the image lists so it isn't reported as
+                            # an empty "scanned" image; the tarball scan covers it.
+                            for img_list in images.txt images-optional.txt; do
+                                [[ -f "$img_list" ]] || continue
+                                if grep -v '/rke2-runtime:' "$img_list" > "${img_list}.tmp" 2>/dev/null; then
+                                    mv "${img_list}.tmp" "$img_list"
+                                else
+                                    rm -f "${img_list}.tmp"
+                                fi
+                            done
                         fi
                     else
                         echo "Warning: No suitable runtime/image archive found in artifact"
@@ -455,9 +497,6 @@ if [[ -n "$pr_number" ]]; then
                 fi
             fi
         fi
-    else
-        echo "Warning: Could not fetch PR head SHA for PR #${pr_number}"
-    fi
 fi
 
 # Download the Rancher OpenVEX Trivy report
@@ -489,7 +528,7 @@ fi
     done < "$input_file"
     if [[ -n "$pr_runtime_tar" ]]; then
         echo ""
-        echo "## PR Runtime Tarball"
+        echo "## Runtime Image Tarball"
         echo ""
         printf -- '- `%s`\n' "$pr_runtime_tar"
     fi
@@ -831,10 +870,10 @@ while IFS= read -r image; do
     rm -f "$scan_json_tmp"
 done < "$input_file"
 
-# Also scan PR runtime tarball directly if available
+# Also scan the runtime image tarball directly if available
 if [[ -n "$pr_runtime_tar" ]]; then
-    echo "Scanning PR runtime tarball: $pr_runtime_tar"
-    tarball_label="PR Runtime Tarball: $(basename "$pr_runtime_tar")"
+    echo "Scanning runtime tarball: $pr_runtime_tar"
+    tarball_label="Runtime Image Tarball: $(basename "$pr_runtime_tar")"
     scan_tmp=$(mktemp)
     scan_json_tmp=$(mktemp)
     trivy image --input "$pr_runtime_tar" $vex_flag  --severity CRITICAL,HIGH --format json > "$scan_json_tmp" 2>/dev/null
