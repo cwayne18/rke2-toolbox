@@ -1,0 +1,597 @@
+{
+  "@context": "https://openvex.dev/ns/v0.2.0",
+  "@id": "https://github.com/cwayne18/rke2-toolbox/vex/rke2-v1.36.2-rc3-xnet-xcrypto",
+  "author": "RKE2 Toolbox CVE triage (govulncheck reachability analysis)",
+  "version": 1,
+  "timestamp": "2026-06-23T00:00:00Z",
+  "statements": [
+    {
+      "vulnerability": {
+        "name": "CVE-2026-25680"
+      },
+      "products": [
+        {
+          "@id": "pkg:oci/hardened-dns-node-cache",
+          "subcomponents": [
+            {
+              "@id": "pkg:golang/golang.org/x/net@v0.52.0"
+            }
+          ]
+        },
+        {
+          "@id": "pkg:oci/hardened-k8s-metrics-server",
+          "subcomponents": [
+            {
+              "@id": "pkg:golang/golang.org/x/net@v0.52.0"
+            }
+          ]
+        },
+        {
+          "@id": "pkg:oci/klipper-helm",
+          "subcomponents": [
+            {
+              "@id": "pkg:golang/golang.org/x/net@v0.49.0"
+            }
+          ]
+        },
+        {
+          "@id": "pkg:oci/rke2-cloud-provider",
+          "subcomponents": [
+            {
+              "@id": "pkg:golang/golang.org/x/net@v0.53.0"
+            }
+          ]
+        },
+        {
+          "@id": "pkg:oci/rke2-runtime",
+          "subcomponents": [
+            {
+              "@id": "pkg:golang/golang.org/x/net@v0.43.0"
+            }
+          ]
+        }
+      ],
+      "status": "not_affected",
+      "justification": "vulnerable_code_not_in_execute_path",
+      "impact_statement": "The golang.org/x/net/html parser is linked but RKE2 components never parse attacker-supplied HTML; Parse/ParseFragment are not invoked on untrusted input in any default execution path. Verified with govulncheck -mode=binary against the v1.36.2-rc3 binaries.",
+      "timestamp": "2026-06-23T00:00:00Z"
+    },
+    {
+      "vulnerability": {
+        "name": "CVE-2026-39828"
+      },
+      "products": [
+        {
+          "@id": "pkg:oci/hardened-dns-node-cache",
+          "subcomponents": [
+            {
+              "@id": "pkg:golang/golang.org/x/crypto@v0.49.0"
+            }
+          ]
+        },
+        {
+          "@id": "pkg:oci/hardened-k8s-metrics-server",
+          "subcomponents": [
+            {
+              "@id": "pkg:golang/golang.org/x/crypto@v0.49.0"
+            }
+          ]
+        },
+        {
+          "@id": "pkg:oci/klipper-helm",
+          "subcomponents": [
+            {
+              "@id": "pkg:golang/golang.org/x/crypto@v0.47.0"
+            }
+          ]
+        },
+        {
+          "@id": "pkg:oci/rke2-cloud-provider",
+          "subcomponents": [
+            {
+              "@id": "pkg:golang/golang.org/x/crypto@v0.50.0"
+            }
+          ]
+        }
+      ],
+      "status": "not_affected",
+      "justification": "vulnerable_code_not_in_execute_path",
+      "impact_statement": "The golang.org/x/crypto/ssh code is linked transitively via Kubernetes/cloud-provider dependencies but RKE2 components do not operate an SSH server, SSH agent, or knownhosts verification against untrusted input in the default configuration. The vulnerable symbols are not reachable from any attacker-controlled execution path. Verified with govulncheck -mode=binary against the v1.36.2-rc3 binaries.",
+      "timestamp": "2026-06-23T00:00:00Z"
+    },
+    {
+      "vulnerability": {
+        "name": "CVE-2026-39829"
+      },
+      "products": [
+        {
+          "@id": "pkg:oci/hardened-dns-node-cache",
+          "subcomponents": [
+            {
+              "@id": "pkg:golang/golang.org/x/crypto@v0.49.0"
+            }
+          ]
+        },
+        {
+          "@id": "pkg:oci/hardened-k8s-metrics-server",
+          "subcomponents": [
+            {
+              "@id": "pkg:golang/golang.org/x/crypto@v0.49.0"
+            }
+          ]
+        },
+        {
+          "@id": "pkg:oci/hardened-kubernetes",
+          "subcomponents": [
+            {
+              "@id": "pkg:golang/golang.org/x/crypto@v0.47.0"
+            }
+          ]
+        },
+        {
+          "@id": "pkg:oci/klipper-helm",
+          "subcomponents": [
+            {
+              "@id": "pkg:golang/golang.org/x/crypto@v0.47.0"
+            }
+          ]
+        },
+        {
+          "@id": "pkg:oci/rke2-cloud-provider",
+          "subcomponents": [
+            {
+              "@id": "pkg:golang/golang.org/x/crypto@v0.50.0"
+            }
+          ]
+        },
+        {
+          "@id": "pkg:oci/rke2-runtime",
+          "subcomponents": [
+            {
+              "@id": "pkg:golang/golang.org/x/crypto@v0.47.0"
+            }
+          ]
+        }
+      ],
+      "status": "not_affected",
+      "justification": "vulnerable_code_not_in_execute_path",
+      "impact_statement": "The golang.org/x/crypto/ssh code is linked transitively via Kubernetes/cloud-provider dependencies but RKE2 components do not operate an SSH server, SSH agent, or knownhosts verification against untrusted input in the default configuration. The vulnerable symbols are not reachable from any attacker-controlled execution path. Verified with govulncheck -mode=binary against the v1.36.2-rc3 binaries.",
+      "timestamp": "2026-06-23T00:00:00Z"
+    },
+    {
+      "vulnerability": {
+        "name": "CVE-2026-39831"
+      },
+      "products": [
+        {
+          "@id": "pkg:oci/hardened-dns-node-cache",
+          "subcomponents": [
+            {
+              "@id": "pkg:golang/golang.org/x/crypto@v0.49.0"
+            }
+          ]
+        },
+        {
+          "@id": "pkg:oci/hardened-k8s-metrics-server",
+          "subcomponents": [
+            {
+              "@id": "pkg:golang/golang.org/x/crypto@v0.49.0"
+            }
+          ]
+        },
+        {
+          "@id": "pkg:oci/hardened-kubernetes",
+          "subcomponents": [
+            {
+              "@id": "pkg:golang/golang.org/x/crypto@v0.47.0"
+            }
+          ]
+        },
+        {
+          "@id": "pkg:oci/klipper-helm",
+          "subcomponents": [
+            {
+              "@id": "pkg:golang/golang.org/x/crypto@v0.47.0"
+            }
+          ]
+        },
+        {
+          "@id": "pkg:oci/rke2-cloud-provider",
+          "subcomponents": [
+            {
+              "@id": "pkg:golang/golang.org/x/crypto@v0.50.0"
+            }
+          ]
+        },
+        {
+          "@id": "pkg:oci/rke2-runtime",
+          "subcomponents": [
+            {
+              "@id": "pkg:golang/golang.org/x/crypto@v0.47.0"
+            }
+          ]
+        }
+      ],
+      "status": "not_affected",
+      "justification": "vulnerable_code_not_in_execute_path",
+      "impact_statement": "The golang.org/x/crypto/ssh code is linked transitively via Kubernetes/cloud-provider dependencies but RKE2 components do not operate an SSH server, SSH agent, or knownhosts verification against untrusted input in the default configuration. The vulnerable symbols are not reachable from any attacker-controlled execution path. Verified with govulncheck -mode=binary against the v1.36.2-rc3 binaries.",
+      "timestamp": "2026-06-23T00:00:00Z"
+    },
+    {
+      "vulnerability": {
+        "name": "CVE-2026-39832"
+      },
+      "products": [
+        {
+          "@id": "pkg:oci/hardened-dns-node-cache",
+          "subcomponents": [
+            {
+              "@id": "pkg:golang/golang.org/x/crypto@v0.49.0"
+            }
+          ]
+        },
+        {
+          "@id": "pkg:oci/hardened-k8s-metrics-server",
+          "subcomponents": [
+            {
+              "@id": "pkg:golang/golang.org/x/crypto@v0.49.0"
+            }
+          ]
+        },
+        {
+          "@id": "pkg:oci/klipper-helm",
+          "subcomponents": [
+            {
+              "@id": "pkg:golang/golang.org/x/crypto@v0.47.0"
+            }
+          ]
+        },
+        {
+          "@id": "pkg:oci/rke2-cloud-provider",
+          "subcomponents": [
+            {
+              "@id": "pkg:golang/golang.org/x/crypto@v0.50.0"
+            }
+          ]
+        }
+      ],
+      "status": "not_affected",
+      "justification": "vulnerable_code_not_in_execute_path",
+      "impact_statement": "The golang.org/x/crypto/ssh code is linked transitively via Kubernetes/cloud-provider dependencies but RKE2 components do not operate an SSH server, SSH agent, or knownhosts verification against untrusted input in the default configuration. The vulnerable symbols are not reachable from any attacker-controlled execution path. Verified with govulncheck -mode=binary against the v1.36.2-rc3 binaries.",
+      "timestamp": "2026-06-23T00:00:00Z"
+    },
+    {
+      "vulnerability": {
+        "name": "CVE-2026-39833"
+      },
+      "products": [
+        {
+          "@id": "pkg:oci/hardened-dns-node-cache",
+          "subcomponents": [
+            {
+              "@id": "pkg:golang/golang.org/x/crypto@v0.49.0"
+            }
+          ]
+        },
+        {
+          "@id": "pkg:oci/hardened-k8s-metrics-server",
+          "subcomponents": [
+            {
+              "@id": "pkg:golang/golang.org/x/crypto@v0.49.0"
+            }
+          ]
+        },
+        {
+          "@id": "pkg:oci/klipper-helm",
+          "subcomponents": [
+            {
+              "@id": "pkg:golang/golang.org/x/crypto@v0.47.0"
+            }
+          ]
+        },
+        {
+          "@id": "pkg:oci/rke2-cloud-provider",
+          "subcomponents": [
+            {
+              "@id": "pkg:golang/golang.org/x/crypto@v0.50.0"
+            }
+          ]
+        }
+      ],
+      "status": "not_affected",
+      "justification": "vulnerable_code_not_in_execute_path",
+      "impact_statement": "The golang.org/x/crypto/ssh code is linked transitively via Kubernetes/cloud-provider dependencies but RKE2 components do not operate an SSH server, SSH agent, or knownhosts verification against untrusted input in the default configuration. The vulnerable symbols are not reachable from any attacker-controlled execution path. Verified with govulncheck -mode=binary against the v1.36.2-rc3 binaries.",
+      "timestamp": "2026-06-23T00:00:00Z"
+    },
+    {
+      "vulnerability": {
+        "name": "CVE-2026-39834"
+      },
+      "products": [
+        {
+          "@id": "pkg:oci/hardened-dns-node-cache",
+          "subcomponents": [
+            {
+              "@id": "pkg:golang/golang.org/x/crypto@v0.49.0"
+            }
+          ]
+        },
+        {
+          "@id": "pkg:oci/hardened-k8s-metrics-server",
+          "subcomponents": [
+            {
+              "@id": "pkg:golang/golang.org/x/crypto@v0.49.0"
+            }
+          ]
+        },
+        {
+          "@id": "pkg:oci/hardened-kubernetes",
+          "subcomponents": [
+            {
+              "@id": "pkg:golang/golang.org/x/crypto@v0.47.0"
+            }
+          ]
+        },
+        {
+          "@id": "pkg:oci/klipper-helm",
+          "subcomponents": [
+            {
+              "@id": "pkg:golang/golang.org/x/crypto@v0.47.0"
+            }
+          ]
+        },
+        {
+          "@id": "pkg:oci/rke2-cloud-provider",
+          "subcomponents": [
+            {
+              "@id": "pkg:golang/golang.org/x/crypto@v0.50.0"
+            }
+          ]
+        },
+        {
+          "@id": "pkg:oci/rke2-runtime",
+          "subcomponents": [
+            {
+              "@id": "pkg:golang/golang.org/x/crypto@v0.47.0"
+            }
+          ]
+        }
+      ],
+      "status": "not_affected",
+      "justification": "vulnerable_code_not_in_execute_path",
+      "impact_statement": "The golang.org/x/crypto/ssh code is linked transitively via Kubernetes/cloud-provider dependencies but RKE2 components do not operate an SSH server, SSH agent, or knownhosts verification against untrusted input in the default configuration. The vulnerable symbols are not reachable from any attacker-controlled execution path. Verified with govulncheck -mode=binary against the v1.36.2-rc3 binaries.",
+      "timestamp": "2026-06-23T00:00:00Z"
+    },
+    {
+      "vulnerability": {
+        "name": "CVE-2026-39835"
+      },
+      "products": [
+        {
+          "@id": "pkg:oci/hardened-dns-node-cache",
+          "subcomponents": [
+            {
+              "@id": "pkg:golang/golang.org/x/crypto@v0.49.0"
+            }
+          ]
+        },
+        {
+          "@id": "pkg:oci/hardened-k8s-metrics-server",
+          "subcomponents": [
+            {
+              "@id": "pkg:golang/golang.org/x/crypto@v0.49.0"
+            }
+          ]
+        },
+        {
+          "@id": "pkg:oci/klipper-helm",
+          "subcomponents": [
+            {
+              "@id": "pkg:golang/golang.org/x/crypto@v0.47.0"
+            }
+          ]
+        },
+        {
+          "@id": "pkg:oci/rke2-cloud-provider",
+          "subcomponents": [
+            {
+              "@id": "pkg:golang/golang.org/x/crypto@v0.50.0"
+            }
+          ]
+        }
+      ],
+      "status": "not_affected",
+      "justification": "vulnerable_code_not_in_execute_path",
+      "impact_statement": "The golang.org/x/crypto/ssh code is linked transitively via Kubernetes/cloud-provider dependencies but RKE2 components do not operate an SSH server, SSH agent, or knownhosts verification against untrusted input in the default configuration. The vulnerable symbols are not reachable from any attacker-controlled execution path. Verified with govulncheck -mode=binary against the v1.36.2-rc3 binaries.",
+      "timestamp": "2026-06-23T00:00:00Z"
+    },
+    {
+      "vulnerability": {
+        "name": "CVE-2026-42508"
+      },
+      "products": [
+        {
+          "@id": "pkg:oci/hardened-dns-node-cache",
+          "subcomponents": [
+            {
+              "@id": "pkg:golang/golang.org/x/crypto@v0.49.0"
+            }
+          ]
+        },
+        {
+          "@id": "pkg:oci/hardened-k8s-metrics-server",
+          "subcomponents": [
+            {
+              "@id": "pkg:golang/golang.org/x/crypto@v0.49.0"
+            }
+          ]
+        },
+        {
+          "@id": "pkg:oci/klipper-helm",
+          "subcomponents": [
+            {
+              "@id": "pkg:golang/golang.org/x/crypto@v0.47.0"
+            }
+          ]
+        },
+        {
+          "@id": "pkg:oci/rke2-cloud-provider",
+          "subcomponents": [
+            {
+              "@id": "pkg:golang/golang.org/x/crypto@v0.50.0"
+            }
+          ]
+        }
+      ],
+      "status": "not_affected",
+      "justification": "vulnerable_code_not_in_execute_path",
+      "impact_statement": "The golang.org/x/crypto/ssh code is linked transitively via Kubernetes/cloud-provider dependencies but RKE2 components do not operate an SSH server, SSH agent, or knownhosts verification against untrusted input in the default configuration. The vulnerable symbols are not reachable from any attacker-controlled execution path. Verified with govulncheck -mode=binary against the v1.36.2-rc3 binaries.",
+      "timestamp": "2026-06-23T00:00:00Z"
+    },
+    {
+      "vulnerability": {
+        "name": "CVE-2026-46595"
+      },
+      "products": [
+        {
+          "@id": "pkg:oci/hardened-dns-node-cache",
+          "subcomponents": [
+            {
+              "@id": "pkg:golang/golang.org/x/crypto@v0.49.0"
+            }
+          ]
+        },
+        {
+          "@id": "pkg:oci/hardened-k8s-metrics-server",
+          "subcomponents": [
+            {
+              "@id": "pkg:golang/golang.org/x/crypto@v0.49.0"
+            }
+          ]
+        },
+        {
+          "@id": "pkg:oci/klipper-helm",
+          "subcomponents": [
+            {
+              "@id": "pkg:golang/golang.org/x/crypto@v0.47.0"
+            }
+          ]
+        },
+        {
+          "@id": "pkg:oci/rke2-cloud-provider",
+          "subcomponents": [
+            {
+              "@id": "pkg:golang/golang.org/x/crypto@v0.50.0"
+            }
+          ]
+        }
+      ],
+      "status": "not_affected",
+      "justification": "vulnerable_code_not_in_execute_path",
+      "impact_statement": "The golang.org/x/crypto/ssh code is linked transitively via Kubernetes/cloud-provider dependencies but RKE2 components do not operate an SSH server, SSH agent, or knownhosts verification against untrusted input in the default configuration. The vulnerable symbols are not reachable from any attacker-controlled execution path. Verified with govulncheck -mode=binary against the v1.36.2-rc3 binaries.",
+      "timestamp": "2026-06-23T00:00:00Z"
+    },
+    {
+      "vulnerability": {
+        "name": "CVE-2026-46597"
+      },
+      "products": [
+        {
+          "@id": "pkg:oci/hardened-dns-node-cache",
+          "subcomponents": [
+            {
+              "@id": "pkg:golang/golang.org/x/crypto@v0.49.0"
+            }
+          ]
+        },
+        {
+          "@id": "pkg:oci/hardened-k8s-metrics-server",
+          "subcomponents": [
+            {
+              "@id": "pkg:golang/golang.org/x/crypto@v0.49.0"
+            }
+          ]
+        },
+        {
+          "@id": "pkg:oci/hardened-kubernetes",
+          "subcomponents": [
+            {
+              "@id": "pkg:golang/golang.org/x/crypto@v0.47.0"
+            }
+          ]
+        },
+        {
+          "@id": "pkg:oci/klipper-helm",
+          "subcomponents": [
+            {
+              "@id": "pkg:golang/golang.org/x/crypto@v0.47.0"
+            }
+          ]
+        },
+        {
+          "@id": "pkg:oci/rke2-cloud-provider",
+          "subcomponents": [
+            {
+              "@id": "pkg:golang/golang.org/x/crypto@v0.50.0"
+            }
+          ]
+        },
+        {
+          "@id": "pkg:oci/rke2-runtime",
+          "subcomponents": [
+            {
+              "@id": "pkg:golang/golang.org/x/crypto@v0.47.0"
+            }
+          ]
+        }
+      ],
+      "status": "not_affected",
+      "justification": "vulnerable_code_not_in_execute_path",
+      "impact_statement": "The golang.org/x/crypto/ssh code is linked transitively via Kubernetes/cloud-provider dependencies but RKE2 components do not operate an SSH server, SSH agent, or knownhosts verification against untrusted input in the default configuration. The vulnerable symbols are not reachable from any attacker-controlled execution path. Verified with govulncheck -mode=binary against the v1.36.2-rc3 binaries.",
+      "timestamp": "2026-06-23T00:00:00Z"
+    },
+    {
+      "vulnerability": {
+        "name": "CVE-2026-46598"
+      },
+      "products": [
+        {
+          "@id": "pkg:oci/hardened-dns-node-cache",
+          "subcomponents": [
+            {
+              "@id": "pkg:golang/golang.org/x/crypto@v0.49.0"
+            }
+          ]
+        },
+        {
+          "@id": "pkg:oci/hardened-k8s-metrics-server",
+          "subcomponents": [
+            {
+              "@id": "pkg:golang/golang.org/x/crypto@v0.49.0"
+            }
+          ]
+        },
+        {
+          "@id": "pkg:oci/klipper-helm",
+          "subcomponents": [
+            {
+              "@id": "pkg:golang/golang.org/x/crypto@v0.47.0"
+            }
+          ]
+        },
+        {
+          "@id": "pkg:oci/rke2-cloud-provider",
+          "subcomponents": [
+            {
+              "@id": "pkg:golang/golang.org/x/crypto@v0.50.0"
+            }
+          ]
+        }
+      ],
+      "status": "not_affected",
+      "justification": "vulnerable_code_not_in_execute_path",
+      "impact_statement": "The golang.org/x/crypto/ssh code is linked transitively via Kubernetes/cloud-provider dependencies but RKE2 components do not operate an SSH server, SSH agent, or knownhosts verification against untrusted input in the default configuration. The vulnerable symbols are not reachable from any attacker-controlled execution path. Verified with govulncheck -mode=binary against the v1.36.2-rc3 binaries.",
+      "timestamp": "2026-06-23T00:00:00Z"
+    }
+  ]
+}
