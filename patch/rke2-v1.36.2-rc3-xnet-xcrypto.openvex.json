@@ -2,7 +2,7 @@
   "@context": "https://openvex.dev/ns/v0.2.0",
   "@id": "https://github.com/cwayne18/rke2-toolbox/vex/rke2-v1.36.2-rc3-xnet-xcrypto",
   "author": "RKE2 Toolbox CVE triage (govulncheck reachability analysis)",
-  "version": 2,
+  "version": 3,
   "timestamp": "2026-06-23T00:00:00Z",
   "statements": [
     {
@@ -106,14 +106,6 @@
               "@id": "pkg:golang/golang.org/x/crypto@v0.47.0"
             }
           ]
-        },
-        {
-          "@id": "pkg:oci/rke2-cloud-provider",
-          "subcomponents": [
-            {
-              "@id": "pkg:golang/golang.org/x/crypto@v0.50.0"
-            }
-          ]
         }
       ],
       "status": "not_affected",
@@ -166,14 +158,6 @@
           "subcomponents": [
             {
               "@id": "pkg:golang/golang.org/x/crypto@v0.47.0"
-            }
-          ]
-        },
-        {
-          "@id": "pkg:oci/rke2-cloud-provider",
-          "subcomponents": [
-            {
-              "@id": "pkg:golang/golang.org/x/crypto@v0.50.0"
             }
           ]
         },
@@ -240,14 +224,6 @@
           ]
         },
         {
-          "@id": "pkg:oci/rke2-cloud-provider",
-          "subcomponents": [
-            {
-              "@id": "pkg:golang/golang.org/x/crypto@v0.50.0"
-            }
-          ]
-        },
-        {
           "@id": "pkg:oci/rke2-runtime",
           "subcomponents": [
             {
@@ -300,14 +276,6 @@
               "@id": "pkg:golang/golang.org/x/crypto@v0.47.0"
             }
           ]
-        },
-        {
-          "@id": "pkg:oci/rke2-cloud-provider",
-          "subcomponents": [
-            {
-              "@id": "pkg:golang/golang.org/x/crypto@v0.50.0"
-            }
-          ]
         }
       ],
       "status": "not_affected",
@@ -352,14 +320,6 @@
           "subcomponents": [
             {
               "@id": "pkg:golang/golang.org/x/crypto@v0.47.0"
-            }
-          ]
-        },
-        {
-          "@id": "pkg:oci/rke2-cloud-provider",
-          "subcomponents": [
-            {
-              "@id": "pkg:golang/golang.org/x/crypto@v0.50.0"
             }
           ]
         }
@@ -418,14 +378,6 @@
           ]
         },
         {
-          "@id": "pkg:oci/rke2-cloud-provider",
-          "subcomponents": [
-            {
-              "@id": "pkg:golang/golang.org/x/crypto@v0.50.0"
-            }
-          ]
-        },
-        {
           "@id": "pkg:oci/rke2-runtime",
           "subcomponents": [
             {
@@ -478,14 +430,6 @@
               "@id": "pkg:golang/golang.org/x/crypto@v0.47.0"
             }
           ]
-        },
-        {
-          "@id": "pkg:oci/rke2-cloud-provider",
-          "subcomponents": [
-            {
-              "@id": "pkg:golang/golang.org/x/crypto@v0.50.0"
-            }
-          ]
         }
       ],
       "status": "not_affected",
@@ -532,14 +476,6 @@
               "@id": "pkg:golang/golang.org/x/crypto@v0.47.0"
             }
           ]
-        },
-        {
-          "@id": "pkg:oci/rke2-cloud-provider",
-          "subcomponents": [
-            {
-              "@id": "pkg:golang/golang.org/x/crypto@v0.50.0"
-            }
-          ]
         }
       ],
       "status": "not_affected",
@@ -584,14 +520,6 @@
           "subcomponents": [
             {
               "@id": "pkg:golang/golang.org/x/crypto@v0.47.0"
-            }
-          ]
-        },
-        {
-          "@id": "pkg:oci/rke2-cloud-provider",
-          "subcomponents": [
-            {
-              "@id": "pkg:golang/golang.org/x/crypto@v0.50.0"
             }
           ]
         }
@@ -650,14 +578,6 @@
           ]
         },
         {
-          "@id": "pkg:oci/rke2-cloud-provider",
-          "subcomponents": [
-            {
-              "@id": "pkg:golang/golang.org/x/crypto@v0.50.0"
-            }
-          ]
-        },
-        {
           "@id": "pkg:oci/rke2-runtime",
           "subcomponents": [
             {
@@ -708,14 +628,6 @@
           "subcomponents": [
             {
               "@id": "pkg:golang/golang.org/x/crypto@v0.47.0"
-            }
-          ]
-        },
-        {
-          "@id": "pkg:oci/rke2-cloud-provider",
-          "subcomponents": [
-            {
-              "@id": "pkg:golang/golang.org/x/crypto@v0.50.0"
             }
           ]
         }
@@ -778,6 +690,746 @@
       "justification": "vulnerable_code_not_present",
       "impact_statement": "The golang.org/x/crypto/ssh, ssh/agent and ssh/knownhosts packages are NOT compiled into this binary. The rancher build graph was reproduced exactly (clone at the shipped commit + Dockerfile go mod edit -replace directives + go mod tidy), yielding golang.org/x/crypto v0.49.0 \u2014 identical to the shipped binary's `go version -m`. `go list -deps ./cmd/<daemon>` shows only non-ssh x/crypto packages (cryptobyte, hkdf, chacha20poly1305, nacl/secretbox, salsa20); `go mod why golang.org/x/crypto/ssh` reports \"main module does not need package\". Vulnerable code not present.",
       "timestamp": "2026-06-23T00:00:00Z"
+    },
+    {
+      "vulnerability": {
+        "name": "CVE-2026-46597"
+      },
+      "products": [
+        {
+          "@id": "pkg:oci/hardened-flannel",
+          "subcomponents": [
+            {
+              "@id": "pkg:golang/golang.org/x/crypto@v0.49.0"
+            }
+          ]
+        },
+        {
+          "@id": "pkg:oci/hardened-calico",
+          "subcomponents": [
+            {
+              "@id": "pkg:golang/golang.org/x/crypto@v0.47.0"
+            }
+          ]
+        },
+        {
+          "@id": "pkg:oci/rke2-cloud-provider",
+          "subcomponents": [
+            {
+              "@id": "pkg:golang/golang.org/x/crypto@v0.50.0"
+            }
+          ]
+        }
+      ],
+      "status": "not_affected",
+      "justification": "vulnerable_code_not_present",
+      "impact_statement": "The golang.org/x/crypto/ssh, ssh/agent and ssh/knownhosts packages are NOT compiled into the listed binaries. The Go function-name table (pclntab, retained despite -s -w stripping) contains no x/crypto/ssh* symbols \u2014 only unrelated x/crypto sub-packages (cryptobyte/hkdf/chacha20poly1305/nacl) used by TLS. Vulnerable code not present. Filed upstream as rancher/image-scanning#1451.",
+      "timestamp": "2026-06-24T00:00:00Z"
+    },
+    {
+      "vulnerability": {
+        "name": "CVE-2026-39828"
+      },
+      "products": [
+        {
+          "@id": "pkg:oci/hardened-flannel",
+          "subcomponents": [
+            {
+              "@id": "pkg:golang/golang.org/x/crypto@v0.49.0"
+            }
+          ]
+        },
+        {
+          "@id": "pkg:oci/hardened-calico",
+          "subcomponents": [
+            {
+              "@id": "pkg:golang/golang.org/x/crypto@v0.47.0"
+            }
+          ]
+        },
+        {
+          "@id": "pkg:oci/rke2-cloud-provider",
+          "subcomponents": [
+            {
+              "@id": "pkg:golang/golang.org/x/crypto@v0.50.0"
+            }
+          ]
+        }
+      ],
+      "status": "not_affected",
+      "justification": "vulnerable_code_not_present",
+      "impact_statement": "The golang.org/x/crypto/ssh, ssh/agent and ssh/knownhosts packages are NOT compiled into the listed binaries. The Go function-name table (pclntab, retained despite -s -w stripping) contains no x/crypto/ssh* symbols \u2014 only unrelated x/crypto sub-packages (cryptobyte/hkdf/chacha20poly1305/nacl) used by TLS. Vulnerable code not present. Filed upstream as rancher/image-scanning#1451.",
+      "timestamp": "2026-06-24T00:00:00Z"
+    },
+    {
+      "vulnerability": {
+        "name": "CVE-2026-39835"
+      },
+      "products": [
+        {
+          "@id": "pkg:oci/hardened-flannel",
+          "subcomponents": [
+            {
+              "@id": "pkg:golang/golang.org/x/crypto@v0.49.0"
+            }
+          ]
+        },
+        {
+          "@id": "pkg:oci/hardened-calico",
+          "subcomponents": [
+            {
+              "@id": "pkg:golang/golang.org/x/crypto@v0.47.0"
+            }
+          ]
+        },
+        {
+          "@id": "pkg:oci/rke2-cloud-provider",
+          "subcomponents": [
+            {
+              "@id": "pkg:golang/golang.org/x/crypto@v0.50.0"
+            }
+          ]
+        }
+      ],
+      "status": "not_affected",
+      "justification": "vulnerable_code_not_present",
+      "impact_statement": "The golang.org/x/crypto/ssh, ssh/agent and ssh/knownhosts packages are NOT compiled into the listed binaries. The Go function-name table (pclntab, retained despite -s -w stripping) contains no x/crypto/ssh* symbols \u2014 only unrelated x/crypto sub-packages (cryptobyte/hkdf/chacha20poly1305/nacl) used by TLS. Vulnerable code not present. Filed upstream as rancher/image-scanning#1451.",
+      "timestamp": "2026-06-24T00:00:00Z"
+    },
+    {
+      "vulnerability": {
+        "name": "CVE-2026-39827"
+      },
+      "products": [
+        {
+          "@id": "pkg:oci/hardened-flannel",
+          "subcomponents": [
+            {
+              "@id": "pkg:golang/golang.org/x/crypto@v0.49.0"
+            }
+          ]
+        },
+        {
+          "@id": "pkg:oci/hardened-calico",
+          "subcomponents": [
+            {
+              "@id": "pkg:golang/golang.org/x/crypto@v0.47.0"
+            }
+          ]
+        },
+        {
+          "@id": "pkg:oci/rke2-cloud-provider",
+          "subcomponents": [
+            {
+              "@id": "pkg:golang/golang.org/x/crypto@v0.50.0"
+            }
+          ]
+        }
+      ],
+      "status": "not_affected",
+      "justification": "vulnerable_code_not_present",
+      "impact_statement": "The golang.org/x/crypto/ssh, ssh/agent and ssh/knownhosts packages are NOT compiled into the listed binaries. The Go function-name table (pclntab, retained despite -s -w stripping) contains no x/crypto/ssh* symbols \u2014 only unrelated x/crypto sub-packages (cryptobyte/hkdf/chacha20poly1305/nacl) used by TLS. Vulnerable code not present. Filed upstream as rancher/image-scanning#1451.",
+      "timestamp": "2026-06-24T00:00:00Z"
+    },
+    {
+      "vulnerability": {
+        "name": "CVE-2026-39830"
+      },
+      "products": [
+        {
+          "@id": "pkg:oci/hardened-flannel",
+          "subcomponents": [
+            {
+              "@id": "pkg:golang/golang.org/x/crypto@v0.49.0"
+            }
+          ]
+        },
+        {
+          "@id": "pkg:oci/hardened-calico",
+          "subcomponents": [
+            {
+              "@id": "pkg:golang/golang.org/x/crypto@v0.47.0"
+            }
+          ]
+        },
+        {
+          "@id": "pkg:oci/rke2-cloud-provider",
+          "subcomponents": [
+            {
+              "@id": "pkg:golang/golang.org/x/crypto@v0.50.0"
+            }
+          ]
+        }
+      ],
+      "status": "not_affected",
+      "justification": "vulnerable_code_not_present",
+      "impact_statement": "The golang.org/x/crypto/ssh, ssh/agent and ssh/knownhosts packages are NOT compiled into the listed binaries. The Go function-name table (pclntab, retained despite -s -w stripping) contains no x/crypto/ssh* symbols \u2014 only unrelated x/crypto sub-packages (cryptobyte/hkdf/chacha20poly1305/nacl) used by TLS. Vulnerable code not present. Filed upstream as rancher/image-scanning#1451.",
+      "timestamp": "2026-06-24T00:00:00Z"
+    },
+    {
+      "vulnerability": {
+        "name": "CVE-2026-39829"
+      },
+      "products": [
+        {
+          "@id": "pkg:oci/hardened-flannel",
+          "subcomponents": [
+            {
+              "@id": "pkg:golang/golang.org/x/crypto@v0.49.0"
+            }
+          ]
+        },
+        {
+          "@id": "pkg:oci/hardened-calico",
+          "subcomponents": [
+            {
+              "@id": "pkg:golang/golang.org/x/crypto@v0.47.0"
+            }
+          ]
+        },
+        {
+          "@id": "pkg:oci/rke2-cloud-provider",
+          "subcomponents": [
+            {
+              "@id": "pkg:golang/golang.org/x/crypto@v0.50.0"
+            }
+          ]
+        }
+      ],
+      "status": "not_affected",
+      "justification": "vulnerable_code_not_present",
+      "impact_statement": "The golang.org/x/crypto/ssh, ssh/agent and ssh/knownhosts packages are NOT compiled into the listed binaries. The Go function-name table (pclntab, retained despite -s -w stripping) contains no x/crypto/ssh* symbols \u2014 only unrelated x/crypto sub-packages (cryptobyte/hkdf/chacha20poly1305/nacl) used by TLS. Vulnerable code not present. Filed upstream as rancher/image-scanning#1451.",
+      "timestamp": "2026-06-24T00:00:00Z"
+    },
+    {
+      "vulnerability": {
+        "name": "CVE-2026-39831"
+      },
+      "products": [
+        {
+          "@id": "pkg:oci/hardened-flannel",
+          "subcomponents": [
+            {
+              "@id": "pkg:golang/golang.org/x/crypto@v0.49.0"
+            }
+          ]
+        },
+        {
+          "@id": "pkg:oci/hardened-calico",
+          "subcomponents": [
+            {
+              "@id": "pkg:golang/golang.org/x/crypto@v0.47.0"
+            }
+          ]
+        },
+        {
+          "@id": "pkg:oci/rke2-cloud-provider",
+          "subcomponents": [
+            {
+              "@id": "pkg:golang/golang.org/x/crypto@v0.50.0"
+            }
+          ]
+        }
+      ],
+      "status": "not_affected",
+      "justification": "vulnerable_code_not_present",
+      "impact_statement": "The golang.org/x/crypto/ssh, ssh/agent and ssh/knownhosts packages are NOT compiled into the listed binaries. The Go function-name table (pclntab, retained despite -s -w stripping) contains no x/crypto/ssh* symbols \u2014 only unrelated x/crypto sub-packages (cryptobyte/hkdf/chacha20poly1305/nacl) used by TLS. Vulnerable code not present. Filed upstream as rancher/image-scanning#1451.",
+      "timestamp": "2026-06-24T00:00:00Z"
+    },
+    {
+      "vulnerability": {
+        "name": "CVE-2026-39834"
+      },
+      "products": [
+        {
+          "@id": "pkg:oci/hardened-flannel",
+          "subcomponents": [
+            {
+              "@id": "pkg:golang/golang.org/x/crypto@v0.49.0"
+            }
+          ]
+        },
+        {
+          "@id": "pkg:oci/hardened-calico",
+          "subcomponents": [
+            {
+              "@id": "pkg:golang/golang.org/x/crypto@v0.47.0"
+            }
+          ]
+        },
+        {
+          "@id": "pkg:oci/rke2-cloud-provider",
+          "subcomponents": [
+            {
+              "@id": "pkg:golang/golang.org/x/crypto@v0.50.0"
+            }
+          ]
+        }
+      ],
+      "status": "not_affected",
+      "justification": "vulnerable_code_not_present",
+      "impact_statement": "The golang.org/x/crypto/ssh, ssh/agent and ssh/knownhosts packages are NOT compiled into the listed binaries. The Go function-name table (pclntab, retained despite -s -w stripping) contains no x/crypto/ssh* symbols \u2014 only unrelated x/crypto sub-packages (cryptobyte/hkdf/chacha20poly1305/nacl) used by TLS. Vulnerable code not present. Filed upstream as rancher/image-scanning#1451.",
+      "timestamp": "2026-06-24T00:00:00Z"
+    },
+    {
+      "vulnerability": {
+        "name": "CVE-2026-46595"
+      },
+      "products": [
+        {
+          "@id": "pkg:oci/hardened-flannel",
+          "subcomponents": [
+            {
+              "@id": "pkg:golang/golang.org/x/crypto@v0.49.0"
+            }
+          ]
+        },
+        {
+          "@id": "pkg:oci/hardened-calico",
+          "subcomponents": [
+            {
+              "@id": "pkg:golang/golang.org/x/crypto@v0.47.0"
+            }
+          ]
+        },
+        {
+          "@id": "pkg:oci/rke2-cloud-provider",
+          "subcomponents": [
+            {
+              "@id": "pkg:golang/golang.org/x/crypto@v0.50.0"
+            }
+          ]
+        }
+      ],
+      "status": "not_affected",
+      "justification": "vulnerable_code_not_present",
+      "impact_statement": "The golang.org/x/crypto/ssh, ssh/agent and ssh/knownhosts packages are NOT compiled into the listed binaries. The Go function-name table (pclntab, retained despite -s -w stripping) contains no x/crypto/ssh* symbols \u2014 only unrelated x/crypto sub-packages (cryptobyte/hkdf/chacha20poly1305/nacl) used by TLS. Vulnerable code not present. Filed upstream as rancher/image-scanning#1451.",
+      "timestamp": "2026-06-24T00:00:00Z"
+    },
+    {
+      "vulnerability": {
+        "name": "CVE-2026-39833"
+      },
+      "products": [
+        {
+          "@id": "pkg:oci/hardened-flannel",
+          "subcomponents": [
+            {
+              "@id": "pkg:golang/golang.org/x/crypto@v0.49.0"
+            }
+          ]
+        },
+        {
+          "@id": "pkg:oci/hardened-calico",
+          "subcomponents": [
+            {
+              "@id": "pkg:golang/golang.org/x/crypto@v0.47.0"
+            }
+          ]
+        },
+        {
+          "@id": "pkg:oci/rke2-cloud-provider",
+          "subcomponents": [
+            {
+              "@id": "pkg:golang/golang.org/x/crypto@v0.50.0"
+            }
+          ]
+        }
+      ],
+      "status": "not_affected",
+      "justification": "vulnerable_code_not_present",
+      "impact_statement": "The golang.org/x/crypto/ssh, ssh/agent and ssh/knownhosts packages are NOT compiled into the listed binaries. The Go function-name table (pclntab, retained despite -s -w stripping) contains no x/crypto/ssh* symbols \u2014 only unrelated x/crypto sub-packages (cryptobyte/hkdf/chacha20poly1305/nacl) used by TLS. Vulnerable code not present. Filed upstream as rancher/image-scanning#1451.",
+      "timestamp": "2026-06-24T00:00:00Z"
+    },
+    {
+      "vulnerability": {
+        "name": "CVE-2026-39832"
+      },
+      "products": [
+        {
+          "@id": "pkg:oci/hardened-flannel",
+          "subcomponents": [
+            {
+              "@id": "pkg:golang/golang.org/x/crypto@v0.49.0"
+            }
+          ]
+        },
+        {
+          "@id": "pkg:oci/hardened-calico",
+          "subcomponents": [
+            {
+              "@id": "pkg:golang/golang.org/x/crypto@v0.47.0"
+            }
+          ]
+        },
+        {
+          "@id": "pkg:oci/rke2-cloud-provider",
+          "subcomponents": [
+            {
+              "@id": "pkg:golang/golang.org/x/crypto@v0.50.0"
+            }
+          ]
+        }
+      ],
+      "status": "not_affected",
+      "justification": "vulnerable_code_not_present",
+      "impact_statement": "The golang.org/x/crypto/ssh, ssh/agent and ssh/knownhosts packages are NOT compiled into the listed binaries. The Go function-name table (pclntab, retained despite -s -w stripping) contains no x/crypto/ssh* symbols \u2014 only unrelated x/crypto sub-packages (cryptobyte/hkdf/chacha20poly1305/nacl) used by TLS. Vulnerable code not present. Filed upstream as rancher/image-scanning#1451.",
+      "timestamp": "2026-06-24T00:00:00Z"
+    },
+    {
+      "vulnerability": {
+        "name": "CVE-2026-46598"
+      },
+      "products": [
+        {
+          "@id": "pkg:oci/hardened-flannel",
+          "subcomponents": [
+            {
+              "@id": "pkg:golang/golang.org/x/crypto@v0.49.0"
+            }
+          ]
+        },
+        {
+          "@id": "pkg:oci/hardened-calico",
+          "subcomponents": [
+            {
+              "@id": "pkg:golang/golang.org/x/crypto@v0.47.0"
+            }
+          ]
+        },
+        {
+          "@id": "pkg:oci/rke2-cloud-provider",
+          "subcomponents": [
+            {
+              "@id": "pkg:golang/golang.org/x/crypto@v0.50.0"
+            }
+          ]
+        }
+      ],
+      "status": "not_affected",
+      "justification": "vulnerable_code_not_present",
+      "impact_statement": "The golang.org/x/crypto/ssh, ssh/agent and ssh/knownhosts packages are NOT compiled into the listed binaries. The Go function-name table (pclntab, retained despite -s -w stripping) contains no x/crypto/ssh* symbols \u2014 only unrelated x/crypto sub-packages (cryptobyte/hkdf/chacha20poly1305/nacl) used by TLS. Vulnerable code not present. Filed upstream as rancher/image-scanning#1451.",
+      "timestamp": "2026-06-24T00:00:00Z"
+    },
+    {
+      "vulnerability": {
+        "name": "CVE-2026-42508"
+      },
+      "products": [
+        {
+          "@id": "pkg:oci/hardened-flannel",
+          "subcomponents": [
+            {
+              "@id": "pkg:golang/golang.org/x/crypto@v0.49.0"
+            }
+          ]
+        },
+        {
+          "@id": "pkg:oci/hardened-calico",
+          "subcomponents": [
+            {
+              "@id": "pkg:golang/golang.org/x/crypto@v0.47.0"
+            }
+          ]
+        },
+        {
+          "@id": "pkg:oci/rke2-cloud-provider",
+          "subcomponents": [
+            {
+              "@id": "pkg:golang/golang.org/x/crypto@v0.50.0"
+            }
+          ]
+        }
+      ],
+      "status": "not_affected",
+      "justification": "vulnerable_code_not_present",
+      "impact_statement": "The golang.org/x/crypto/ssh, ssh/agent and ssh/knownhosts packages are NOT compiled into the listed binaries. The Go function-name table (pclntab, retained despite -s -w stripping) contains no x/crypto/ssh* symbols \u2014 only unrelated x/crypto sub-packages (cryptobyte/hkdf/chacha20poly1305/nacl) used by TLS. Vulnerable code not present. Filed upstream as rancher/image-scanning#1451.",
+      "timestamp": "2026-06-24T00:00:00Z"
+    },
+    {
+      "vulnerability": {
+        "name": "CVE-2026-42506"
+      },
+      "products": [
+        {
+          "@id": "pkg:oci/hardened-flannel",
+          "subcomponents": [
+            {
+              "@id": "pkg:golang/golang.org/x/net@v0.52.0"
+            }
+          ]
+        },
+        {
+          "@id": "pkg:oci/nginx-ingress-controller",
+          "subcomponents": [
+            {
+              "@id": "pkg:golang/golang.org/x/net@v0.52.0"
+            }
+          ]
+        },
+        {
+          "@id": "pkg:oci/hardened-cluster-autoscaler",
+          "subcomponents": [
+            {
+              "@id": "pkg:golang/golang.org/x/net@v0.36.0"
+            }
+          ]
+        },
+        {
+          "@id": "pkg:oci/hardened-calico",
+          "subcomponents": [
+            {
+              "@id": "pkg:golang/golang.org/x/net@v0.49.0"
+            }
+          ]
+        },
+        {
+          "@id": "pkg:oci/rke2-cloud-provider",
+          "subcomponents": [
+            {
+              "@id": "pkg:golang/golang.org/x/net@v0.53.0"
+            }
+          ]
+        }
+      ],
+      "status": "not_affected",
+      "justification": "vulnerable_code_not_present",
+      "impact_statement": "The golang.org/x/net/html package is NOT compiled into the listed binaries (pclntab contains no x/net/html symbols; only http2/idna are linked). For hardened-calico this applies to all calico binaries EXCEPT calico-node, which does link x/net/html and is excluded. Vulnerable code not present. Filed upstream as rancher/image-scanning#1452.",
+      "timestamp": "2026-06-24T00:00:00Z"
+    },
+    {
+      "vulnerability": {
+        "name": "CVE-2026-42502"
+      },
+      "products": [
+        {
+          "@id": "pkg:oci/hardened-flannel",
+          "subcomponents": [
+            {
+              "@id": "pkg:golang/golang.org/x/net@v0.52.0"
+            }
+          ]
+        },
+        {
+          "@id": "pkg:oci/nginx-ingress-controller",
+          "subcomponents": [
+            {
+              "@id": "pkg:golang/golang.org/x/net@v0.52.0"
+            }
+          ]
+        },
+        {
+          "@id": "pkg:oci/hardened-cluster-autoscaler",
+          "subcomponents": [
+            {
+              "@id": "pkg:golang/golang.org/x/net@v0.36.0"
+            }
+          ]
+        },
+        {
+          "@id": "pkg:oci/hardened-calico",
+          "subcomponents": [
+            {
+              "@id": "pkg:golang/golang.org/x/net@v0.49.0"
+            }
+          ]
+        },
+        {
+          "@id": "pkg:oci/rke2-cloud-provider",
+          "subcomponents": [
+            {
+              "@id": "pkg:golang/golang.org/x/net@v0.53.0"
+            }
+          ]
+        }
+      ],
+      "status": "not_affected",
+      "justification": "vulnerable_code_not_present",
+      "impact_statement": "The golang.org/x/net/html package is NOT compiled into the listed binaries (pclntab contains no x/net/html symbols; only http2/idna are linked). For hardened-calico this applies to all calico binaries EXCEPT calico-node, which does link x/net/html and is excluded. Vulnerable code not present. Filed upstream as rancher/image-scanning#1452.",
+      "timestamp": "2026-06-24T00:00:00Z"
+    },
+    {
+      "vulnerability": {
+        "name": "CVE-2026-25680"
+      },
+      "products": [
+        {
+          "@id": "pkg:oci/hardened-flannel",
+          "subcomponents": [
+            {
+              "@id": "pkg:golang/golang.org/x/net@v0.52.0"
+            }
+          ]
+        },
+        {
+          "@id": "pkg:oci/nginx-ingress-controller",
+          "subcomponents": [
+            {
+              "@id": "pkg:golang/golang.org/x/net@v0.52.0"
+            }
+          ]
+        },
+        {
+          "@id": "pkg:oci/hardened-cluster-autoscaler",
+          "subcomponents": [
+            {
+              "@id": "pkg:golang/golang.org/x/net@v0.36.0"
+            }
+          ]
+        },
+        {
+          "@id": "pkg:oci/hardened-calico",
+          "subcomponents": [
+            {
+              "@id": "pkg:golang/golang.org/x/net@v0.49.0"
+            }
+          ]
+        }
+      ],
+      "status": "not_affected",
+      "justification": "vulnerable_code_not_present",
+      "impact_statement": "The golang.org/x/net/html package is NOT compiled into the listed binaries (pclntab contains no x/net/html symbols; only http2/idna are linked). For hardened-calico this applies to all calico binaries EXCEPT calico-node, which does link x/net/html and is excluded. Vulnerable code not present. Filed upstream as rancher/image-scanning#1452.",
+      "timestamp": "2026-06-24T00:00:00Z"
+    },
+    {
+      "vulnerability": {
+        "name": "CVE-2026-25681"
+      },
+      "products": [
+        {
+          "@id": "pkg:oci/hardened-flannel",
+          "subcomponents": [
+            {
+              "@id": "pkg:golang/golang.org/x/net@v0.52.0"
+            }
+          ]
+        },
+        {
+          "@id": "pkg:oci/nginx-ingress-controller",
+          "subcomponents": [
+            {
+              "@id": "pkg:golang/golang.org/x/net@v0.52.0"
+            }
+          ]
+        },
+        {
+          "@id": "pkg:oci/hardened-cluster-autoscaler",
+          "subcomponents": [
+            {
+              "@id": "pkg:golang/golang.org/x/net@v0.36.0"
+            }
+          ]
+        },
+        {
+          "@id": "pkg:oci/hardened-calico",
+          "subcomponents": [
+            {
+              "@id": "pkg:golang/golang.org/x/net@v0.49.0"
+            }
+          ]
+        },
+        {
+          "@id": "pkg:oci/rke2-cloud-provider",
+          "subcomponents": [
+            {
+              "@id": "pkg:golang/golang.org/x/net@v0.53.0"
+            }
+          ]
+        }
+      ],
+      "status": "not_affected",
+      "justification": "vulnerable_code_not_present",
+      "impact_statement": "The golang.org/x/net/html package is NOT compiled into the listed binaries (pclntab contains no x/net/html symbols; only http2/idna are linked). For hardened-calico this applies to all calico binaries EXCEPT calico-node, which does link x/net/html and is excluded. Vulnerable code not present. Filed upstream as rancher/image-scanning#1452.",
+      "timestamp": "2026-06-24T00:00:00Z"
+    },
+    {
+      "vulnerability": {
+        "name": "CVE-2026-27136"
+      },
+      "products": [
+        {
+          "@id": "pkg:oci/hardened-flannel",
+          "subcomponents": [
+            {
+              "@id": "pkg:golang/golang.org/x/net@v0.52.0"
+            }
+          ]
+        },
+        {
+          "@id": "pkg:oci/nginx-ingress-controller",
+          "subcomponents": [
+            {
+              "@id": "pkg:golang/golang.org/x/net@v0.52.0"
+            }
+          ]
+        },
+        {
+          "@id": "pkg:oci/hardened-cluster-autoscaler",
+          "subcomponents": [
+            {
+              "@id": "pkg:golang/golang.org/x/net@v0.36.0"
+            }
+          ]
+        },
+        {
+          "@id": "pkg:oci/hardened-calico",
+          "subcomponents": [
+            {
+              "@id": "pkg:golang/golang.org/x/net@v0.49.0"
+            }
+          ]
+        },
+        {
+          "@id": "pkg:oci/rke2-cloud-provider",
+          "subcomponents": [
+            {
+              "@id": "pkg:golang/golang.org/x/net@v0.53.0"
+            }
+          ]
+        }
+      ],
+      "status": "not_affected",
+      "justification": "vulnerable_code_not_present",
+      "impact_statement": "The golang.org/x/net/html package is NOT compiled into the listed binaries (pclntab contains no x/net/html symbols; only http2/idna are linked). For hardened-calico this applies to all calico binaries EXCEPT calico-node, which does link x/net/html and is excluded. Vulnerable code not present. Filed upstream as rancher/image-scanning#1452.",
+      "timestamp": "2026-06-24T00:00:00Z"
+    },
+    {
+      "vulnerability": {
+        "name": "CVE-2025-47911"
+      },
+      "products": [
+        {
+          "@id": "pkg:oci/hardened-cluster-autoscaler",
+          "subcomponents": [
+            {
+              "@id": "pkg:golang/golang.org/x/net@v0.36.0"
+            }
+          ]
+        }
+      ],
+      "status": "not_affected",
+      "justification": "vulnerable_code_not_present",
+      "impact_statement": "The golang.org/x/net/html package is NOT compiled into the listed binaries (pclntab contains no x/net/html symbols; only http2/idna are linked). For hardened-calico this applies to all calico binaries EXCEPT calico-node, which does link x/net/html and is excluded. Vulnerable code not present. Filed upstream as rancher/image-scanning#1452.",
+      "timestamp": "2026-06-24T00:00:00Z"
+    },
+    {
+      "vulnerability": {
+        "name": "CVE-2025-58190"
+      },
+      "products": [
+        {
+          "@id": "pkg:oci/hardened-cluster-autoscaler",
+          "subcomponents": [
+            {
+              "@id": "pkg:golang/golang.org/x/net@v0.36.0"
+            }
+          ]
+        }
+      ],
+      "status": "not_affected",
+      "justification": "vulnerable_code_not_present",
+      "impact_statement": "The golang.org/x/net/html package is NOT compiled into the listed binaries (pclntab contains no x/net/html symbols; only http2/idna are linked). For hardened-calico this applies to all calico binaries EXCEPT calico-node, which does link x/net/html and is excluded. Vulnerable code not present. Filed upstream as rancher/image-scanning#1452.",
+      "timestamp": "2026-06-24T00:00:00Z"
     }
   ]
 }
