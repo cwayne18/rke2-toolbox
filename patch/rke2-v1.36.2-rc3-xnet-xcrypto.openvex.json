@@ -2,7 +2,7 @@
   "@context": "https://openvex.dev/ns/v0.2.0",
   "@id": "https://github.com/cwayne18/rke2-toolbox/vex/rke2-v1.36.2-rc3-xnet-xcrypto",
   "author": "RKE2 Toolbox CVE triage (govulncheck reachability analysis)",
-  "version": 3,
+  "version": 4,
   "timestamp": "2026-06-23T00:00:00Z",
   "statements": [
     {
@@ -146,14 +146,6 @@
       },
       "products": [
         {
-          "@id": "pkg:oci/hardened-kubernetes",
-          "subcomponents": [
-            {
-              "@id": "pkg:golang/golang.org/x/crypto@v0.47.0"
-            }
-          ]
-        },
-        {
           "@id": "pkg:oci/klipper-helm",
           "subcomponents": [
             {
@@ -207,14 +199,6 @@
         "name": "CVE-2026-39831"
       },
       "products": [
-        {
-          "@id": "pkg:oci/hardened-kubernetes",
-          "subcomponents": [
-            {
-              "@id": "pkg:golang/golang.org/x/crypto@v0.47.0"
-            }
-          ]
-        },
         {
           "@id": "pkg:oci/klipper-helm",
           "subcomponents": [
@@ -361,14 +345,6 @@
         "name": "CVE-2026-39834"
       },
       "products": [
-        {
-          "@id": "pkg:oci/hardened-kubernetes",
-          "subcomponents": [
-            {
-              "@id": "pkg:golang/golang.org/x/crypto@v0.47.0"
-            }
-          ]
-        },
         {
           "@id": "pkg:oci/klipper-helm",
           "subcomponents": [
@@ -561,14 +537,6 @@
         "name": "CVE-2026-46597"
       },
       "products": [
-        {
-          "@id": "pkg:oci/hardened-kubernetes",
-          "subcomponents": [
-            {
-              "@id": "pkg:golang/golang.org/x/crypto@v0.47.0"
-            }
-          ]
-        },
         {
           "@id": "pkg:oci/klipper-helm",
           "subcomponents": [
@@ -1429,6 +1397,500 @@
       "status": "not_affected",
       "justification": "vulnerable_code_not_present",
       "impact_statement": "The golang.org/x/net/html package is NOT compiled into the listed binaries (pclntab contains no x/net/html symbols; only http2/idna are linked). For hardened-calico this applies to all calico binaries EXCEPT calico-node, which does link x/net/html and is excluded. Vulnerable code not present. Filed upstream as rancher/image-scanning#1452.",
+      "timestamp": "2026-06-24T00:00:00Z"
+    },
+    {
+      "vulnerability": {
+        "name": "CVE-2026-46597"
+      },
+      "products": [
+        {
+          "@id": "pkg:oci/hardened-kubernetes",
+          "subcomponents": [
+            {
+              "@id": "pkg:golang/golang.org/x/crypto@v0.47.0"
+            }
+          ]
+        }
+      ],
+      "status": "not_affected",
+      "justification": "vulnerable_code_not_present",
+      "impact_statement": "The golang.org/x/crypto/ssh, ssh/agent and ssh/knownhosts packages are NOT compiled into the hardened-kubernetes binaries (kube-apiserver/kube-controller-manager/kube-scheduler/kube-proxy/kubelet). pclntab (retained despite -s -w; nm=0) contains zero x/crypto/ssh* symbols \u2014 only TLS sub-packages (cryptobyte/chacha20poly1305/hkdf/nacl/ed25519). Vulnerable code not present. Filed as rancher/image-scanning#1456.",
+      "timestamp": "2026-06-24T00:00:00Z"
+    },
+    {
+      "vulnerability": {
+        "name": "CVE-2026-39828"
+      },
+      "products": [
+        {
+          "@id": "pkg:oci/hardened-kubernetes",
+          "subcomponents": [
+            {
+              "@id": "pkg:golang/golang.org/x/crypto@v0.47.0"
+            }
+          ]
+        }
+      ],
+      "status": "not_affected",
+      "justification": "vulnerable_code_not_present",
+      "impact_statement": "The golang.org/x/crypto/ssh, ssh/agent and ssh/knownhosts packages are NOT compiled into the hardened-kubernetes binaries (kube-apiserver/kube-controller-manager/kube-scheduler/kube-proxy/kubelet). pclntab (retained despite -s -w; nm=0) contains zero x/crypto/ssh* symbols \u2014 only TLS sub-packages (cryptobyte/chacha20poly1305/hkdf/nacl/ed25519). Vulnerable code not present. Filed as rancher/image-scanning#1456.",
+      "timestamp": "2026-06-24T00:00:00Z"
+    },
+    {
+      "vulnerability": {
+        "name": "CVE-2026-39835"
+      },
+      "products": [
+        {
+          "@id": "pkg:oci/hardened-kubernetes",
+          "subcomponents": [
+            {
+              "@id": "pkg:golang/golang.org/x/crypto@v0.47.0"
+            }
+          ]
+        }
+      ],
+      "status": "not_affected",
+      "justification": "vulnerable_code_not_present",
+      "impact_statement": "The golang.org/x/crypto/ssh, ssh/agent and ssh/knownhosts packages are NOT compiled into the hardened-kubernetes binaries (kube-apiserver/kube-controller-manager/kube-scheduler/kube-proxy/kubelet). pclntab (retained despite -s -w; nm=0) contains zero x/crypto/ssh* symbols \u2014 only TLS sub-packages (cryptobyte/chacha20poly1305/hkdf/nacl/ed25519). Vulnerable code not present. Filed as rancher/image-scanning#1456.",
+      "timestamp": "2026-06-24T00:00:00Z"
+    },
+    {
+      "vulnerability": {
+        "name": "CVE-2026-39827"
+      },
+      "products": [
+        {
+          "@id": "pkg:oci/hardened-kubernetes",
+          "subcomponents": [
+            {
+              "@id": "pkg:golang/golang.org/x/crypto@v0.47.0"
+            }
+          ]
+        }
+      ],
+      "status": "not_affected",
+      "justification": "vulnerable_code_not_present",
+      "impact_statement": "The golang.org/x/crypto/ssh, ssh/agent and ssh/knownhosts packages are NOT compiled into the hardened-kubernetes binaries (kube-apiserver/kube-controller-manager/kube-scheduler/kube-proxy/kubelet). pclntab (retained despite -s -w; nm=0) contains zero x/crypto/ssh* symbols \u2014 only TLS sub-packages (cryptobyte/chacha20poly1305/hkdf/nacl/ed25519). Vulnerable code not present. Filed as rancher/image-scanning#1456.",
+      "timestamp": "2026-06-24T00:00:00Z"
+    },
+    {
+      "vulnerability": {
+        "name": "CVE-2026-39830"
+      },
+      "products": [
+        {
+          "@id": "pkg:oci/hardened-kubernetes",
+          "subcomponents": [
+            {
+              "@id": "pkg:golang/golang.org/x/crypto@v0.47.0"
+            }
+          ]
+        }
+      ],
+      "status": "not_affected",
+      "justification": "vulnerable_code_not_present",
+      "impact_statement": "The golang.org/x/crypto/ssh, ssh/agent and ssh/knownhosts packages are NOT compiled into the hardened-kubernetes binaries (kube-apiserver/kube-controller-manager/kube-scheduler/kube-proxy/kubelet). pclntab (retained despite -s -w; nm=0) contains zero x/crypto/ssh* symbols \u2014 only TLS sub-packages (cryptobyte/chacha20poly1305/hkdf/nacl/ed25519). Vulnerable code not present. Filed as rancher/image-scanning#1456.",
+      "timestamp": "2026-06-24T00:00:00Z"
+    },
+    {
+      "vulnerability": {
+        "name": "CVE-2026-39829"
+      },
+      "products": [
+        {
+          "@id": "pkg:oci/hardened-kubernetes",
+          "subcomponents": [
+            {
+              "@id": "pkg:golang/golang.org/x/crypto@v0.47.0"
+            }
+          ]
+        }
+      ],
+      "status": "not_affected",
+      "justification": "vulnerable_code_not_present",
+      "impact_statement": "The golang.org/x/crypto/ssh, ssh/agent and ssh/knownhosts packages are NOT compiled into the hardened-kubernetes binaries (kube-apiserver/kube-controller-manager/kube-scheduler/kube-proxy/kubelet). pclntab (retained despite -s -w; nm=0) contains zero x/crypto/ssh* symbols \u2014 only TLS sub-packages (cryptobyte/chacha20poly1305/hkdf/nacl/ed25519). Vulnerable code not present. Filed as rancher/image-scanning#1456.",
+      "timestamp": "2026-06-24T00:00:00Z"
+    },
+    {
+      "vulnerability": {
+        "name": "CVE-2026-39831"
+      },
+      "products": [
+        {
+          "@id": "pkg:oci/hardened-kubernetes",
+          "subcomponents": [
+            {
+              "@id": "pkg:golang/golang.org/x/crypto@v0.47.0"
+            }
+          ]
+        }
+      ],
+      "status": "not_affected",
+      "justification": "vulnerable_code_not_present",
+      "impact_statement": "The golang.org/x/crypto/ssh, ssh/agent and ssh/knownhosts packages are NOT compiled into the hardened-kubernetes binaries (kube-apiserver/kube-controller-manager/kube-scheduler/kube-proxy/kubelet). pclntab (retained despite -s -w; nm=0) contains zero x/crypto/ssh* symbols \u2014 only TLS sub-packages (cryptobyte/chacha20poly1305/hkdf/nacl/ed25519). Vulnerable code not present. Filed as rancher/image-scanning#1456.",
+      "timestamp": "2026-06-24T00:00:00Z"
+    },
+    {
+      "vulnerability": {
+        "name": "CVE-2026-39834"
+      },
+      "products": [
+        {
+          "@id": "pkg:oci/hardened-kubernetes",
+          "subcomponents": [
+            {
+              "@id": "pkg:golang/golang.org/x/crypto@v0.47.0"
+            }
+          ]
+        }
+      ],
+      "status": "not_affected",
+      "justification": "vulnerable_code_not_present",
+      "impact_statement": "The golang.org/x/crypto/ssh, ssh/agent and ssh/knownhosts packages are NOT compiled into the hardened-kubernetes binaries (kube-apiserver/kube-controller-manager/kube-scheduler/kube-proxy/kubelet). pclntab (retained despite -s -w; nm=0) contains zero x/crypto/ssh* symbols \u2014 only TLS sub-packages (cryptobyte/chacha20poly1305/hkdf/nacl/ed25519). Vulnerable code not present. Filed as rancher/image-scanning#1456.",
+      "timestamp": "2026-06-24T00:00:00Z"
+    },
+    {
+      "vulnerability": {
+        "name": "CVE-2026-46595"
+      },
+      "products": [
+        {
+          "@id": "pkg:oci/hardened-kubernetes",
+          "subcomponents": [
+            {
+              "@id": "pkg:golang/golang.org/x/crypto@v0.47.0"
+            }
+          ]
+        }
+      ],
+      "status": "not_affected",
+      "justification": "vulnerable_code_not_present",
+      "impact_statement": "The golang.org/x/crypto/ssh, ssh/agent and ssh/knownhosts packages are NOT compiled into the hardened-kubernetes binaries (kube-apiserver/kube-controller-manager/kube-scheduler/kube-proxy/kubelet). pclntab (retained despite -s -w; nm=0) contains zero x/crypto/ssh* symbols \u2014 only TLS sub-packages (cryptobyte/chacha20poly1305/hkdf/nacl/ed25519). Vulnerable code not present. Filed as rancher/image-scanning#1456.",
+      "timestamp": "2026-06-24T00:00:00Z"
+    },
+    {
+      "vulnerability": {
+        "name": "CVE-2026-39833"
+      },
+      "products": [
+        {
+          "@id": "pkg:oci/hardened-kubernetes",
+          "subcomponents": [
+            {
+              "@id": "pkg:golang/golang.org/x/crypto@v0.47.0"
+            }
+          ]
+        }
+      ],
+      "status": "not_affected",
+      "justification": "vulnerable_code_not_present",
+      "impact_statement": "The golang.org/x/crypto/ssh, ssh/agent and ssh/knownhosts packages are NOT compiled into the hardened-kubernetes binaries (kube-apiserver/kube-controller-manager/kube-scheduler/kube-proxy/kubelet). pclntab (retained despite -s -w; nm=0) contains zero x/crypto/ssh* symbols \u2014 only TLS sub-packages (cryptobyte/chacha20poly1305/hkdf/nacl/ed25519). Vulnerable code not present. Filed as rancher/image-scanning#1456.",
+      "timestamp": "2026-06-24T00:00:00Z"
+    },
+    {
+      "vulnerability": {
+        "name": "CVE-2026-39832"
+      },
+      "products": [
+        {
+          "@id": "pkg:oci/hardened-kubernetes",
+          "subcomponents": [
+            {
+              "@id": "pkg:golang/golang.org/x/crypto@v0.47.0"
+            }
+          ]
+        }
+      ],
+      "status": "not_affected",
+      "justification": "vulnerable_code_not_present",
+      "impact_statement": "The golang.org/x/crypto/ssh, ssh/agent and ssh/knownhosts packages are NOT compiled into the hardened-kubernetes binaries (kube-apiserver/kube-controller-manager/kube-scheduler/kube-proxy/kubelet). pclntab (retained despite -s -w; nm=0) contains zero x/crypto/ssh* symbols \u2014 only TLS sub-packages (cryptobyte/chacha20poly1305/hkdf/nacl/ed25519). Vulnerable code not present. Filed as rancher/image-scanning#1456.",
+      "timestamp": "2026-06-24T00:00:00Z"
+    },
+    {
+      "vulnerability": {
+        "name": "CVE-2026-46598"
+      },
+      "products": [
+        {
+          "@id": "pkg:oci/hardened-kubernetes",
+          "subcomponents": [
+            {
+              "@id": "pkg:golang/golang.org/x/crypto@v0.47.0"
+            }
+          ]
+        }
+      ],
+      "status": "not_affected",
+      "justification": "vulnerable_code_not_present",
+      "impact_statement": "The golang.org/x/crypto/ssh, ssh/agent and ssh/knownhosts packages are NOT compiled into the hardened-kubernetes binaries (kube-apiserver/kube-controller-manager/kube-scheduler/kube-proxy/kubelet). pclntab (retained despite -s -w; nm=0) contains zero x/crypto/ssh* symbols \u2014 only TLS sub-packages (cryptobyte/chacha20poly1305/hkdf/nacl/ed25519). Vulnerable code not present. Filed as rancher/image-scanning#1456.",
+      "timestamp": "2026-06-24T00:00:00Z"
+    },
+    {
+      "vulnerability": {
+        "name": "CVE-2026-42508"
+      },
+      "products": [
+        {
+          "@id": "pkg:oci/hardened-kubernetes",
+          "subcomponents": [
+            {
+              "@id": "pkg:golang/golang.org/x/crypto@v0.47.0"
+            }
+          ]
+        }
+      ],
+      "status": "not_affected",
+      "justification": "vulnerable_code_not_present",
+      "impact_statement": "The golang.org/x/crypto/ssh, ssh/agent and ssh/knownhosts packages are NOT compiled into the hardened-kubernetes binaries (kube-apiserver/kube-controller-manager/kube-scheduler/kube-proxy/kubelet). pclntab (retained despite -s -w; nm=0) contains zero x/crypto/ssh* symbols \u2014 only TLS sub-packages (cryptobyte/chacha20poly1305/hkdf/nacl/ed25519). Vulnerable code not present. Filed as rancher/image-scanning#1456.",
+      "timestamp": "2026-06-24T00:00:00Z"
+    },
+    {
+      "vulnerability": {
+        "name": "CVE-2025-22872"
+      },
+      "products": [
+        {
+          "@id": "pkg:oci/hardened-addon-resizer",
+          "subcomponents": [
+            {
+              "@id": "pkg:golang/golang.org/x/net@v0.33.0"
+            }
+          ]
+        }
+      ],
+      "status": "not_affected",
+      "justification": "vulnerable_code_not_present",
+      "impact_statement": "The golang.org/x/net/html package is NOT compiled into the listed binary (pclntab contains no x/net/html symbols; only http2/idna linked). Vulnerable code not present. Filed as rancher/image-scanning#1457.",
+      "timestamp": "2026-06-24T00:00:00Z"
+    },
+    {
+      "vulnerability": {
+        "name": "CVE-2025-47911"
+      },
+      "products": [
+        {
+          "@id": "pkg:oci/hardened-addon-resizer",
+          "subcomponents": [
+            {
+              "@id": "pkg:golang/golang.org/x/net@v0.33.0"
+            }
+          ]
+        }
+      ],
+      "status": "not_affected",
+      "justification": "vulnerable_code_not_present",
+      "impact_statement": "The golang.org/x/net/html package is NOT compiled into the listed binary (pclntab contains no x/net/html symbols; only http2/idna linked). Vulnerable code not present. Filed as rancher/image-scanning#1457.",
+      "timestamp": "2026-06-24T00:00:00Z"
+    },
+    {
+      "vulnerability": {
+        "name": "CVE-2025-58190"
+      },
+      "products": [
+        {
+          "@id": "pkg:oci/hardened-addon-resizer",
+          "subcomponents": [
+            {
+              "@id": "pkg:golang/golang.org/x/net@v0.33.0"
+            }
+          ]
+        }
+      ],
+      "status": "not_affected",
+      "justification": "vulnerable_code_not_present",
+      "impact_statement": "The golang.org/x/net/html package is NOT compiled into the listed binary (pclntab contains no x/net/html symbols; only http2/idna linked). Vulnerable code not present. Filed as rancher/image-scanning#1457.",
+      "timestamp": "2026-06-24T00:00:00Z"
+    },
+    {
+      "vulnerability": {
+        "name": "CVE-2026-25680"
+      },
+      "products": [
+        {
+          "@id": "pkg:oci/hardened-addon-resizer",
+          "subcomponents": [
+            {
+              "@id": "pkg:golang/golang.org/x/net@v0.33.0"
+            }
+          ]
+        }
+      ],
+      "status": "not_affected",
+      "justification": "vulnerable_code_not_present",
+      "impact_statement": "The golang.org/x/net/html package is NOT compiled into the listed binary (pclntab contains no x/net/html symbols; only http2/idna linked). Vulnerable code not present. Filed as rancher/image-scanning#1457.",
+      "timestamp": "2026-06-24T00:00:00Z"
+    },
+    {
+      "vulnerability": {
+        "name": "CVE-2026-25681"
+      },
+      "products": [
+        {
+          "@id": "pkg:oci/hardened-addon-resizer",
+          "subcomponents": [
+            {
+              "@id": "pkg:golang/golang.org/x/net@v0.33.0"
+            }
+          ]
+        }
+      ],
+      "status": "not_affected",
+      "justification": "vulnerable_code_not_present",
+      "impact_statement": "The golang.org/x/net/html package is NOT compiled into the listed binary (pclntab contains no x/net/html symbols; only http2/idna linked). Vulnerable code not present. Filed as rancher/image-scanning#1457.",
+      "timestamp": "2026-06-24T00:00:00Z"
+    },
+    {
+      "vulnerability": {
+        "name": "CVE-2026-27136"
+      },
+      "products": [
+        {
+          "@id": "pkg:oci/hardened-addon-resizer",
+          "subcomponents": [
+            {
+              "@id": "pkg:golang/golang.org/x/net@v0.33.0"
+            }
+          ]
+        }
+      ],
+      "status": "not_affected",
+      "justification": "vulnerable_code_not_present",
+      "impact_statement": "The golang.org/x/net/html package is NOT compiled into the listed binary (pclntab contains no x/net/html symbols; only http2/idna linked). Vulnerable code not present. Filed as rancher/image-scanning#1457.",
+      "timestamp": "2026-06-24T00:00:00Z"
+    },
+    {
+      "vulnerability": {
+        "name": "CVE-2026-42502"
+      },
+      "products": [
+        {
+          "@id": "pkg:oci/hardened-addon-resizer",
+          "subcomponents": [
+            {
+              "@id": "pkg:golang/golang.org/x/net@v0.33.0"
+            }
+          ]
+        }
+      ],
+      "status": "not_affected",
+      "justification": "vulnerable_code_not_present",
+      "impact_statement": "The golang.org/x/net/html package is NOT compiled into the listed binary (pclntab contains no x/net/html symbols; only http2/idna linked). Vulnerable code not present. Filed as rancher/image-scanning#1457.",
+      "timestamp": "2026-06-24T00:00:00Z"
+    },
+    {
+      "vulnerability": {
+        "name": "CVE-2026-42506"
+      },
+      "products": [
+        {
+          "@id": "pkg:oci/hardened-addon-resizer",
+          "subcomponents": [
+            {
+              "@id": "pkg:golang/golang.org/x/net@v0.33.0"
+            }
+          ]
+        }
+      ],
+      "status": "not_affected",
+      "justification": "vulnerable_code_not_present",
+      "impact_statement": "The golang.org/x/net/html package is NOT compiled into the listed binary (pclntab contains no x/net/html symbols; only http2/idna linked). Vulnerable code not present. Filed as rancher/image-scanning#1457.",
+      "timestamp": "2026-06-24T00:00:00Z"
+    },
+    {
+      "vulnerability": {
+        "name": "CVE-2026-25680"
+      },
+      "products": [
+        {
+          "@id": "pkg:oci/hardened-snapshot-controller",
+          "subcomponents": [
+            {
+              "@id": "pkg:golang/golang.org/x/net@v0.54.0"
+            }
+          ]
+        }
+      ],
+      "status": "not_affected",
+      "justification": "vulnerable_code_not_present",
+      "impact_statement": "The golang.org/x/net/html package is NOT compiled into the listed binary (pclntab contains no x/net/html symbols; only http2/idna linked). Vulnerable code not present. Filed as rancher/image-scanning#1457.",
+      "timestamp": "2026-06-24T00:00:00Z"
+    },
+    {
+      "vulnerability": {
+        "name": "CVE-2026-25681"
+      },
+      "products": [
+        {
+          "@id": "pkg:oci/hardened-snapshot-controller",
+          "subcomponents": [
+            {
+              "@id": "pkg:golang/golang.org/x/net@v0.54.0"
+            }
+          ]
+        }
+      ],
+      "status": "not_affected",
+      "justification": "vulnerable_code_not_present",
+      "impact_statement": "The golang.org/x/net/html package is NOT compiled into the listed binary (pclntab contains no x/net/html symbols; only http2/idna linked). Vulnerable code not present. Filed as rancher/image-scanning#1457.",
+      "timestamp": "2026-06-24T00:00:00Z"
+    },
+    {
+      "vulnerability": {
+        "name": "CVE-2026-27136"
+      },
+      "products": [
+        {
+          "@id": "pkg:oci/hardened-snapshot-controller",
+          "subcomponents": [
+            {
+              "@id": "pkg:golang/golang.org/x/net@v0.54.0"
+            }
+          ]
+        }
+      ],
+      "status": "not_affected",
+      "justification": "vulnerable_code_not_present",
+      "impact_statement": "The golang.org/x/net/html package is NOT compiled into the listed binary (pclntab contains no x/net/html symbols; only http2/idna linked). Vulnerable code not present. Filed as rancher/image-scanning#1457.",
+      "timestamp": "2026-06-24T00:00:00Z"
+    },
+    {
+      "vulnerability": {
+        "name": "CVE-2026-42502"
+      },
+      "products": [
+        {
+          "@id": "pkg:oci/hardened-snapshot-controller",
+          "subcomponents": [
+            {
+              "@id": "pkg:golang/golang.org/x/net@v0.54.0"
+            }
+          ]
+        }
+      ],
+      "status": "not_affected",
+      "justification": "vulnerable_code_not_present",
+      "impact_statement": "The golang.org/x/net/html package is NOT compiled into the listed binary (pclntab contains no x/net/html symbols; only http2/idna linked). Vulnerable code not present. Filed as rancher/image-scanning#1457.",
+      "timestamp": "2026-06-24T00:00:00Z"
+    },
+    {
+      "vulnerability": {
+        "name": "CVE-2026-42506"
+      },
+      "products": [
+        {
+          "@id": "pkg:oci/hardened-snapshot-controller",
+          "subcomponents": [
+            {
+              "@id": "pkg:golang/golang.org/x/net@v0.54.0"
+            }
+          ]
+        }
+      ],
+      "status": "not_affected",
+      "justification": "vulnerable_code_not_present",
+      "impact_statement": "The golang.org/x/net/html package is NOT compiled into the listed binary (pclntab contains no x/net/html symbols; only http2/idna linked). Vulnerable code not present. Filed as rancher/image-scanning#1457.",
       "timestamp": "2026-06-24T00:00:00Z"
     }
   ]
