@@ -242,7 +242,12 @@ def is_stripped(binary: Path) -> bool:
 
 def linked_symbol_blob(binary: Path) -> str:
     """All pclntab-ish strings from the binary (one big lowercase-safe blob)."""
-    out = subprocess.run(["strings", "-n", "8", str(binary)], capture_output=True, text=True)
+    exe = shutil.which("strings")
+    if not exe:
+        raise RuntimeError("strings(1) not found on PATH")
+    out = subprocess.run([exe, "-n", "8", str(binary)], capture_output=True, text=True)
+    if out.returncode != 0:
+        raise RuntimeError(f"strings failed for {binary}: {out.stderr.strip()}")
     return out.stdout
 
 
