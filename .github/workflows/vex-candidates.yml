@@ -70,14 +70,14 @@ jobs:
           REPORT_INPUT: ${{ inputs.report }}
           MODULES_INPUT: ${{ inputs.modules }}
         run: |
-          ARGS=""
+          ARGS=()
           if [ -n "${REPORT_INPUT}" ]; then
-            ARGS="--report ${REPORT_INPUT}"
+            ARGS+=(--report "${REPORT_INPUT}")
           fi
           if [ -n "${MODULES_INPUT}" ]; then
-            ARGS="${ARGS} --modules ${MODULES_INPUT}"
+            ARGS+=(--modules "${MODULES_INPUT}")
           fi
-          python3 .github/scripts/vex_candidates.py ${ARGS} --github-output "${GITHUB_OUTPUT}"
+          python3 .github/scripts/vex_candidates.py "${ARGS[@]}" --github-output "${GITHUB_OUTPUT}"
 
       - name: Upload analysis artifacts
         uses: actions/upload-artifact@v4
