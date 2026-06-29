@@ -1,0 +1,2294 @@
+{
+  "@context": "https://openvex.dev/ns/v0.2.0",
+  "@id": "https://github.com/cwayne18/rke2-toolbox/vex/rke2-v1.36.2-rc3-xnet-xcrypto",
+  "author": "RKE2 Toolbox CVE triage (govulncheck reachability analysis)",
+  "version": 5,
+  "timestamp": "2026-06-23T00:00:00Z",
+  "statements": [
+    {
+      "vulnerability": {
+        "name": "CVE-2026-25680"
+      },
+      "products": [
+        {
+          "@id": "pkg:oci/hardened-dns-node-cache",
+          "subcomponents": [
+            {
+              "@id": "pkg:golang/golang.org/x/net@v0.52.0"
+            }
+          ]
+        },
+        {
+          "@id": "pkg:oci/hardened-k8s-metrics-server",
+          "subcomponents": [
+            {
+              "@id": "pkg:golang/golang.org/x/net@v0.52.0"
+            }
+          ]
+        }
+      ],
+      "status": "not_affected",
+      "justification": "vulnerable_code_not_present",
+      "impact_statement": "The golang.org/x/net/html package is NOT compiled into this binary. Reproduced build graph (x/net v0.52.0, matching the shipped binary) `go list -deps` shows http2/idna/httpguts but no x/net/html; `go mod why golang.org/x/net/html` resolves only through the onsi/gomega test matchers (test-only). Vulnerable code not present.",
+      "timestamp": "2026-06-23T00:00:00Z"
+    },
+    {
+      "vulnerability": {
+        "name": "CVE-2026-25680"
+      },
+      "products": [
+        {
+          "@id": "pkg:oci/klipper-helm",
+          "subcomponents": [
+            {
+              "@id": "pkg:golang/golang.org/x/net@v0.49.0"
+            }
+          ]
+        },
+        {
+          "@id": "pkg:oci/rke2-cloud-provider",
+          "subcomponents": [
+            {
+              "@id": "pkg:golang/golang.org/x/net@v0.53.0"
+            }
+          ]
+        }
+      ],
+      "status": "not_affected",
+      "justification": "vulnerable_code_not_in_execute_path",
+      "impact_statement": "The golang.org/x/net/html parser is linked but RKE2 components never parse attacker-supplied HTML; Parse/ParseFragment are not invoked on untrusted input in any default execution path. Verified with govulncheck -mode=binary against the v1.36.2-rc3 binaries.",
+      "timestamp": "2026-06-23T00:00:00Z"
+    },
+    {
+      "vulnerability": {
+        "name": "CVE-2026-39828"
+      },
+      "products": [
+        {
+          "@id": "pkg:oci/hardened-dns-node-cache",
+          "subcomponents": [
+            {
+              "@id": "pkg:golang/golang.org/x/crypto@v0.49.0"
+            }
+          ]
+        },
+        {
+          "@id": "pkg:oci/hardened-k8s-metrics-server",
+          "subcomponents": [
+            {
+              "@id": "pkg:golang/golang.org/x/crypto@v0.49.0"
+            }
+          ]
+        }
+      ],
+      "status": "not_affected",
+      "justification": "vulnerable_code_not_present",
+      "impact_statement": "The golang.org/x/crypto/ssh, ssh/agent and ssh/knownhosts packages are NOT compiled into this binary. The rancher build graph was reproduced exactly (clone at the shipped commit + Dockerfile go mod edit -replace directives + go mod tidy), yielding golang.org/x/crypto v0.49.0 \u2014 identical to the shipped binary's `go version -m`. `go list -deps ./cmd/<daemon>` shows only non-ssh x/crypto packages (cryptobyte, hkdf, chacha20poly1305, nacl/secretbox, salsa20); `go mod why golang.org/x/crypto/ssh` reports \"main module does not need package\". Vulnerable code not present.",
+      "timestamp": "2026-06-23T00:00:00Z"
+    },
+    {
+      "vulnerability": {
+        "name": "CVE-2026-39828"
+      },
+      "products": [
+        {
+          "@id": "pkg:oci/klipper-helm",
+          "subcomponents": [
+            {
+              "@id": "pkg:golang/golang.org/x/crypto@v0.47.0"
+            }
+          ]
+        }
+      ],
+      "status": "not_affected",
+      "justification": "vulnerable_code_not_in_execute_path",
+      "impact_statement": "The golang.org/x/crypto/ssh code is linked transitively via Kubernetes/cloud-provider dependencies but RKE2 components do not operate an SSH server, SSH agent, or knownhosts verification against untrusted input in the default configuration. The vulnerable symbols are not reachable from any attacker-controlled execution path. Verified with govulncheck -mode=binary against the v1.36.2-rc3 binaries.",
+      "timestamp": "2026-06-23T00:00:00Z"
+    },
+    {
+      "vulnerability": {
+        "name": "CVE-2026-39829"
+      },
+      "products": [
+        {
+          "@id": "pkg:oci/hardened-dns-node-cache",
+          "subcomponents": [
+            {
+              "@id": "pkg:golang/golang.org/x/crypto@v0.49.0"
+            }
+          ]
+        },
+        {
+          "@id": "pkg:oci/hardened-k8s-metrics-server",
+          "subcomponents": [
+            {
+              "@id": "pkg:golang/golang.org/x/crypto@v0.49.0"
+            }
+          ]
+        }
+      ],
+      "status": "not_affected",
+      "justification": "vulnerable_code_not_present",
+      "impact_statement": "The golang.org/x/crypto/ssh, ssh/agent and ssh/knownhosts packages are NOT compiled into this binary. The rancher build graph was reproduced exactly (clone at the shipped commit + Dockerfile go mod edit -replace directives + go mod tidy), yielding golang.org/x/crypto v0.49.0 \u2014 identical to the shipped binary's `go version -m`. `go list -deps ./cmd/<daemon>` shows only non-ssh x/crypto packages (cryptobyte, hkdf, chacha20poly1305, nacl/secretbox, salsa20); `go mod why golang.org/x/crypto/ssh` reports \"main module does not need package\". Vulnerable code not present.",
+      "timestamp": "2026-06-23T00:00:00Z"
+    },
+    {
+      "vulnerability": {
+        "name": "CVE-2026-39829"
+      },
+      "products": [
+        {
+          "@id": "pkg:oci/klipper-helm",
+          "subcomponents": [
+            {
+              "@id": "pkg:golang/golang.org/x/crypto@v0.47.0"
+            }
+          ]
+        }
+      ],
+      "status": "not_affected",
+      "justification": "vulnerable_code_not_in_execute_path",
+      "impact_statement": "The golang.org/x/crypto/ssh code is linked transitively via Kubernetes/cloud-provider dependencies but RKE2 components do not operate an SSH server, SSH agent, or knownhosts verification against untrusted input in the default configuration. The vulnerable symbols are not reachable from any attacker-controlled execution path. Verified with govulncheck -mode=binary against the v1.36.2-rc3 binaries.",
+      "timestamp": "2026-06-23T00:00:00Z"
+    },
+    {
+      "vulnerability": {
+        "name": "CVE-2026-39831"
+      },
+      "products": [
+        {
+          "@id": "pkg:oci/hardened-dns-node-cache",
+          "subcomponents": [
+            {
+              "@id": "pkg:golang/golang.org/x/crypto@v0.49.0"
+            }
+          ]
+        },
+        {
+          "@id": "pkg:oci/hardened-k8s-metrics-server",
+          "subcomponents": [
+            {
+              "@id": "pkg:golang/golang.org/x/crypto@v0.49.0"
+            }
+          ]
+        }
+      ],
+      "status": "not_affected",
+      "justification": "vulnerable_code_not_present",
+      "impact_statement": "The golang.org/x/crypto/ssh, ssh/agent and ssh/knownhosts packages are NOT compiled into this binary. The rancher build graph was reproduced exactly (clone at the shipped commit + Dockerfile go mod edit -replace directives + go mod tidy), yielding golang.org/x/crypto v0.49.0 \u2014 identical to the shipped binary's `go version -m`. `go list -deps ./cmd/<daemon>` shows only non-ssh x/crypto packages (cryptobyte, hkdf, chacha20poly1305, nacl/secretbox, salsa20); `go mod why golang.org/x/crypto/ssh` reports \"main module does not need package\". Vulnerable code not present.",
+      "timestamp": "2026-06-23T00:00:00Z"
+    },
+    {
+      "vulnerability": {
+        "name": "CVE-2026-39831"
+      },
+      "products": [
+        {
+          "@id": "pkg:oci/klipper-helm",
+          "subcomponents": [
+            {
+              "@id": "pkg:golang/golang.org/x/crypto@v0.47.0"
+            }
+          ]
+        }
+      ],
+      "status": "not_affected",
+      "justification": "vulnerable_code_not_in_execute_path",
+      "impact_statement": "The golang.org/x/crypto/ssh code is linked transitively via Kubernetes/cloud-provider dependencies but RKE2 components do not operate an SSH server, SSH agent, or knownhosts verification against untrusted input in the default configuration. The vulnerable symbols are not reachable from any attacker-controlled execution path. Verified with govulncheck -mode=binary against the v1.36.2-rc3 binaries.",
+      "timestamp": "2026-06-23T00:00:00Z"
+    },
+    {
+      "vulnerability": {
+        "name": "CVE-2026-39832"
+      },
+      "products": [
+        {
+          "@id": "pkg:oci/hardened-dns-node-cache",
+          "subcomponents": [
+            {
+              "@id": "pkg:golang/golang.org/x/crypto@v0.49.0"
+            }
+          ]
+        },
+        {
+          "@id": "pkg:oci/hardened-k8s-metrics-server",
+          "subcomponents": [
+            {
+              "@id": "pkg:golang/golang.org/x/crypto@v0.49.0"
+            }
+          ]
+        }
+      ],
+      "status": "not_affected",
+      "justification": "vulnerable_code_not_present",
+      "impact_statement": "The golang.org/x/crypto/ssh, ssh/agent and ssh/knownhosts packages are NOT compiled into this binary. The rancher build graph was reproduced exactly (clone at the shipped commit + Dockerfile go mod edit -replace directives + go mod tidy), yielding golang.org/x/crypto v0.49.0 \u2014 identical to the shipped binary's `go version -m`. `go list -deps ./cmd/<daemon>` shows only non-ssh x/crypto packages (cryptobyte, hkdf, chacha20poly1305, nacl/secretbox, salsa20); `go mod why golang.org/x/crypto/ssh` reports \"main module does not need package\". Vulnerable code not present.",
+      "timestamp": "2026-06-23T00:00:00Z"
+    },
+    {
+      "vulnerability": {
+        "name": "CVE-2026-39832"
+      },
+      "products": [
+        {
+          "@id": "pkg:oci/klipper-helm",
+          "subcomponents": [
+            {
+              "@id": "pkg:golang/golang.org/x/crypto@v0.47.0"
+            }
+          ]
+        }
+      ],
+      "status": "not_affected",
+      "justification": "vulnerable_code_not_in_execute_path",
+      "impact_statement": "The golang.org/x/crypto/ssh code is linked transitively via Kubernetes/cloud-provider dependencies but RKE2 components do not operate an SSH server, SSH agent, or knownhosts verification against untrusted input in the default configuration. The vulnerable symbols are not reachable from any attacker-controlled execution path. Verified with govulncheck -mode=binary against the v1.36.2-rc3 binaries.",
+      "timestamp": "2026-06-23T00:00:00Z"
+    },
+    {
+      "vulnerability": {
+        "name": "CVE-2026-39833"
+      },
+      "products": [
+        {
+          "@id": "pkg:oci/hardened-dns-node-cache",
+          "subcomponents": [
+            {
+              "@id": "pkg:golang/golang.org/x/crypto@v0.49.0"
+            }
+          ]
+        },
+        {
+          "@id": "pkg:oci/hardened-k8s-metrics-server",
+          "subcomponents": [
+            {
+              "@id": "pkg:golang/golang.org/x/crypto@v0.49.0"
+            }
+          ]
+        }
+      ],
+      "status": "not_affected",
+      "justification": "vulnerable_code_not_present",
+      "impact_statement": "The golang.org/x/crypto/ssh, ssh/agent and ssh/knownhosts packages are NOT compiled into this binary. The rancher build graph was reproduced exactly (clone at the shipped commit + Dockerfile go mod edit -replace directives + go mod tidy), yielding golang.org/x/crypto v0.49.0 \u2014 identical to the shipped binary's `go version -m`. `go list -deps ./cmd/<daemon>` shows only non-ssh x/crypto packages (cryptobyte, hkdf, chacha20poly1305, nacl/secretbox, salsa20); `go mod why golang.org/x/crypto/ssh` reports \"main module does not need package\". Vulnerable code not present.",
+      "timestamp": "2026-06-23T00:00:00Z"
+    },
+    {
+      "vulnerability": {
+        "name": "CVE-2026-39833"
+      },
+      "products": [
+        {
+          "@id": "pkg:oci/klipper-helm",
+          "subcomponents": [
+            {
+              "@id": "pkg:golang/golang.org/x/crypto@v0.47.0"
+            }
+          ]
+        }
+      ],
+      "status": "not_affected",
+      "justification": "vulnerable_code_not_in_execute_path",
+      "impact_statement": "The golang.org/x/crypto/ssh code is linked transitively via Kubernetes/cloud-provider dependencies but RKE2 components do not operate an SSH server, SSH agent, or knownhosts verification against untrusted input in the default configuration. The vulnerable symbols are not reachable from any attacker-controlled execution path. Verified with govulncheck -mode=binary against the v1.36.2-rc3 binaries.",
+      "timestamp": "2026-06-23T00:00:00Z"
+    },
+    {
+      "vulnerability": {
+        "name": "CVE-2026-39834"
+      },
+      "products": [
+        {
+          "@id": "pkg:oci/hardened-dns-node-cache",
+          "subcomponents": [
+            {
+              "@id": "pkg:golang/golang.org/x/crypto@v0.49.0"
+            }
+          ]
+        },
+        {
+          "@id": "pkg:oci/hardened-k8s-metrics-server",
+          "subcomponents": [
+            {
+              "@id": "pkg:golang/golang.org/x/crypto@v0.49.0"
+            }
+          ]
+        }
+      ],
+      "status": "not_affected",
+      "justification": "vulnerable_code_not_present",
+      "impact_statement": "The golang.org/x/crypto/ssh, ssh/agent and ssh/knownhosts packages are NOT compiled into this binary. The rancher build graph was reproduced exactly (clone at the shipped commit + Dockerfile go mod edit -replace directives + go mod tidy), yielding golang.org/x/crypto v0.49.0 \u2014 identical to the shipped binary's `go version -m`. `go list -deps ./cmd/<daemon>` shows only non-ssh x/crypto packages (cryptobyte, hkdf, chacha20poly1305, nacl/secretbox, salsa20); `go mod why golang.org/x/crypto/ssh` reports \"main module does not need package\". Vulnerable code not present.",
+      "timestamp": "2026-06-23T00:00:00Z"
+    },
+    {
+      "vulnerability": {
+        "name": "CVE-2026-39834"
+      },
+      "products": [
+        {
+          "@id": "pkg:oci/klipper-helm",
+          "subcomponents": [
+            {
+              "@id": "pkg:golang/golang.org/x/crypto@v0.47.0"
+            }
+          ]
+        }
+      ],
+      "status": "not_affected",
+      "justification": "vulnerable_code_not_in_execute_path",
+      "impact_statement": "The golang.org/x/crypto/ssh code is linked transitively via Kubernetes/cloud-provider dependencies but RKE2 components do not operate an SSH server, SSH agent, or knownhosts verification against untrusted input in the default configuration. The vulnerable symbols are not reachable from any attacker-controlled execution path. Verified with govulncheck -mode=binary against the v1.36.2-rc3 binaries.",
+      "timestamp": "2026-06-23T00:00:00Z"
+    },
+    {
+      "vulnerability": {
+        "name": "CVE-2026-39835"
+      },
+      "products": [
+        {
+          "@id": "pkg:oci/hardened-dns-node-cache",
+          "subcomponents": [
+            {
+              "@id": "pkg:golang/golang.org/x/crypto@v0.49.0"
+            }
+          ]
+        },
+        {
+          "@id": "pkg:oci/hardened-k8s-metrics-server",
+          "subcomponents": [
+            {
+              "@id": "pkg:golang/golang.org/x/crypto@v0.49.0"
+            }
+          ]
+        }
+      ],
+      "status": "not_affected",
+      "justification": "vulnerable_code_not_present",
+      "impact_statement": "The golang.org/x/crypto/ssh, ssh/agent and ssh/knownhosts packages are NOT compiled into this binary. The rancher build graph was reproduced exactly (clone at the shipped commit + Dockerfile go mod edit -replace directives + go mod tidy), yielding golang.org/x/crypto v0.49.0 \u2014 identical to the shipped binary's `go version -m`. `go list -deps ./cmd/<daemon>` shows only non-ssh x/crypto packages (cryptobyte, hkdf, chacha20poly1305, nacl/secretbox, salsa20); `go mod why golang.org/x/crypto/ssh` reports \"main module does not need package\". Vulnerable code not present.",
+      "timestamp": "2026-06-23T00:00:00Z"
+    },
+    {
+      "vulnerability": {
+        "name": "CVE-2026-39835"
+      },
+      "products": [
+        {
+          "@id": "pkg:oci/klipper-helm",
+          "subcomponents": [
+            {
+              "@id": "pkg:golang/golang.org/x/crypto@v0.47.0"
+            }
+          ]
+        }
+      ],
+      "status": "not_affected",
+      "justification": "vulnerable_code_not_in_execute_path",
+      "impact_statement": "The golang.org/x/crypto/ssh code is linked transitively via Kubernetes/cloud-provider dependencies but RKE2 components do not operate an SSH server, SSH agent, or knownhosts verification against untrusted input in the default configuration. The vulnerable symbols are not reachable from any attacker-controlled execution path. Verified with govulncheck -mode=binary against the v1.36.2-rc3 binaries.",
+      "timestamp": "2026-06-23T00:00:00Z"
+    },
+    {
+      "vulnerability": {
+        "name": "CVE-2026-42508"
+      },
+      "products": [
+        {
+          "@id": "pkg:oci/hardened-dns-node-cache",
+          "subcomponents": [
+            {
+              "@id": "pkg:golang/golang.org/x/crypto@v0.49.0"
+            }
+          ]
+        },
+        {
+          "@id": "pkg:oci/hardened-k8s-metrics-server",
+          "subcomponents": [
+            {
+              "@id": "pkg:golang/golang.org/x/crypto@v0.49.0"
+            }
+          ]
+        }
+      ],
+      "status": "not_affected",
+      "justification": "vulnerable_code_not_present",
+      "impact_statement": "The golang.org/x/crypto/ssh, ssh/agent and ssh/knownhosts packages are NOT compiled into this binary. The rancher build graph was reproduced exactly (clone at the shipped commit + Dockerfile go mod edit -replace directives + go mod tidy), yielding golang.org/x/crypto v0.49.0 \u2014 identical to the shipped binary's `go version -m`. `go list -deps ./cmd/<daemon>` shows only non-ssh x/crypto packages (cryptobyte, hkdf, chacha20poly1305, nacl/secretbox, salsa20); `go mod why golang.org/x/crypto/ssh` reports \"main module does not need package\". Vulnerable code not present.",
+      "timestamp": "2026-06-23T00:00:00Z"
+    },
+    {
+      "vulnerability": {
+        "name": "CVE-2026-42508"
+      },
+      "products": [
+        {
+          "@id": "pkg:oci/klipper-helm",
+          "subcomponents": [
+            {
+              "@id": "pkg:golang/golang.org/x/crypto@v0.47.0"
+            }
+          ]
+        }
+      ],
+      "status": "not_affected",
+      "justification": "vulnerable_code_not_in_execute_path",
+      "impact_statement": "The golang.org/x/crypto/ssh code is linked transitively via Kubernetes/cloud-provider dependencies but RKE2 components do not operate an SSH server, SSH agent, or knownhosts verification against untrusted input in the default configuration. The vulnerable symbols are not reachable from any attacker-controlled execution path. Verified with govulncheck -mode=binary against the v1.36.2-rc3 binaries.",
+      "timestamp": "2026-06-23T00:00:00Z"
+    },
+    {
+      "vulnerability": {
+        "name": "CVE-2026-46595"
+      },
+      "products": [
+        {
+          "@id": "pkg:oci/hardened-dns-node-cache",
+          "subcomponents": [
+            {
+              "@id": "pkg:golang/golang.org/x/crypto@v0.49.0"
+            }
+          ]
+        },
+        {
+          "@id": "pkg:oci/hardened-k8s-metrics-server",
+          "subcomponents": [
+            {
+              "@id": "pkg:golang/golang.org/x/crypto@v0.49.0"
+            }
+          ]
+        }
+      ],
+      "status": "not_affected",
+      "justification": "vulnerable_code_not_present",
+      "impact_statement": "The golang.org/x/crypto/ssh, ssh/agent and ssh/knownhosts packages are NOT compiled into this binary. The rancher build graph was reproduced exactly (clone at the shipped commit + Dockerfile go mod edit -replace directives + go mod tidy), yielding golang.org/x/crypto v0.49.0 \u2014 identical to the shipped binary's `go version -m`. `go list -deps ./cmd/<daemon>` shows only non-ssh x/crypto packages (cryptobyte, hkdf, chacha20poly1305, nacl/secretbox, salsa20); `go mod why golang.org/x/crypto/ssh` reports \"main module does not need package\". Vulnerable code not present.",
+      "timestamp": "2026-06-23T00:00:00Z"
+    },
+    {
+      "vulnerability": {
+        "name": "CVE-2026-46595"
+      },
+      "products": [
+        {
+          "@id": "pkg:oci/klipper-helm",
+          "subcomponents": [
+            {
+              "@id": "pkg:golang/golang.org/x/crypto@v0.47.0"
+            }
+          ]
+        }
+      ],
+      "status": "not_affected",
+      "justification": "vulnerable_code_not_in_execute_path",
+      "impact_statement": "The golang.org/x/crypto/ssh code is linked transitively via Kubernetes/cloud-provider dependencies but RKE2 components do not operate an SSH server, SSH agent, or knownhosts verification against untrusted input in the default configuration. The vulnerable symbols are not reachable from any attacker-controlled execution path. Verified with govulncheck -mode=binary against the v1.36.2-rc3 binaries.",
+      "timestamp": "2026-06-23T00:00:00Z"
+    },
+    {
+      "vulnerability": {
+        "name": "CVE-2026-46597"
+      },
+      "products": [
+        {
+          "@id": "pkg:oci/hardened-dns-node-cache",
+          "subcomponents": [
+            {
+              "@id": "pkg:golang/golang.org/x/crypto@v0.49.0"
+            }
+          ]
+        },
+        {
+          "@id": "pkg:oci/hardened-k8s-metrics-server",
+          "subcomponents": [
+            {
+              "@id": "pkg:golang/golang.org/x/crypto@v0.49.0"
+            }
+          ]
+        }
+      ],
+      "status": "not_affected",
+      "justification": "vulnerable_code_not_present",
+      "impact_statement": "The golang.org/x/crypto/ssh, ssh/agent and ssh/knownhosts packages are NOT compiled into this binary. The rancher build graph was reproduced exactly (clone at the shipped commit + Dockerfile go mod edit -replace directives + go mod tidy), yielding golang.org/x/crypto v0.49.0 \u2014 identical to the shipped binary's `go version -m`. `go list -deps ./cmd/<daemon>` shows only non-ssh x/crypto packages (cryptobyte, hkdf, chacha20poly1305, nacl/secretbox, salsa20); `go mod why golang.org/x/crypto/ssh` reports \"main module does not need package\". Vulnerable code not present.",
+      "timestamp": "2026-06-23T00:00:00Z"
+    },
+    {
+      "vulnerability": {
+        "name": "CVE-2026-46597"
+      },
+      "products": [
+        {
+          "@id": "pkg:oci/klipper-helm",
+          "subcomponents": [
+            {
+              "@id": "pkg:golang/golang.org/x/crypto@v0.47.0"
+            }
+          ]
+        }
+      ],
+      "status": "not_affected",
+      "justification": "vulnerable_code_not_in_execute_path",
+      "impact_statement": "The golang.org/x/crypto/ssh code is linked transitively via Kubernetes/cloud-provider dependencies but RKE2 components do not operate an SSH server, SSH agent, or knownhosts verification against untrusted input in the default configuration. The vulnerable symbols are not reachable from any attacker-controlled execution path. Verified with govulncheck -mode=binary against the v1.36.2-rc3 binaries.",
+      "timestamp": "2026-06-23T00:00:00Z"
+    },
+    {
+      "vulnerability": {
+        "name": "CVE-2026-46598"
+      },
+      "products": [
+        {
+          "@id": "pkg:oci/hardened-dns-node-cache",
+          "subcomponents": [
+            {
+              "@id": "pkg:golang/golang.org/x/crypto@v0.49.0"
+            }
+          ]
+        },
+        {
+          "@id": "pkg:oci/hardened-k8s-metrics-server",
+          "subcomponents": [
+            {
+              "@id": "pkg:golang/golang.org/x/crypto@v0.49.0"
+            }
+          ]
+        }
+      ],
+      "status": "not_affected",
+      "justification": "vulnerable_code_not_present",
+      "impact_statement": "The golang.org/x/crypto/ssh, ssh/agent and ssh/knownhosts packages are NOT compiled into this binary. The rancher build graph was reproduced exactly (clone at the shipped commit + Dockerfile go mod edit -replace directives + go mod tidy), yielding golang.org/x/crypto v0.49.0 \u2014 identical to the shipped binary's `go version -m`. `go list -deps ./cmd/<daemon>` shows only non-ssh x/crypto packages (cryptobyte, hkdf, chacha20poly1305, nacl/secretbox, salsa20); `go mod why golang.org/x/crypto/ssh` reports \"main module does not need package\". Vulnerable code not present.",
+      "timestamp": "2026-06-23T00:00:00Z"
+    },
+    {
+      "vulnerability": {
+        "name": "CVE-2026-46598"
+      },
+      "products": [
+        {
+          "@id": "pkg:oci/klipper-helm",
+          "subcomponents": [
+            {
+              "@id": "pkg:golang/golang.org/x/crypto@v0.47.0"
+            }
+          ]
+        }
+      ],
+      "status": "not_affected",
+      "justification": "vulnerable_code_not_in_execute_path",
+      "impact_statement": "The golang.org/x/crypto/ssh code is linked transitively via Kubernetes/cloud-provider dependencies but RKE2 components do not operate an SSH server, SSH agent, or knownhosts verification against untrusted input in the default configuration. The vulnerable symbols are not reachable from any attacker-controlled execution path. Verified with govulncheck -mode=binary against the v1.36.2-rc3 binaries.",
+      "timestamp": "2026-06-23T00:00:00Z"
+    },
+    {
+      "vulnerability": {
+        "name": "CVE-2026-39827"
+      },
+      "products": [
+        {
+          "@id": "pkg:oci/hardened-dns-node-cache",
+          "subcomponents": [
+            {
+              "@id": "pkg:golang/golang.org/x/crypto@v0.49.0"
+            }
+          ]
+        },
+        {
+          "@id": "pkg:oci/hardened-k8s-metrics-server",
+          "subcomponents": [
+            {
+              "@id": "pkg:golang/golang.org/x/crypto@v0.49.0"
+            }
+          ]
+        }
+      ],
+      "status": "not_affected",
+      "justification": "vulnerable_code_not_present",
+      "impact_statement": "The golang.org/x/crypto/ssh, ssh/agent and ssh/knownhosts packages are NOT compiled into this binary. The rancher build graph was reproduced exactly (clone at the shipped commit + Dockerfile go mod edit -replace directives + go mod tidy), yielding golang.org/x/crypto v0.49.0 \u2014 identical to the shipped binary's `go version -m`. `go list -deps ./cmd/<daemon>` shows only non-ssh x/crypto packages (cryptobyte, hkdf, chacha20poly1305, nacl/secretbox, salsa20); `go mod why golang.org/x/crypto/ssh` reports \"main module does not need package\". Vulnerable code not present.",
+      "timestamp": "2026-06-23T00:00:00Z"
+    },
+    {
+      "vulnerability": {
+        "name": "CVE-2026-39830"
+      },
+      "products": [
+        {
+          "@id": "pkg:oci/hardened-dns-node-cache",
+          "subcomponents": [
+            {
+              "@id": "pkg:golang/golang.org/x/crypto@v0.49.0"
+            }
+          ]
+        },
+        {
+          "@id": "pkg:oci/hardened-k8s-metrics-server",
+          "subcomponents": [
+            {
+              "@id": "pkg:golang/golang.org/x/crypto@v0.49.0"
+            }
+          ]
+        }
+      ],
+      "status": "not_affected",
+      "justification": "vulnerable_code_not_present",
+      "impact_statement": "The golang.org/x/crypto/ssh, ssh/agent and ssh/knownhosts packages are NOT compiled into this binary. The rancher build graph was reproduced exactly (clone at the shipped commit + Dockerfile go mod edit -replace directives + go mod tidy), yielding golang.org/x/crypto v0.49.0 \u2014 identical to the shipped binary's `go version -m`. `go list -deps ./cmd/<daemon>` shows only non-ssh x/crypto packages (cryptobyte, hkdf, chacha20poly1305, nacl/secretbox, salsa20); `go mod why golang.org/x/crypto/ssh` reports \"main module does not need package\". Vulnerable code not present.",
+      "timestamp": "2026-06-23T00:00:00Z"
+    },
+    {
+      "vulnerability": {
+        "name": "CVE-2026-46597"
+      },
+      "products": [
+        {
+          "@id": "pkg:oci/hardened-flannel",
+          "subcomponents": [
+            {
+              "@id": "pkg:golang/golang.org/x/crypto@v0.49.0"
+            }
+          ]
+        },
+        {
+          "@id": "pkg:oci/hardened-calico",
+          "subcomponents": [
+            {
+              "@id": "pkg:golang/golang.org/x/crypto@v0.47.0"
+            }
+          ]
+        },
+        {
+          "@id": "pkg:oci/rke2-cloud-provider",
+          "subcomponents": [
+            {
+              "@id": "pkg:golang/golang.org/x/crypto@v0.50.0"
+            }
+          ]
+        }
+      ],
+      "status": "not_affected",
+      "justification": "vulnerable_code_not_present",
+      "impact_statement": "The golang.org/x/crypto/ssh, ssh/agent and ssh/knownhosts packages are NOT compiled into the listed binaries. The Go function-name table (pclntab, retained despite -s -w stripping) contains no x/crypto/ssh* symbols \u2014 only unrelated x/crypto sub-packages (cryptobyte/hkdf/chacha20poly1305/nacl) used by TLS. Vulnerable code not present. Filed upstream as rancher/image-scanning#1451.",
+      "timestamp": "2026-06-24T00:00:00Z"
+    },
+    {
+      "vulnerability": {
+        "name": "CVE-2026-39828"
+      },
+      "products": [
+        {
+          "@id": "pkg:oci/hardened-flannel",
+          "subcomponents": [
+            {
+              "@id": "pkg:golang/golang.org/x/crypto@v0.49.0"
+            }
+          ]
+        },
+        {
+          "@id": "pkg:oci/hardened-calico",
+          "subcomponents": [
+            {
+              "@id": "pkg:golang/golang.org/x/crypto@v0.47.0"
+            }
+          ]
+        },
+        {
+          "@id": "pkg:oci/rke2-cloud-provider",
+          "subcomponents": [
+            {
+              "@id": "pkg:golang/golang.org/x/crypto@v0.50.0"
+            }
+          ]
+        }
+      ],
+      "status": "not_affected",
+      "justification": "vulnerable_code_not_present",
+      "impact_statement": "The golang.org/x/crypto/ssh, ssh/agent and ssh/knownhosts packages are NOT compiled into the listed binaries. The Go function-name table (pclntab, retained despite -s -w stripping) contains no x/crypto/ssh* symbols \u2014 only unrelated x/crypto sub-packages (cryptobyte/hkdf/chacha20poly1305/nacl) used by TLS. Vulnerable code not present. Filed upstream as rancher/image-scanning#1451.",
+      "timestamp": "2026-06-24T00:00:00Z"
+    },
+    {
+      "vulnerability": {
+        "name": "CVE-2026-39835"
+      },
+      "products": [
+        {
+          "@id": "pkg:oci/hardened-flannel",
+          "subcomponents": [
+            {
+              "@id": "pkg:golang/golang.org/x/crypto@v0.49.0"
+            }
+          ]
+        },
+        {
+          "@id": "pkg:oci/hardened-calico",
+          "subcomponents": [
+            {
+              "@id": "pkg:golang/golang.org/x/crypto@v0.47.0"
+            }
+          ]
+        },
+        {
+          "@id": "pkg:oci/rke2-cloud-provider",
+          "subcomponents": [
+            {
+              "@id": "pkg:golang/golang.org/x/crypto@v0.50.0"
+            }
+          ]
+        }
+      ],
+      "status": "not_affected",
+      "justification": "vulnerable_code_not_present",
+      "impact_statement": "The golang.org/x/crypto/ssh, ssh/agent and ssh/knownhosts packages are NOT compiled into the listed binaries. The Go function-name table (pclntab, retained despite -s -w stripping) contains no x/crypto/ssh* symbols \u2014 only unrelated x/crypto sub-packages (cryptobyte/hkdf/chacha20poly1305/nacl) used by TLS. Vulnerable code not present. Filed upstream as rancher/image-scanning#1451.",
+      "timestamp": "2026-06-24T00:00:00Z"
+    },
+    {
+      "vulnerability": {
+        "name": "CVE-2026-39827"
+      },
+      "products": [
+        {
+          "@id": "pkg:oci/hardened-flannel",
+          "subcomponents": [
+            {
+              "@id": "pkg:golang/golang.org/x/crypto@v0.49.0"
+            }
+          ]
+        },
+        {
+          "@id": "pkg:oci/hardened-calico",
+          "subcomponents": [
+            {
+              "@id": "pkg:golang/golang.org/x/crypto@v0.47.0"
+            }
+          ]
+        },
+        {
+          "@id": "pkg:oci/rke2-cloud-provider",
+          "subcomponents": [
+            {
+              "@id": "pkg:golang/golang.org/x/crypto@v0.50.0"
+            }
+          ]
+        }
+      ],
+      "status": "not_affected",
+      "justification": "vulnerable_code_not_present",
+      "impact_statement": "The golang.org/x/crypto/ssh, ssh/agent and ssh/knownhosts packages are NOT compiled into the listed binaries. The Go function-name table (pclntab, retained despite -s -w stripping) contains no x/crypto/ssh* symbols \u2014 only unrelated x/crypto sub-packages (cryptobyte/hkdf/chacha20poly1305/nacl) used by TLS. Vulnerable code not present. Filed upstream as rancher/image-scanning#1451.",
+      "timestamp": "2026-06-24T00:00:00Z"
+    },
+    {
+      "vulnerability": {
+        "name": "CVE-2026-39830"
+      },
+      "products": [
+        {
+          "@id": "pkg:oci/hardened-flannel",
+          "subcomponents": [
+            {
+              "@id": "pkg:golang/golang.org/x/crypto@v0.49.0"
+            }
+          ]
+        },
+        {
+          "@id": "pkg:oci/hardened-calico",
+          "subcomponents": [
+            {
+              "@id": "pkg:golang/golang.org/x/crypto@v0.47.0"
+            }
+          ]
+        },
+        {
+          "@id": "pkg:oci/rke2-cloud-provider",
+          "subcomponents": [
+            {
+              "@id": "pkg:golang/golang.org/x/crypto@v0.50.0"
+            }
+          ]
+        }
+      ],
+      "status": "not_affected",
+      "justification": "vulnerable_code_not_present",
+      "impact_statement": "The golang.org/x/crypto/ssh, ssh/agent and ssh/knownhosts packages are NOT compiled into the listed binaries. The Go function-name table (pclntab, retained despite -s -w stripping) contains no x/crypto/ssh* symbols \u2014 only unrelated x/crypto sub-packages (cryptobyte/hkdf/chacha20poly1305/nacl) used by TLS. Vulnerable code not present. Filed upstream as rancher/image-scanning#1451.",
+      "timestamp": "2026-06-24T00:00:00Z"
+    },
+    {
+      "vulnerability": {
+        "name": "CVE-2026-39829"
+      },
+      "products": [
+        {
+          "@id": "pkg:oci/hardened-flannel",
+          "subcomponents": [
+            {
+              "@id": "pkg:golang/golang.org/x/crypto@v0.49.0"
+            }
+          ]
+        },
+        {
+          "@id": "pkg:oci/hardened-calico",
+          "subcomponents": [
+            {
+              "@id": "pkg:golang/golang.org/x/crypto@v0.47.0"
+            }
+          ]
+        },
+        {
+          "@id": "pkg:oci/rke2-cloud-provider",
+          "subcomponents": [
+            {
+              "@id": "pkg:golang/golang.org/x/crypto@v0.50.0"
+            }
+          ]
+        }
+      ],
+      "status": "not_affected",
+      "justification": "vulnerable_code_not_present",
+      "impact_statement": "The golang.org/x/crypto/ssh, ssh/agent and ssh/knownhosts packages are NOT compiled into the listed binaries. The Go function-name table (pclntab, retained despite -s -w stripping) contains no x/crypto/ssh* symbols \u2014 only unrelated x/crypto sub-packages (cryptobyte/hkdf/chacha20poly1305/nacl) used by TLS. Vulnerable code not present. Filed upstream as rancher/image-scanning#1451.",
+      "timestamp": "2026-06-24T00:00:00Z"
+    },
+    {
+      "vulnerability": {
+        "name": "CVE-2026-39831"
+      },
+      "products": [
+        {
+          "@id": "pkg:oci/hardened-flannel",
+          "subcomponents": [
+            {
+              "@id": "pkg:golang/golang.org/x/crypto@v0.49.0"
+            }
+          ]
+        },
+        {
+          "@id": "pkg:oci/hardened-calico",
+          "subcomponents": [
+            {
+              "@id": "pkg:golang/golang.org/x/crypto@v0.47.0"
+            }
+          ]
+        },
+        {
+          "@id": "pkg:oci/rke2-cloud-provider",
+          "subcomponents": [
+            {
+              "@id": "pkg:golang/golang.org/x/crypto@v0.50.0"
+            }
+          ]
+        }
+      ],
+      "status": "not_affected",
+      "justification": "vulnerable_code_not_present",
+      "impact_statement": "The golang.org/x/crypto/ssh, ssh/agent and ssh/knownhosts packages are NOT compiled into the listed binaries. The Go function-name table (pclntab, retained despite -s -w stripping) contains no x/crypto/ssh* symbols \u2014 only unrelated x/crypto sub-packages (cryptobyte/hkdf/chacha20poly1305/nacl) used by TLS. Vulnerable code not present. Filed upstream as rancher/image-scanning#1451.",
+      "timestamp": "2026-06-24T00:00:00Z"
+    },
+    {
+      "vulnerability": {
+        "name": "CVE-2026-39834"
+      },
+      "products": [
+        {
+          "@id": "pkg:oci/hardened-flannel",
+          "subcomponents": [
+            {
+              "@id": "pkg:golang/golang.org/x/crypto@v0.49.0"
+            }
+          ]
+        },
+        {
+          "@id": "pkg:oci/hardened-calico",
+          "subcomponents": [
+            {
+              "@id": "pkg:golang/golang.org/x/crypto@v0.47.0"
+            }
+          ]
+        },
+        {
+          "@id": "pkg:oci/rke2-cloud-provider",
+          "subcomponents": [
+            {
+              "@id": "pkg:golang/golang.org/x/crypto@v0.50.0"
+            }
+          ]
+        }
+      ],
+      "status": "not_affected",
+      "justification": "vulnerable_code_not_present",
+      "impact_statement": "The golang.org/x/crypto/ssh, ssh/agent and ssh/knownhosts packages are NOT compiled into the listed binaries. The Go function-name table (pclntab, retained despite -s -w stripping) contains no x/crypto/ssh* symbols \u2014 only unrelated x/crypto sub-packages (cryptobyte/hkdf/chacha20poly1305/nacl) used by TLS. Vulnerable code not present. Filed upstream as rancher/image-scanning#1451.",
+      "timestamp": "2026-06-24T00:00:00Z"
+    },
+    {
+      "vulnerability": {
+        "name": "CVE-2026-46595"
+      },
+      "products": [
+        {
+          "@id": "pkg:oci/hardened-flannel",
+          "subcomponents": [
+            {
+              "@id": "pkg:golang/golang.org/x/crypto@v0.49.0"
+            }
+          ]
+        },
+        {
+          "@id": "pkg:oci/hardened-calico",
+          "subcomponents": [
+            {
+              "@id": "pkg:golang/golang.org/x/crypto@v0.47.0"
+            }
+          ]
+        },
+        {
+          "@id": "pkg:oci/rke2-cloud-provider",
+          "subcomponents": [
+            {
+              "@id": "pkg:golang/golang.org/x/crypto@v0.50.0"
+            }
+          ]
+        }
+      ],
+      "status": "not_affected",
+      "justification": "vulnerable_code_not_present",
+      "impact_statement": "The golang.org/x/crypto/ssh, ssh/agent and ssh/knownhosts packages are NOT compiled into the listed binaries. The Go function-name table (pclntab, retained despite -s -w stripping) contains no x/crypto/ssh* symbols \u2014 only unrelated x/crypto sub-packages (cryptobyte/hkdf/chacha20poly1305/nacl) used by TLS. Vulnerable code not present. Filed upstream as rancher/image-scanning#1451.",
+      "timestamp": "2026-06-24T00:00:00Z"
+    },
+    {
+      "vulnerability": {
+        "name": "CVE-2026-39833"
+      },
+      "products": [
+        {
+          "@id": "pkg:oci/hardened-flannel",
+          "subcomponents": [
+            {
+              "@id": "pkg:golang/golang.org/x/crypto@v0.49.0"
+            }
+          ]
+        },
+        {
+          "@id": "pkg:oci/hardened-calico",
+          "subcomponents": [
+            {
+              "@id": "pkg:golang/golang.org/x/crypto@v0.47.0"
+            }
+          ]
+        },
+        {
+          "@id": "pkg:oci/rke2-cloud-provider",
+          "subcomponents": [
+            {
+              "@id": "pkg:golang/golang.org/x/crypto@v0.50.0"
+            }
+          ]
+        }
+      ],
+      "status": "not_affected",
+      "justification": "vulnerable_code_not_present",
+      "impact_statement": "The golang.org/x/crypto/ssh, ssh/agent and ssh/knownhosts packages are NOT compiled into the listed binaries. The Go function-name table (pclntab, retained despite -s -w stripping) contains no x/crypto/ssh* symbols \u2014 only unrelated x/crypto sub-packages (cryptobyte/hkdf/chacha20poly1305/nacl) used by TLS. Vulnerable code not present. Filed upstream as rancher/image-scanning#1451.",
+      "timestamp": "2026-06-24T00:00:00Z"
+    },
+    {
+      "vulnerability": {
+        "name": "CVE-2026-39832"
+      },
+      "products": [
+        {
+          "@id": "pkg:oci/hardened-flannel",
+          "subcomponents": [
+            {
+              "@id": "pkg:golang/golang.org/x/crypto@v0.49.0"
+            }
+          ]
+        },
+        {
+          "@id": "pkg:oci/hardened-calico",
+          "subcomponents": [
+            {
+              "@id": "pkg:golang/golang.org/x/crypto@v0.47.0"
+            }
+          ]
+        },
+        {
+          "@id": "pkg:oci/rke2-cloud-provider",
+          "subcomponents": [
+            {
+              "@id": "pkg:golang/golang.org/x/crypto@v0.50.0"
+            }
+          ]
+        }
+      ],
+      "status": "not_affected",
+      "justification": "vulnerable_code_not_present",
+      "impact_statement": "The golang.org/x/crypto/ssh, ssh/agent and ssh/knownhosts packages are NOT compiled into the listed binaries. The Go function-name table (pclntab, retained despite -s -w stripping) contains no x/crypto/ssh* symbols \u2014 only unrelated x/crypto sub-packages (cryptobyte/hkdf/chacha20poly1305/nacl) used by TLS. Vulnerable code not present. Filed upstream as rancher/image-scanning#1451.",
+      "timestamp": "2026-06-24T00:00:00Z"
+    },
+    {
+      "vulnerability": {
+        "name": "CVE-2026-46598"
+      },
+      "products": [
+        {
+          "@id": "pkg:oci/hardened-flannel",
+          "subcomponents": [
+            {
+              "@id": "pkg:golang/golang.org/x/crypto@v0.49.0"
+            }
+          ]
+        },
+        {
+          "@id": "pkg:oci/hardened-calico",
+          "subcomponents": [
+            {
+              "@id": "pkg:golang/golang.org/x/crypto@v0.47.0"
+            }
+          ]
+        },
+        {
+          "@id": "pkg:oci/rke2-cloud-provider",
+          "subcomponents": [
+            {
+              "@id": "pkg:golang/golang.org/x/crypto@v0.50.0"
+            }
+          ]
+        }
+      ],
+      "status": "not_affected",
+      "justification": "vulnerable_code_not_present",
+      "impact_statement": "The golang.org/x/crypto/ssh, ssh/agent and ssh/knownhosts packages are NOT compiled into the listed binaries. The Go function-name table (pclntab, retained despite -s -w stripping) contains no x/crypto/ssh* symbols \u2014 only unrelated x/crypto sub-packages (cryptobyte/hkdf/chacha20poly1305/nacl) used by TLS. Vulnerable code not present. Filed upstream as rancher/image-scanning#1451.",
+      "timestamp": "2026-06-24T00:00:00Z"
+    },
+    {
+      "vulnerability": {
+        "name": "CVE-2026-42508"
+      },
+      "products": [
+        {
+          "@id": "pkg:oci/hardened-flannel",
+          "subcomponents": [
+            {
+              "@id": "pkg:golang/golang.org/x/crypto@v0.49.0"
+            }
+          ]
+        },
+        {
+          "@id": "pkg:oci/hardened-calico",
+          "subcomponents": [
+            {
+              "@id": "pkg:golang/golang.org/x/crypto@v0.47.0"
+            }
+          ]
+        },
+        {
+          "@id": "pkg:oci/rke2-cloud-provider",
+          "subcomponents": [
+            {
+              "@id": "pkg:golang/golang.org/x/crypto@v0.50.0"
+            }
+          ]
+        }
+      ],
+      "status": "not_affected",
+      "justification": "vulnerable_code_not_present",
+      "impact_statement": "The golang.org/x/crypto/ssh, ssh/agent and ssh/knownhosts packages are NOT compiled into the listed binaries. The Go function-name table (pclntab, retained despite -s -w stripping) contains no x/crypto/ssh* symbols \u2014 only unrelated x/crypto sub-packages (cryptobyte/hkdf/chacha20poly1305/nacl) used by TLS. Vulnerable code not present. Filed upstream as rancher/image-scanning#1451.",
+      "timestamp": "2026-06-24T00:00:00Z"
+    },
+    {
+      "vulnerability": {
+        "name": "CVE-2026-42506"
+      },
+      "products": [
+        {
+          "@id": "pkg:oci/hardened-flannel",
+          "subcomponents": [
+            {
+              "@id": "pkg:golang/golang.org/x/net@v0.52.0"
+            }
+          ]
+        },
+        {
+          "@id": "pkg:oci/nginx-ingress-controller",
+          "subcomponents": [
+            {
+              "@id": "pkg:golang/golang.org/x/net@v0.52.0"
+            }
+          ]
+        },
+        {
+          "@id": "pkg:oci/hardened-cluster-autoscaler",
+          "subcomponents": [
+            {
+              "@id": "pkg:golang/golang.org/x/net@v0.36.0"
+            }
+          ]
+        },
+        {
+          "@id": "pkg:oci/hardened-calico",
+          "subcomponents": [
+            {
+              "@id": "pkg:golang/golang.org/x/net@v0.49.0"
+            }
+          ]
+        },
+        {
+          "@id": "pkg:oci/rke2-cloud-provider",
+          "subcomponents": [
+            {
+              "@id": "pkg:golang/golang.org/x/net@v0.53.0"
+            }
+          ]
+        }
+      ],
+      "status": "not_affected",
+      "justification": "vulnerable_code_not_present",
+      "impact_statement": "The golang.org/x/net/html package is NOT compiled into the listed binaries (pclntab contains no x/net/html symbols; only http2/idna are linked). For hardened-calico this applies to all calico binaries EXCEPT calico-node, which does link x/net/html and is excluded. Vulnerable code not present. Filed upstream as rancher/image-scanning#1452.",
+      "timestamp": "2026-06-24T00:00:00Z"
+    },
+    {
+      "vulnerability": {
+        "name": "CVE-2026-42502"
+      },
+      "products": [
+        {
+          "@id": "pkg:oci/hardened-flannel",
+          "subcomponents": [
+            {
+              "@id": "pkg:golang/golang.org/x/net@v0.52.0"
+            }
+          ]
+        },
+        {
+          "@id": "pkg:oci/nginx-ingress-controller",
+          "subcomponents": [
+            {
+              "@id": "pkg:golang/golang.org/x/net@v0.52.0"
+            }
+          ]
+        },
+        {
+          "@id": "pkg:oci/hardened-cluster-autoscaler",
+          "subcomponents": [
+            {
+              "@id": "pkg:golang/golang.org/x/net@v0.36.0"
+            }
+          ]
+        },
+        {
+          "@id": "pkg:oci/hardened-calico",
+          "subcomponents": [
+            {
+              "@id": "pkg:golang/golang.org/x/net@v0.49.0"
+            }
+          ]
+        },
+        {
+          "@id": "pkg:oci/rke2-cloud-provider",
+          "subcomponents": [
+            {
+              "@id": "pkg:golang/golang.org/x/net@v0.53.0"
+            }
+          ]
+        }
+      ],
+      "status": "not_affected",
+      "justification": "vulnerable_code_not_present",
+      "impact_statement": "The golang.org/x/net/html package is NOT compiled into the listed binaries (pclntab contains no x/net/html symbols; only http2/idna are linked). For hardened-calico this applies to all calico binaries EXCEPT calico-node, which does link x/net/html and is excluded. Vulnerable code not present. Filed upstream as rancher/image-scanning#1452.",
+      "timestamp": "2026-06-24T00:00:00Z"
+    },
+    {
+      "vulnerability": {
+        "name": "CVE-2026-25680"
+      },
+      "products": [
+        {
+          "@id": "pkg:oci/hardened-flannel",
+          "subcomponents": [
+            {
+              "@id": "pkg:golang/golang.org/x/net@v0.52.0"
+            }
+          ]
+        },
+        {
+          "@id": "pkg:oci/nginx-ingress-controller",
+          "subcomponents": [
+            {
+              "@id": "pkg:golang/golang.org/x/net@v0.52.0"
+            }
+          ]
+        },
+        {
+          "@id": "pkg:oci/hardened-cluster-autoscaler",
+          "subcomponents": [
+            {
+              "@id": "pkg:golang/golang.org/x/net@v0.36.0"
+            }
+          ]
+        },
+        {
+          "@id": "pkg:oci/hardened-calico",
+          "subcomponents": [
+            {
+              "@id": "pkg:golang/golang.org/x/net@v0.49.0"
+            }
+          ]
+        }
+      ],
+      "status": "not_affected",
+      "justification": "vulnerable_code_not_present",
+      "impact_statement": "The golang.org/x/net/html package is NOT compiled into the listed binaries (pclntab contains no x/net/html symbols; only http2/idna are linked). For hardened-calico this applies to all calico binaries EXCEPT calico-node, which does link x/net/html and is excluded. Vulnerable code not present. Filed upstream as rancher/image-scanning#1452.",
+      "timestamp": "2026-06-24T00:00:00Z"
+    },
+    {
+      "vulnerability": {
+        "name": "CVE-2026-25681"
+      },
+      "products": [
+        {
+          "@id": "pkg:oci/hardened-flannel",
+          "subcomponents": [
+            {
+              "@id": "pkg:golang/golang.org/x/net@v0.52.0"
+            }
+          ]
+        },
+        {
+          "@id": "pkg:oci/nginx-ingress-controller",
+          "subcomponents": [
+            {
+              "@id": "pkg:golang/golang.org/x/net@v0.52.0"
+            }
+          ]
+        },
+        {
+          "@id": "pkg:oci/hardened-cluster-autoscaler",
+          "subcomponents": [
+            {
+              "@id": "pkg:golang/golang.org/x/net@v0.36.0"
+            }
+          ]
+        },
+        {
+          "@id": "pkg:oci/hardened-calico",
+          "subcomponents": [
+            {
+              "@id": "pkg:golang/golang.org/x/net@v0.49.0"
+            }
+          ]
+        },
+        {
+          "@id": "pkg:oci/rke2-cloud-provider",
+          "subcomponents": [
+            {
+              "@id": "pkg:golang/golang.org/x/net@v0.53.0"
+            }
+          ]
+        }
+      ],
+      "status": "not_affected",
+      "justification": "vulnerable_code_not_present",
+      "impact_statement": "The golang.org/x/net/html package is NOT compiled into the listed binaries (pclntab contains no x/net/html symbols; only http2/idna are linked). For hardened-calico this applies to all calico binaries EXCEPT calico-node, which does link x/net/html and is excluded. Vulnerable code not present. Filed upstream as rancher/image-scanning#1452.",
+      "timestamp": "2026-06-24T00:00:00Z"
+    },
+    {
+      "vulnerability": {
+        "name": "CVE-2026-27136"
+      },
+      "products": [
+        {
+          "@id": "pkg:oci/hardened-flannel",
+          "subcomponents": [
+            {
+              "@id": "pkg:golang/golang.org/x/net@v0.52.0"
+            }
+          ]
+        },
+        {
+          "@id": "pkg:oci/nginx-ingress-controller",
+          "subcomponents": [
+            {
+              "@id": "pkg:golang/golang.org/x/net@v0.52.0"
+            }
+          ]
+        },
+        {
+          "@id": "pkg:oci/hardened-cluster-autoscaler",
+          "subcomponents": [
+            {
+              "@id": "pkg:golang/golang.org/x/net@v0.36.0"
+            }
+          ]
+        },
+        {
+          "@id": "pkg:oci/hardened-calico",
+          "subcomponents": [
+            {
+              "@id": "pkg:golang/golang.org/x/net@v0.49.0"
+            }
+          ]
+        },
+        {
+          "@id": "pkg:oci/rke2-cloud-provider",
+          "subcomponents": [
+            {
+              "@id": "pkg:golang/golang.org/x/net@v0.53.0"
+            }
+          ]
+        }
+      ],
+      "status": "not_affected",
+      "justification": "vulnerable_code_not_present",
+      "impact_statement": "The golang.org/x/net/html package is NOT compiled into the listed binaries (pclntab contains no x/net/html symbols; only http2/idna are linked). For hardened-calico this applies to all calico binaries EXCEPT calico-node, which does link x/net/html and is excluded. Vulnerable code not present. Filed upstream as rancher/image-scanning#1452.",
+      "timestamp": "2026-06-24T00:00:00Z"
+    },
+    {
+      "vulnerability": {
+        "name": "CVE-2025-47911"
+      },
+      "products": [
+        {
+          "@id": "pkg:oci/hardened-cluster-autoscaler",
+          "subcomponents": [
+            {
+              "@id": "pkg:golang/golang.org/x/net@v0.36.0"
+            }
+          ]
+        }
+      ],
+      "status": "not_affected",
+      "justification": "vulnerable_code_not_present",
+      "impact_statement": "The golang.org/x/net/html package is NOT compiled into the listed binaries (pclntab contains no x/net/html symbols; only http2/idna are linked). For hardened-calico this applies to all calico binaries EXCEPT calico-node, which does link x/net/html and is excluded. Vulnerable code not present. Filed upstream as rancher/image-scanning#1452.",
+      "timestamp": "2026-06-24T00:00:00Z"
+    },
+    {
+      "vulnerability": {
+        "name": "CVE-2025-58190"
+      },
+      "products": [
+        {
+          "@id": "pkg:oci/hardened-cluster-autoscaler",
+          "subcomponents": [
+            {
+              "@id": "pkg:golang/golang.org/x/net@v0.36.0"
+            }
+          ]
+        }
+      ],
+      "status": "not_affected",
+      "justification": "vulnerable_code_not_present",
+      "impact_statement": "The golang.org/x/net/html package is NOT compiled into the listed binaries (pclntab contains no x/net/html symbols; only http2/idna are linked). For hardened-calico this applies to all calico binaries EXCEPT calico-node, which does link x/net/html and is excluded. Vulnerable code not present. Filed upstream as rancher/image-scanning#1452.",
+      "timestamp": "2026-06-24T00:00:00Z"
+    },
+    {
+      "vulnerability": {
+        "name": "CVE-2026-46597"
+      },
+      "products": [
+        {
+          "@id": "pkg:oci/hardened-kubernetes",
+          "subcomponents": [
+            {
+              "@id": "pkg:golang/golang.org/x/crypto@v0.47.0"
+            }
+          ]
+        }
+      ],
+      "status": "not_affected",
+      "justification": "vulnerable_code_not_present",
+      "impact_statement": "The golang.org/x/crypto/ssh, ssh/agent and ssh/knownhosts packages are NOT compiled into the hardened-kubernetes binaries (kube-apiserver/kube-controller-manager/kube-scheduler/kube-proxy/kubelet). pclntab (retained despite -s -w; nm=0) contains zero x/crypto/ssh* symbols \u2014 only TLS sub-packages (cryptobyte/chacha20poly1305/hkdf/nacl/ed25519). Vulnerable code not present. Filed as rancher/image-scanning#1456.",
+      "timestamp": "2026-06-24T00:00:00Z"
+    },
+    {
+      "vulnerability": {
+        "name": "CVE-2026-39828"
+      },
+      "products": [
+        {
+          "@id": "pkg:oci/hardened-kubernetes",
+          "subcomponents": [
+            {
+              "@id": "pkg:golang/golang.org/x/crypto@v0.47.0"
+            }
+          ]
+        }
+      ],
+      "status": "not_affected",
+      "justification": "vulnerable_code_not_present",
+      "impact_statement": "The golang.org/x/crypto/ssh, ssh/agent and ssh/knownhosts packages are NOT compiled into the hardened-kubernetes binaries (kube-apiserver/kube-controller-manager/kube-scheduler/kube-proxy/kubelet). pclntab (retained despite -s -w; nm=0) contains zero x/crypto/ssh* symbols \u2014 only TLS sub-packages (cryptobyte/chacha20poly1305/hkdf/nacl/ed25519). Vulnerable code not present. Filed as rancher/image-scanning#1456.",
+      "timestamp": "2026-06-24T00:00:00Z"
+    },
+    {
+      "vulnerability": {
+        "name": "CVE-2026-39835"
+      },
+      "products": [
+        {
+          "@id": "pkg:oci/hardened-kubernetes",
+          "subcomponents": [
+            {
+              "@id": "pkg:golang/golang.org/x/crypto@v0.47.0"
+            }
+          ]
+        }
+      ],
+      "status": "not_affected",
+      "justification": "vulnerable_code_not_present",
+      "impact_statement": "The golang.org/x/crypto/ssh, ssh/agent and ssh/knownhosts packages are NOT compiled into the hardened-kubernetes binaries (kube-apiserver/kube-controller-manager/kube-scheduler/kube-proxy/kubelet). pclntab (retained despite -s -w; nm=0) contains zero x/crypto/ssh* symbols \u2014 only TLS sub-packages (cryptobyte/chacha20poly1305/hkdf/nacl/ed25519). Vulnerable code not present. Filed as rancher/image-scanning#1456.",
+      "timestamp": "2026-06-24T00:00:00Z"
+    },
+    {
+      "vulnerability": {
+        "name": "CVE-2026-39827"
+      },
+      "products": [
+        {
+          "@id": "pkg:oci/hardened-kubernetes",
+          "subcomponents": [
+            {
+              "@id": "pkg:golang/golang.org/x/crypto@v0.47.0"
+            }
+          ]
+        }
+      ],
+      "status": "not_affected",
+      "justification": "vulnerable_code_not_present",
+      "impact_statement": "The golang.org/x/crypto/ssh, ssh/agent and ssh/knownhosts packages are NOT compiled into the hardened-kubernetes binaries (kube-apiserver/kube-controller-manager/kube-scheduler/kube-proxy/kubelet). pclntab (retained despite -s -w; nm=0) contains zero x/crypto/ssh* symbols \u2014 only TLS sub-packages (cryptobyte/chacha20poly1305/hkdf/nacl/ed25519). Vulnerable code not present. Filed as rancher/image-scanning#1456.",
+      "timestamp": "2026-06-24T00:00:00Z"
+    },
+    {
+      "vulnerability": {
+        "name": "CVE-2026-39830"
+      },
+      "products": [
+        {
+          "@id": "pkg:oci/hardened-kubernetes",
+          "subcomponents": [
+            {
+              "@id": "pkg:golang/golang.org/x/crypto@v0.47.0"
+            }
+          ]
+        }
+      ],
+      "status": "not_affected",
+      "justification": "vulnerable_code_not_present",
+      "impact_statement": "The golang.org/x/crypto/ssh, ssh/agent and ssh/knownhosts packages are NOT compiled into the hardened-kubernetes binaries (kube-apiserver/kube-controller-manager/kube-scheduler/kube-proxy/kubelet). pclntab (retained despite -s -w; nm=0) contains zero x/crypto/ssh* symbols \u2014 only TLS sub-packages (cryptobyte/chacha20poly1305/hkdf/nacl/ed25519). Vulnerable code not present. Filed as rancher/image-scanning#1456.",
+      "timestamp": "2026-06-24T00:00:00Z"
+    },
+    {
+      "vulnerability": {
+        "name": "CVE-2026-39829"
+      },
+      "products": [
+        {
+          "@id": "pkg:oci/hardened-kubernetes",
+          "subcomponents": [
+            {
+              "@id": "pkg:golang/golang.org/x/crypto@v0.47.0"
+            }
+          ]
+        }
+      ],
+      "status": "not_affected",
+      "justification": "vulnerable_code_not_present",
+      "impact_statement": "The golang.org/x/crypto/ssh, ssh/agent and ssh/knownhosts packages are NOT compiled into the hardened-kubernetes binaries (kube-apiserver/kube-controller-manager/kube-scheduler/kube-proxy/kubelet). pclntab (retained despite -s -w; nm=0) contains zero x/crypto/ssh* symbols \u2014 only TLS sub-packages (cryptobyte/chacha20poly1305/hkdf/nacl/ed25519). Vulnerable code not present. Filed as rancher/image-scanning#1456.",
+      "timestamp": "2026-06-24T00:00:00Z"
+    },
+    {
+      "vulnerability": {
+        "name": "CVE-2026-39831"
+      },
+      "products": [
+        {
+          "@id": "pkg:oci/hardened-kubernetes",
+          "subcomponents": [
+            {
+              "@id": "pkg:golang/golang.org/x/crypto@v0.47.0"
+            }
+          ]
+        }
+      ],
+      "status": "not_affected",
+      "justification": "vulnerable_code_not_present",
+      "impact_statement": "The golang.org/x/crypto/ssh, ssh/agent and ssh/knownhosts packages are NOT compiled into the hardened-kubernetes binaries (kube-apiserver/kube-controller-manager/kube-scheduler/kube-proxy/kubelet). pclntab (retained despite -s -w; nm=0) contains zero x/crypto/ssh* symbols \u2014 only TLS sub-packages (cryptobyte/chacha20poly1305/hkdf/nacl/ed25519). Vulnerable code not present. Filed as rancher/image-scanning#1456.",
+      "timestamp": "2026-06-24T00:00:00Z"
+    },
+    {
+      "vulnerability": {
+        "name": "CVE-2026-39834"
+      },
+      "products": [
+        {
+          "@id": "pkg:oci/hardened-kubernetes",
+          "subcomponents": [
+            {
+              "@id": "pkg:golang/golang.org/x/crypto@v0.47.0"
+            }
+          ]
+        }
+      ],
+      "status": "not_affected",
+      "justification": "vulnerable_code_not_present",
+      "impact_statement": "The golang.org/x/crypto/ssh, ssh/agent and ssh/knownhosts packages are NOT compiled into the hardened-kubernetes binaries (kube-apiserver/kube-controller-manager/kube-scheduler/kube-proxy/kubelet). pclntab (retained despite -s -w; nm=0) contains zero x/crypto/ssh* symbols \u2014 only TLS sub-packages (cryptobyte/chacha20poly1305/hkdf/nacl/ed25519). Vulnerable code not present. Filed as rancher/image-scanning#1456.",
+      "timestamp": "2026-06-24T00:00:00Z"
+    },
+    {
+      "vulnerability": {
+        "name": "CVE-2026-46595"
+      },
+      "products": [
+        {
+          "@id": "pkg:oci/hardened-kubernetes",
+          "subcomponents": [
+            {
+              "@id": "pkg:golang/golang.org/x/crypto@v0.47.0"
+            }
+          ]
+        }
+      ],
+      "status": "not_affected",
+      "justification": "vulnerable_code_not_present",
+      "impact_statement": "The golang.org/x/crypto/ssh, ssh/agent and ssh/knownhosts packages are NOT compiled into the hardened-kubernetes binaries (kube-apiserver/kube-controller-manager/kube-scheduler/kube-proxy/kubelet). pclntab (retained despite -s -w; nm=0) contains zero x/crypto/ssh* symbols \u2014 only TLS sub-packages (cryptobyte/chacha20poly1305/hkdf/nacl/ed25519). Vulnerable code not present. Filed as rancher/image-scanning#1456.",
+      "timestamp": "2026-06-24T00:00:00Z"
+    },
+    {
+      "vulnerability": {
+        "name": "CVE-2026-39833"
+      },
+      "products": [
+        {
+          "@id": "pkg:oci/hardened-kubernetes",
+          "subcomponents": [
+            {
+              "@id": "pkg:golang/golang.org/x/crypto@v0.47.0"
+            }
+          ]
+        }
+      ],
+      "status": "not_affected",
+      "justification": "vulnerable_code_not_present",
+      "impact_statement": "The golang.org/x/crypto/ssh, ssh/agent and ssh/knownhosts packages are NOT compiled into the hardened-kubernetes binaries (kube-apiserver/kube-controller-manager/kube-scheduler/kube-proxy/kubelet). pclntab (retained despite -s -w; nm=0) contains zero x/crypto/ssh* symbols \u2014 only TLS sub-packages (cryptobyte/chacha20poly1305/hkdf/nacl/ed25519). Vulnerable code not present. Filed as rancher/image-scanning#1456.",
+      "timestamp": "2026-06-24T00:00:00Z"
+    },
+    {
+      "vulnerability": {
+        "name": "CVE-2026-39832"
+      },
+      "products": [
+        {
+          "@id": "pkg:oci/hardened-kubernetes",
+          "subcomponents": [
+            {
+              "@id": "pkg:golang/golang.org/x/crypto@v0.47.0"
+            }
+          ]
+        }
+      ],
+      "status": "not_affected",
+      "justification": "vulnerable_code_not_present",
+      "impact_statement": "The golang.org/x/crypto/ssh, ssh/agent and ssh/knownhosts packages are NOT compiled into the hardened-kubernetes binaries (kube-apiserver/kube-controller-manager/kube-scheduler/kube-proxy/kubelet). pclntab (retained despite -s -w; nm=0) contains zero x/crypto/ssh* symbols \u2014 only TLS sub-packages (cryptobyte/chacha20poly1305/hkdf/nacl/ed25519). Vulnerable code not present. Filed as rancher/image-scanning#1456.",
+      "timestamp": "2026-06-24T00:00:00Z"
+    },
+    {
+      "vulnerability": {
+        "name": "CVE-2026-46598"
+      },
+      "products": [
+        {
+          "@id": "pkg:oci/hardened-kubernetes",
+          "subcomponents": [
+            {
+              "@id": "pkg:golang/golang.org/x/crypto@v0.47.0"
+            }
+          ]
+        }
+      ],
+      "status": "not_affected",
+      "justification": "vulnerable_code_not_present",
+      "impact_statement": "The golang.org/x/crypto/ssh, ssh/agent and ssh/knownhosts packages are NOT compiled into the hardened-kubernetes binaries (kube-apiserver/kube-controller-manager/kube-scheduler/kube-proxy/kubelet). pclntab (retained despite -s -w; nm=0) contains zero x/crypto/ssh* symbols \u2014 only TLS sub-packages (cryptobyte/chacha20poly1305/hkdf/nacl/ed25519). Vulnerable code not present. Filed as rancher/image-scanning#1456.",
+      "timestamp": "2026-06-24T00:00:00Z"
+    },
+    {
+      "vulnerability": {
+        "name": "CVE-2026-42508"
+      },
+      "products": [
+        {
+          "@id": "pkg:oci/hardened-kubernetes",
+          "subcomponents": [
+            {
+              "@id": "pkg:golang/golang.org/x/crypto@v0.47.0"
+            }
+          ]
+        }
+      ],
+      "status": "not_affected",
+      "justification": "vulnerable_code_not_present",
+      "impact_statement": "The golang.org/x/crypto/ssh, ssh/agent and ssh/knownhosts packages are NOT compiled into the hardened-kubernetes binaries (kube-apiserver/kube-controller-manager/kube-scheduler/kube-proxy/kubelet). pclntab (retained despite -s -w; nm=0) contains zero x/crypto/ssh* symbols \u2014 only TLS sub-packages (cryptobyte/chacha20poly1305/hkdf/nacl/ed25519). Vulnerable code not present. Filed as rancher/image-scanning#1456.",
+      "timestamp": "2026-06-24T00:00:00Z"
+    },
+    {
+      "vulnerability": {
+        "name": "CVE-2025-22872"
+      },
+      "products": [
+        {
+          "@id": "pkg:oci/hardened-addon-resizer",
+          "subcomponents": [
+            {
+              "@id": "pkg:golang/golang.org/x/net@v0.33.0"
+            }
+          ]
+        }
+      ],
+      "status": "not_affected",
+      "justification": "vulnerable_code_not_present",
+      "impact_statement": "The golang.org/x/net/html package is NOT compiled into the listed binary (pclntab contains no x/net/html symbols; only http2/idna linked). Vulnerable code not present. Filed as rancher/image-scanning#1457.",
+      "timestamp": "2026-06-24T00:00:00Z"
+    },
+    {
+      "vulnerability": {
+        "name": "CVE-2025-47911"
+      },
+      "products": [
+        {
+          "@id": "pkg:oci/hardened-addon-resizer",
+          "subcomponents": [
+            {
+              "@id": "pkg:golang/golang.org/x/net@v0.33.0"
+            }
+          ]
+        }
+      ],
+      "status": "not_affected",
+      "justification": "vulnerable_code_not_present",
+      "impact_statement": "The golang.org/x/net/html package is NOT compiled into the listed binary (pclntab contains no x/net/html symbols; only http2/idna linked). Vulnerable code not present. Filed as rancher/image-scanning#1457.",
+      "timestamp": "2026-06-24T00:00:00Z"
+    },
+    {
+      "vulnerability": {
+        "name": "CVE-2025-58190"
+      },
+      "products": [
+        {
+          "@id": "pkg:oci/hardened-addon-resizer",
+          "subcomponents": [
+            {
+              "@id": "pkg:golang/golang.org/x/net@v0.33.0"
+            }
+          ]
+        }
+      ],
+      "status": "not_affected",
+      "justification": "vulnerable_code_not_present",
+      "impact_statement": "The golang.org/x/net/html package is NOT compiled into the listed binary (pclntab contains no x/net/html symbols; only http2/idna linked). Vulnerable code not present. Filed as rancher/image-scanning#1457.",
+      "timestamp": "2026-06-24T00:00:00Z"
+    },
+    {
+      "vulnerability": {
+        "name": "CVE-2026-25680"
+      },
+      "products": [
+        {
+          "@id": "pkg:oci/hardened-addon-resizer",
+          "subcomponents": [
+            {
+              "@id": "pkg:golang/golang.org/x/net@v0.33.0"
+            }
+          ]
+        }
+      ],
+      "status": "not_affected",
+      "justification": "vulnerable_code_not_present",
+      "impact_statement": "The golang.org/x/net/html package is NOT compiled into the listed binary (pclntab contains no x/net/html symbols; only http2/idna linked). Vulnerable code not present. Filed as rancher/image-scanning#1457.",
+      "timestamp": "2026-06-24T00:00:00Z"
+    },
+    {
+      "vulnerability": {
+        "name": "CVE-2026-25681"
+      },
+      "products": [
+        {
+          "@id": "pkg:oci/hardened-addon-resizer",
+          "subcomponents": [
+            {
+              "@id": "pkg:golang/golang.org/x/net@v0.33.0"
+            }
+          ]
+        }
+      ],
+      "status": "not_affected",
+      "justification": "vulnerable_code_not_present",
+      "impact_statement": "The golang.org/x/net/html package is NOT compiled into the listed binary (pclntab contains no x/net/html symbols; only http2/idna linked). Vulnerable code not present. Filed as rancher/image-scanning#1457.",
+      "timestamp": "2026-06-24T00:00:00Z"
+    },
+    {
+      "vulnerability": {
+        "name": "CVE-2026-27136"
+      },
+      "products": [
+        {
+          "@id": "pkg:oci/hardened-addon-resizer",
+          "subcomponents": [
+            {
+              "@id": "pkg:golang/golang.org/x/net@v0.33.0"
+            }
+          ]
+        }
+      ],
+      "status": "not_affected",
+      "justification": "vulnerable_code_not_present",
+      "impact_statement": "The golang.org/x/net/html package is NOT compiled into the listed binary (pclntab contains no x/net/html symbols; only http2/idna linked). Vulnerable code not present. Filed as rancher/image-scanning#1457.",
+      "timestamp": "2026-06-24T00:00:00Z"
+    },
+    {
+      "vulnerability": {
+        "name": "CVE-2026-42502"
+      },
+      "products": [
+        {
+          "@id": "pkg:oci/hardened-addon-resizer",
+          "subcomponents": [
+            {
+              "@id": "pkg:golang/golang.org/x/net@v0.33.0"
+            }
+          ]
+        }
+      ],
+      "status": "not_affected",
+      "justification": "vulnerable_code_not_present",
+      "impact_statement": "The golang.org/x/net/html package is NOT compiled into the listed binary (pclntab contains no x/net/html symbols; only http2/idna linked). Vulnerable code not present. Filed as rancher/image-scanning#1457.",
+      "timestamp": "2026-06-24T00:00:00Z"
+    },
+    {
+      "vulnerability": {
+        "name": "CVE-2026-42506"
+      },
+      "products": [
+        {
+          "@id": "pkg:oci/hardened-addon-resizer",
+          "subcomponents": [
+            {
+              "@id": "pkg:golang/golang.org/x/net@v0.33.0"
+            }
+          ]
+        }
+      ],
+      "status": "not_affected",
+      "justification": "vulnerable_code_not_present",
+      "impact_statement": "The golang.org/x/net/html package is NOT compiled into the listed binary (pclntab contains no x/net/html symbols; only http2/idna linked). Vulnerable code not present. Filed as rancher/image-scanning#1457.",
+      "timestamp": "2026-06-24T00:00:00Z"
+    },
+    {
+      "vulnerability": {
+        "name": "CVE-2026-25680"
+      },
+      "products": [
+        {
+          "@id": "pkg:oci/hardened-snapshot-controller",
+          "subcomponents": [
+            {
+              "@id": "pkg:golang/golang.org/x/net@v0.54.0"
+            }
+          ]
+        }
+      ],
+      "status": "not_affected",
+      "justification": "vulnerable_code_not_present",
+      "impact_statement": "The golang.org/x/net/html package is NOT compiled into the listed binary (pclntab contains no x/net/html symbols; only http2/idna linked). Vulnerable code not present. Filed as rancher/image-scanning#1457.",
+      "timestamp": "2026-06-24T00:00:00Z"
+    },
+    {
+      "vulnerability": {
+        "name": "CVE-2026-25681"
+      },
+      "products": [
+        {
+          "@id": "pkg:oci/hardened-snapshot-controller",
+          "subcomponents": [
+            {
+              "@id": "pkg:golang/golang.org/x/net@v0.54.0"
+            }
+          ]
+        }
+      ],
+      "status": "not_affected",
+      "justification": "vulnerable_code_not_present",
+      "impact_statement": "The golang.org/x/net/html package is NOT compiled into the listed binary (pclntab contains no x/net/html symbols; only http2/idna linked). Vulnerable code not present. Filed as rancher/image-scanning#1457.",
+      "timestamp": "2026-06-24T00:00:00Z"
+    },
+    {
+      "vulnerability": {
+        "name": "CVE-2026-27136"
+      },
+      "products": [
+        {
+          "@id": "pkg:oci/hardened-snapshot-controller",
+          "subcomponents": [
+            {
+              "@id": "pkg:golang/golang.org/x/net@v0.54.0"
+            }
+          ]
+        }
+      ],
+      "status": "not_affected",
+      "justification": "vulnerable_code_not_present",
+      "impact_statement": "The golang.org/x/net/html package is NOT compiled into the listed binary (pclntab contains no x/net/html symbols; only http2/idna linked). Vulnerable code not present. Filed as rancher/image-scanning#1457.",
+      "timestamp": "2026-06-24T00:00:00Z"
+    },
+    {
+      "vulnerability": {
+        "name": "CVE-2026-42502"
+      },
+      "products": [
+        {
+          "@id": "pkg:oci/hardened-snapshot-controller",
+          "subcomponents": [
+            {
+              "@id": "pkg:golang/golang.org/x/net@v0.54.0"
+            }
+          ]
+        }
+      ],
+      "status": "not_affected",
+      "justification": "vulnerable_code_not_present",
+      "impact_statement": "The golang.org/x/net/html package is NOT compiled into the listed binary (pclntab contains no x/net/html symbols; only http2/idna linked). Vulnerable code not present. Filed as rancher/image-scanning#1457.",
+      "timestamp": "2026-06-24T00:00:00Z"
+    },
+    {
+      "vulnerability": {
+        "name": "CVE-2026-42506"
+      },
+      "products": [
+        {
+          "@id": "pkg:oci/hardened-snapshot-controller",
+          "subcomponents": [
+            {
+              "@id": "pkg:golang/golang.org/x/net@v0.54.0"
+            }
+          ]
+        }
+      ],
+      "status": "not_affected",
+      "justification": "vulnerable_code_not_present",
+      "impact_statement": "The golang.org/x/net/html package is NOT compiled into the listed binary (pclntab contains no x/net/html symbols; only http2/idna linked). Vulnerable code not present. Filed as rancher/image-scanning#1457.",
+      "timestamp": "2026-06-24T00:00:00Z"
+    },
+    {
+      "vulnerability": {
+        "name": "CVE-2026-46597"
+      },
+      "products": [
+        {
+          "@id": "pkg:oci/rke2-runtime",
+          "subcomponents": [
+            {
+              "@id": "pkg:golang/golang.org/x/crypto@v0.47.0"
+            }
+          ]
+        }
+      ],
+      "status": "not_affected",
+      "justification": "vulnerable_code_not_present",
+      "impact_statement": "rke2-runtime rc4: kubelet's golang.org/x/crypto/ssh* packages are NOT compiled in (pclntab shows zero x/crypto/ssh* symbols at v0.47.0). containerd already ships fixed x/crypto v0.53.0. Earlier rc3 binary-mode 'ssh reachable in containerd' was a stripped-binary artifact. Filed rancher/image-scanning#1459.",
+      "timestamp": "2026-06-24T00:00:00Z"
+    },
+    {
+      "vulnerability": {
+        "name": "CVE-2026-39828"
+      },
+      "products": [
+        {
+          "@id": "pkg:oci/rke2-runtime",
+          "subcomponents": [
+            {
+              "@id": "pkg:golang/golang.org/x/crypto@v0.47.0"
+            }
+          ]
+        }
+      ],
+      "status": "not_affected",
+      "justification": "vulnerable_code_not_present",
+      "impact_statement": "rke2-runtime rc4: kubelet's golang.org/x/crypto/ssh* packages are NOT compiled in (pclntab shows zero x/crypto/ssh* symbols at v0.47.0). containerd already ships fixed x/crypto v0.53.0. Earlier rc3 binary-mode 'ssh reachable in containerd' was a stripped-binary artifact. Filed rancher/image-scanning#1459.",
+      "timestamp": "2026-06-24T00:00:00Z"
+    },
+    {
+      "vulnerability": {
+        "name": "CVE-2026-39835"
+      },
+      "products": [
+        {
+          "@id": "pkg:oci/rke2-runtime",
+          "subcomponents": [
+            {
+              "@id": "pkg:golang/golang.org/x/crypto@v0.47.0"
+            }
+          ]
+        }
+      ],
+      "status": "not_affected",
+      "justification": "vulnerable_code_not_present",
+      "impact_statement": "rke2-runtime rc4: kubelet's golang.org/x/crypto/ssh* packages are NOT compiled in (pclntab shows zero x/crypto/ssh* symbols at v0.47.0). containerd already ships fixed x/crypto v0.53.0. Earlier rc3 binary-mode 'ssh reachable in containerd' was a stripped-binary artifact. Filed rancher/image-scanning#1459.",
+      "timestamp": "2026-06-24T00:00:00Z"
+    },
+    {
+      "vulnerability": {
+        "name": "CVE-2026-39827"
+      },
+      "products": [
+        {
+          "@id": "pkg:oci/rke2-runtime",
+          "subcomponents": [
+            {
+              "@id": "pkg:golang/golang.org/x/crypto@v0.47.0"
+            }
+          ]
+        }
+      ],
+      "status": "not_affected",
+      "justification": "vulnerable_code_not_present",
+      "impact_statement": "rke2-runtime rc4: kubelet's golang.org/x/crypto/ssh* packages are NOT compiled in (pclntab shows zero x/crypto/ssh* symbols at v0.47.0). containerd already ships fixed x/crypto v0.53.0. Earlier rc3 binary-mode 'ssh reachable in containerd' was a stripped-binary artifact. Filed rancher/image-scanning#1459.",
+      "timestamp": "2026-06-24T00:00:00Z"
+    },
+    {
+      "vulnerability": {
+        "name": "CVE-2026-39830"
+      },
+      "products": [
+        {
+          "@id": "pkg:oci/rke2-runtime",
+          "subcomponents": [
+            {
+              "@id": "pkg:golang/golang.org/x/crypto@v0.47.0"
+            }
+          ]
+        }
+      ],
+      "status": "not_affected",
+      "justification": "vulnerable_code_not_present",
+      "impact_statement": "rke2-runtime rc4: kubelet's golang.org/x/crypto/ssh* packages are NOT compiled in (pclntab shows zero x/crypto/ssh* symbols at v0.47.0). containerd already ships fixed x/crypto v0.53.0. Earlier rc3 binary-mode 'ssh reachable in containerd' was a stripped-binary artifact. Filed rancher/image-scanning#1459.",
+      "timestamp": "2026-06-24T00:00:00Z"
+    },
+    {
+      "vulnerability": {
+        "name": "CVE-2026-39829"
+      },
+      "products": [
+        {
+          "@id": "pkg:oci/rke2-runtime",
+          "subcomponents": [
+            {
+              "@id": "pkg:golang/golang.org/x/crypto@v0.47.0"
+            }
+          ]
+        }
+      ],
+      "status": "not_affected",
+      "justification": "vulnerable_code_not_present",
+      "impact_statement": "rke2-runtime rc4: kubelet's golang.org/x/crypto/ssh* packages are NOT compiled in (pclntab shows zero x/crypto/ssh* symbols at v0.47.0). containerd already ships fixed x/crypto v0.53.0. Earlier rc3 binary-mode 'ssh reachable in containerd' was a stripped-binary artifact. Filed rancher/image-scanning#1459.",
+      "timestamp": "2026-06-24T00:00:00Z"
+    },
+    {
+      "vulnerability": {
+        "name": "CVE-2026-39831"
+      },
+      "products": [
+        {
+          "@id": "pkg:oci/rke2-runtime",
+          "subcomponents": [
+            {
+              "@id": "pkg:golang/golang.org/x/crypto@v0.47.0"
+            }
+          ]
+        }
+      ],
+      "status": "not_affected",
+      "justification": "vulnerable_code_not_present",
+      "impact_statement": "rke2-runtime rc4: kubelet's golang.org/x/crypto/ssh* packages are NOT compiled in (pclntab shows zero x/crypto/ssh* symbols at v0.47.0). containerd already ships fixed x/crypto v0.53.0. Earlier rc3 binary-mode 'ssh reachable in containerd' was a stripped-binary artifact. Filed rancher/image-scanning#1459.",
+      "timestamp": "2026-06-24T00:00:00Z"
+    },
+    {
+      "vulnerability": {
+        "name": "CVE-2026-39834"
+      },
+      "products": [
+        {
+          "@id": "pkg:oci/rke2-runtime",
+          "subcomponents": [
+            {
+              "@id": "pkg:golang/golang.org/x/crypto@v0.47.0"
+            }
+          ]
+        }
+      ],
+      "status": "not_affected",
+      "justification": "vulnerable_code_not_present",
+      "impact_statement": "rke2-runtime rc4: kubelet's golang.org/x/crypto/ssh* packages are NOT compiled in (pclntab shows zero x/crypto/ssh* symbols at v0.47.0). containerd already ships fixed x/crypto v0.53.0. Earlier rc3 binary-mode 'ssh reachable in containerd' was a stripped-binary artifact. Filed rancher/image-scanning#1459.",
+      "timestamp": "2026-06-24T00:00:00Z"
+    },
+    {
+      "vulnerability": {
+        "name": "CVE-2026-46595"
+      },
+      "products": [
+        {
+          "@id": "pkg:oci/rke2-runtime",
+          "subcomponents": [
+            {
+              "@id": "pkg:golang/golang.org/x/crypto@v0.47.0"
+            }
+          ]
+        }
+      ],
+      "status": "not_affected",
+      "justification": "vulnerable_code_not_present",
+      "impact_statement": "rke2-runtime rc4: kubelet's golang.org/x/crypto/ssh* packages are NOT compiled in (pclntab shows zero x/crypto/ssh* symbols at v0.47.0). containerd already ships fixed x/crypto v0.53.0. Earlier rc3 binary-mode 'ssh reachable in containerd' was a stripped-binary artifact. Filed rancher/image-scanning#1459.",
+      "timestamp": "2026-06-24T00:00:00Z"
+    },
+    {
+      "vulnerability": {
+        "name": "CVE-2026-39833"
+      },
+      "products": [
+        {
+          "@id": "pkg:oci/rke2-runtime",
+          "subcomponents": [
+            {
+              "@id": "pkg:golang/golang.org/x/crypto@v0.47.0"
+            }
+          ]
+        }
+      ],
+      "status": "not_affected",
+      "justification": "vulnerable_code_not_present",
+      "impact_statement": "rke2-runtime rc4: kubelet's golang.org/x/crypto/ssh* packages are NOT compiled in (pclntab shows zero x/crypto/ssh* symbols at v0.47.0). containerd already ships fixed x/crypto v0.53.0. Earlier rc3 binary-mode 'ssh reachable in containerd' was a stripped-binary artifact. Filed rancher/image-scanning#1459.",
+      "timestamp": "2026-06-24T00:00:00Z"
+    },
+    {
+      "vulnerability": {
+        "name": "CVE-2026-39832"
+      },
+      "products": [
+        {
+          "@id": "pkg:oci/rke2-runtime",
+          "subcomponents": [
+            {
+              "@id": "pkg:golang/golang.org/x/crypto@v0.47.0"
+            }
+          ]
+        }
+      ],
+      "status": "not_affected",
+      "justification": "vulnerable_code_not_present",
+      "impact_statement": "rke2-runtime rc4: kubelet's golang.org/x/crypto/ssh* packages are NOT compiled in (pclntab shows zero x/crypto/ssh* symbols at v0.47.0). containerd already ships fixed x/crypto v0.53.0. Earlier rc3 binary-mode 'ssh reachable in containerd' was a stripped-binary artifact. Filed rancher/image-scanning#1459.",
+      "timestamp": "2026-06-24T00:00:00Z"
+    },
+    {
+      "vulnerability": {
+        "name": "CVE-2026-46598"
+      },
+      "products": [
+        {
+          "@id": "pkg:oci/rke2-runtime",
+          "subcomponents": [
+            {
+              "@id": "pkg:golang/golang.org/x/crypto@v0.47.0"
+            }
+          ]
+        }
+      ],
+      "status": "not_affected",
+      "justification": "vulnerable_code_not_present",
+      "impact_statement": "rke2-runtime rc4: kubelet's golang.org/x/crypto/ssh* packages are NOT compiled in (pclntab shows zero x/crypto/ssh* symbols at v0.47.0). containerd already ships fixed x/crypto v0.53.0. Earlier rc3 binary-mode 'ssh reachable in containerd' was a stripped-binary artifact. Filed rancher/image-scanning#1459.",
+      "timestamp": "2026-06-24T00:00:00Z"
+    },
+    {
+      "vulnerability": {
+        "name": "CVE-2026-42508"
+      },
+      "products": [
+        {
+          "@id": "pkg:oci/rke2-runtime",
+          "subcomponents": [
+            {
+              "@id": "pkg:golang/golang.org/x/crypto@v0.47.0"
+            }
+          ]
+        }
+      ],
+      "status": "not_affected",
+      "justification": "vulnerable_code_not_present",
+      "impact_statement": "rke2-runtime rc4: kubelet's golang.org/x/crypto/ssh* packages are NOT compiled in (pclntab shows zero x/crypto/ssh* symbols at v0.47.0). containerd already ships fixed x/crypto v0.53.0. Earlier rc3 binary-mode 'ssh reachable in containerd' was a stripped-binary artifact. Filed rancher/image-scanning#1459.",
+      "timestamp": "2026-06-24T00:00:00Z"
+    },
+    {
+      "vulnerability": {
+        "name": "CVE-2025-47911"
+      },
+      "products": [
+        {
+          "@id": "pkg:oci/rke2-runtime",
+          "subcomponents": [
+            {
+              "@id": "pkg:golang/golang.org/x/net@v0.43.0"
+            }
+          ]
+        }
+      ],
+      "status": "not_affected",
+      "justification": "vulnerable_code_not_present",
+      "impact_statement": "rke2-runtime rc4: runc links only golang.org/x/net/bpf and x/net/dns at v0.43.0 \u2014 html/http2/idna packages are NOT compiled in (pclntab confirms). Vulnerable code not present. Filed rancher/image-scanning#1459.",
+      "timestamp": "2026-06-24T00:00:00Z"
+    },
+    {
+      "vulnerability": {
+        "name": "CVE-2025-58190"
+      },
+      "products": [
+        {
+          "@id": "pkg:oci/rke2-runtime",
+          "subcomponents": [
+            {
+              "@id": "pkg:golang/golang.org/x/net@v0.43.0"
+            }
+          ]
+        }
+      ],
+      "status": "not_affected",
+      "justification": "vulnerable_code_not_present",
+      "impact_statement": "rke2-runtime rc4: runc links only golang.org/x/net/bpf and x/net/dns at v0.43.0 \u2014 html/http2/idna packages are NOT compiled in (pclntab confirms). Vulnerable code not present. Filed rancher/image-scanning#1459.",
+      "timestamp": "2026-06-24T00:00:00Z"
+    },
+    {
+      "vulnerability": {
+        "name": "CVE-2026-25680"
+      },
+      "products": [
+        {
+          "@id": "pkg:oci/rke2-runtime",
+          "subcomponents": [
+            {
+              "@id": "pkg:golang/golang.org/x/net@v0.43.0"
+            }
+          ]
+        }
+      ],
+      "status": "not_affected",
+      "justification": "vulnerable_code_not_present",
+      "impact_statement": "rke2-runtime rc4: runc links only golang.org/x/net/bpf and x/net/dns at v0.43.0 \u2014 html/http2/idna packages are NOT compiled in (pclntab confirms). Vulnerable code not present. Filed rancher/image-scanning#1459.",
+      "timestamp": "2026-06-24T00:00:00Z"
+    },
+    {
+      "vulnerability": {
+        "name": "CVE-2026-25681"
+      },
+      "products": [
+        {
+          "@id": "pkg:oci/rke2-runtime",
+          "subcomponents": [
+            {
+              "@id": "pkg:golang/golang.org/x/net@v0.43.0"
+            }
+          ]
+        }
+      ],
+      "status": "not_affected",
+      "justification": "vulnerable_code_not_present",
+      "impact_statement": "rke2-runtime rc4: runc links only golang.org/x/net/bpf and x/net/dns at v0.43.0 \u2014 html/http2/idna packages are NOT compiled in (pclntab confirms). Vulnerable code not present. Filed rancher/image-scanning#1459.",
+      "timestamp": "2026-06-24T00:00:00Z"
+    },
+    {
+      "vulnerability": {
+        "name": "CVE-2026-27136"
+      },
+      "products": [
+        {
+          "@id": "pkg:oci/rke2-runtime",
+          "subcomponents": [
+            {
+              "@id": "pkg:golang/golang.org/x/net@v0.43.0"
+            }
+          ]
+        }
+      ],
+      "status": "not_affected",
+      "justification": "vulnerable_code_not_present",
+      "impact_statement": "rke2-runtime rc4: runc links only golang.org/x/net/bpf and x/net/dns at v0.43.0 \u2014 html/http2/idna packages are NOT compiled in (pclntab confirms). Vulnerable code not present. Filed rancher/image-scanning#1459.",
+      "timestamp": "2026-06-24T00:00:00Z"
+    },
+    {
+      "vulnerability": {
+        "name": "CVE-2026-42502"
+      },
+      "products": [
+        {
+          "@id": "pkg:oci/rke2-runtime",
+          "subcomponents": [
+            {
+              "@id": "pkg:golang/golang.org/x/net@v0.43.0"
+            }
+          ]
+        }
+      ],
+      "status": "not_affected",
+      "justification": "vulnerable_code_not_present",
+      "impact_statement": "rke2-runtime rc4: runc links only golang.org/x/net/bpf and x/net/dns at v0.43.0 \u2014 html/http2/idna packages are NOT compiled in (pclntab confirms). Vulnerable code not present. Filed rancher/image-scanning#1459.",
+      "timestamp": "2026-06-24T00:00:00Z"
+    },
+    {
+      "vulnerability": {
+        "name": "CVE-2026-42506"
+      },
+      "products": [
+        {
+          "@id": "pkg:oci/rke2-runtime",
+          "subcomponents": [
+            {
+              "@id": "pkg:golang/golang.org/x/net@v0.43.0"
+            }
+          ]
+        }
+      ],
+      "status": "not_affected",
+      "justification": "vulnerable_code_not_present",
+      "impact_statement": "rke2-runtime rc4: runc links only golang.org/x/net/bpf and x/net/dns at v0.43.0 \u2014 html/http2/idna packages are NOT compiled in (pclntab confirms). Vulnerable code not present. Filed rancher/image-scanning#1459.",
+      "timestamp": "2026-06-24T00:00:00Z"
+    },
+    {
+      "vulnerability": {
+        "name": "CVE-2026-27141"
+      },
+      "products": [
+        {
+          "@id": "pkg:oci/rke2-runtime",
+          "subcomponents": [
+            {
+              "@id": "pkg:golang/golang.org/x/net@v0.43.0"
+            }
+          ]
+        }
+      ],
+      "status": "not_affected",
+      "justification": "vulnerable_code_not_present",
+      "impact_statement": "rke2-runtime rc4: runc links only golang.org/x/net/bpf and x/net/dns at v0.43.0 \u2014 html/http2/idna packages are NOT compiled in (pclntab confirms). Vulnerable code not present. Filed rancher/image-scanning#1459.",
+      "timestamp": "2026-06-24T00:00:00Z"
+    },
+    {
+      "vulnerability": {
+        "name": "CVE-2026-33814"
+      },
+      "products": [
+        {
+          "@id": "pkg:oci/rke2-runtime",
+          "subcomponents": [
+            {
+              "@id": "pkg:golang/golang.org/x/net@v0.43.0"
+            }
+          ]
+        }
+      ],
+      "status": "not_affected",
+      "justification": "vulnerable_code_not_present",
+      "impact_statement": "rke2-runtime rc4: runc links only golang.org/x/net/bpf and x/net/dns at v0.43.0 \u2014 html/http2/idna packages are NOT compiled in (pclntab confirms). Vulnerable code not present. Filed rancher/image-scanning#1459.",
+      "timestamp": "2026-06-24T00:00:00Z"
+    },
+    {
+      "vulnerability": {
+        "name": "CVE-2026-39821"
+      },
+      "products": [
+        {
+          "@id": "pkg:oci/rke2-runtime",
+          "subcomponents": [
+            {
+              "@id": "pkg:golang/golang.org/x/net@v0.43.0"
+            }
+          ]
+        }
+      ],
+      "status": "not_affected",
+      "justification": "vulnerable_code_not_present",
+      "impact_statement": "rke2-runtime rc4: runc links only golang.org/x/net/bpf and x/net/dns at v0.43.0 \u2014 html/http2/idna packages are NOT compiled in (pclntab confirms). Vulnerable code not present. Filed rancher/image-scanning#1459.",
+      "timestamp": "2026-06-24T00:00:00Z"
+    }
+  ]
+}

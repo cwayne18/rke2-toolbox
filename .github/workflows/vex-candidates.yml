@@ -1,0 +1,121 @@
+name: VEX Candidates
+
+# After a Trivy scan report is committed, triage its Go-binary CVEs and open a
+# manual-VEX candidate issue in this repo. Each candidate is checked for
+# package-level presence in the actual shipped binary (pclntab + govulncheck),
+# so it can be validated and transferred to rancher/image-scanning.
+
+on:
+  workflow_run:
+    workflows: ["Trivy Scan Report"]
+    types: [completed]
+  workflow_dispatch:
+    inputs:
+      report:
+        description: 'Specific report path (e.g. reports/scan-20260623-1.md). Default: latest.'
+        required: false
+        type: string
+        default: ''
+      modules:
+        description: 'Comma-separated Go modules to evaluate.'
+        required: false
+        type: string
+        default: 'golang.org/x/net,golang.org/x/crypto'
+
+permissions:
+  contents: read
+  issues: write
+
+concurrency:
+  group: vex-candidates
+  cancel-in-progress: false
+
+jobs:
+  triage:
+    # For workflow_run, only proceed when the upstream scan succeeded.
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      (github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success')
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          # On workflow_run, check out the branch the scan committed to so the
+          # newest scan-*.md report is present.
+          ref: ${{ github.event.workflow_run.head_branch || github.ref_name }}
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.25.8'
+
+      - name: Install skopeo
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y skopeo
+
+      - name: Install govulncheck
+        run: go install golang.org/x/vuln/cmd/govulncheck@v1.4.0
+
+      - name: Generate VEX candidates
+        id: gen
+        env:
+          REPORT_INPUT: ${{ inputs.report }}
+          MODULES_INPUT: ${{ inputs.modules }}
+        run: |
+          ARGS=()
+          if [ -n "${REPORT_INPUT}" ]; then
+            ARGS+=(--report "${REPORT_INPUT}")
+          fi
+          if [ -n "${MODULES_INPUT}" ]; then
+            ARGS+=(--modules "${MODULES_INPUT}")
+          fi
+          python3 .github/scripts/vex_candidates.py "${ARGS[@]}" --github-output "${GITHUB_OUTPUT}"
+
+      - name: Upload analysis artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: vex-candidates-${{ steps.gen.outputs.report_name }}
+          path: |
+            vex-candidates.json
+            vex-candidates.text-vex
+            vex-candidates-issue.md
+          if-no-files-found: warn
+          retention-days: 14
+
+      - name: Open or update candidate issue
+        if: ${{ steps.gen.outputs.candidate_count != '0' }}
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPORT_NAME: ${{ steps.gen.outputs.report_name }}
+        run: |
+          TITLE="VEX candidates: ${REPORT_NAME}"
+          LABEL="vex-candidate"
+
+          # Ensure the label exists (ignore failure if it already does).
+          gh label create "${LABEL}" --color BFD4F2 \
+            --description "Automated manual-VEX candidates from a Trivy scan" 2>/dev/null || true
+
+          # Reuse an existing open issue with the same title, else create one.
+          EXISTING=$(gh issue list --state open --label "${LABEL}" \
+            --json number,title \
+            --jq ".[] | select(.title == \"${TITLE}\") | .number" | head -n1)
+
+          if [ -n "${EXISTING}" ]; then
+            gh issue edit "${EXISTING}" --body-file vex-candidates-issue.md
+            echo "Updated issue #${EXISTING}"
+          else
+            gh issue create --title "${TITLE}" --label "${LABEL}" \
+              --body-file vex-candidates-issue.md
+          fi
+
+      - name: No candidates summary
+        if: ${{ steps.gen.outputs.candidate_count == '0' }}
+        run: echo "No VEX candidates found for ${{ steps.gen.outputs.report_name }} — nothing to file."
