@@ -1164,7 +1164,7 @@ def render_md_table(headers, rows, scan_anchors=None):
                     f'title="Jump to scan results for {esc(clean)}">{code_html}</a>'
                 )
             return code_html
-        if h_norm in ("buildrepo",):
+        if h_norm in ("buildrepo", "upstreamrepo"):
             repo = val.strip()
             if repo and repo != "N/A":
                 repo_path = repo if "/" in repo else f"rancher/{repo}"
