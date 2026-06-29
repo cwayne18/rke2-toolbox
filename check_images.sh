@@ -9,6 +9,7 @@ pr_input=""
 raw_repo="rancher/rke2"
 gist_title=""
 use_prime_ingress="false"
+release_version=""
 
 # Optional overrides for image names that do not follow the standard mapping rules.
 # Add mappings in the case statement below as needed.
@@ -68,13 +69,14 @@ upstream_tag_regex_override() {
 
 usage() {
     cat <<EOF
-Usage: $0 [branch] [--pr <pr-number|pr-url>] [--output <file>] [--gist <title>] [--prime]
+Usage: $0 [branch] [--pr <pr-number|pr-url>] [--release <branch>] [--output <file>] [--gist <title>] [--prime]
 
 Examples:
   $0
   $0 release-1.32
   $0 --pr 9994
   $0 --pr https://github.com/rancher/rke2/pull/9994
+  $0 --release release-1.35
   $0 --output my_report.txt
   $0 --prime
   $0 --gist 'My Update Report'
@@ -86,6 +88,11 @@ while [[ $# -gt 0 ]]; do
         -p|--pr)
             [[ -n "${2:-}" ]] || { echo "Error: --pr requires a value"; usage; exit 1; }
             pr_input="$2"
+            shift 2
+            ;;
+        -r|--release)
+            [[ -n "${2:-}" ]] || { echo "Error: --release requires a branch value"; usage; exit 1; }
+            release_version="$2"
             shift 2
             ;;
         -o|--output)
@@ -119,8 +126,22 @@ while [[ $# -gt 0 ]]; do
     esac
 done
 
+# --release names a release branch to build from (e.g. release-1.35). It is a
+# convenience alias for the positional branch argument so the value can be wired
+# in from the GitHub Action.
+if [[ -n "$release_version" ]]; then
+    branch="$release_version"
+fi
+
 if [[ -z "$branch" ]]; then
     branch="master"
+fi
+
+# Validate mutually exclusive flags
+if [[ -n "$release_version" && -n "$pr_input" ]]; then
+    echo "Error: --release and --pr cannot be used together"
+    usage
+    exit 1
 fi
 
 if [[ -n "$pr_input" ]]; then

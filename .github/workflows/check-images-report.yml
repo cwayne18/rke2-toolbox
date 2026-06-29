@@ -4,6 +4,12 @@ on:
   schedule:
     - cron: '0 6 * * *'
   workflow_dispatch:
+    inputs:
+      release_branch:
+        description: 'RKE2 release branch to check (e.g. release-1.35). Defaults to master when empty.'
+        required: false
+        type: string
+        default: ''
 
 permissions:
   contents: write
@@ -24,20 +30,43 @@ jobs:
         with:
           go-version: 'stable'
 
+      - name: Build check_images.sh arguments
+        id: check_args
+        run: |
+          ARGS="master --prime"
+          MODE="scheduled"
+          if [ -n "${{ inputs.release_branch }}" ]; then
+            ARGS="--release ${{ inputs.release_branch }} --prime"
+            MODE="release"
+          fi
+          echo "args=$ARGS" >> "$GITHUB_OUTPUT"
+          echo "mode=$MODE" >> "$GITHUB_OUTPUT"
+
       - name: Run check_images.sh
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: bash check_images.sh master --prime
+        run: bash check_images.sh ${{ steps.check_args.outputs.args }}
 
       - name: Determine output filename
         id: filename
         run: |
-          DATE=$(date +%Y%m%d)
+          MODE="${{ steps.check_args.outputs.mode }}"
+          if [ "$MODE" = "release" ]; then
+            RELEASE="${{ inputs.release_branch }}"
+            SAFE_RELEASE=$(echo "$RELEASE" | sed -E 's/[^A-Za-z0-9._-]+/-/g; s/^-+|-+$//g')
+            if [ -z "$SAFE_RELEASE" ]; then
+              SAFE_RELEASE="release"
+            fi
+            BASE="check-${SAFE_RELEASE}"
+          else
+            DATE=$(date +%Y%m%d)
+            BASE="check-${DATE}"
+          fi
           N=1
-          while [ -f "reports/check-${DATE}-${N}.md" ]; do
+          while [ -f "reports/${BASE}-${N}.md" ]; do
             N=$((N + 1))
           done
-          echo "filename=reports/check-${DATE}-${N}.md" >> "$GITHUB_OUTPUT"
+          echo "filename=reports/${BASE}-${N}.md" >> "$GITHUB_OUTPUT"
 
       - name: Move report to reports directory
         run: mv image_update_report.txt "${{ steps.filename.outputs.filename }}"
