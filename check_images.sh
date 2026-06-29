@@ -41,6 +41,31 @@ tag_regex_override() {
     esac
 }
 
+# Manual upstream repo overrides (owner/repo on GitHub) for images whose
+# image-build repo does not point at the true upstream, or that need special
+# handling. Return "none" to explicitly skip upstream resolution for an image.
+upstream_repo_override() {
+    case "$1" in
+        kube-webhook-certgen|nginx-ingress-controller) echo "kubernetes/ingress-nginx" ;;
+        # klipper images are k3s-io's own projects; the build repo is the source,
+        # so there is no separate upstream to track.
+        klipper-helm|klipper-lb) echo "none" ;;
+        *) echo "" ;;
+    esac
+}
+
+# Optional regex to constrain which upstream tags are considered. Useful for
+# monorepos or repos that publish multiple component tag families.
+upstream_tag_regex_override() {
+    case "$1" in
+        kube-webhook-certgen|nginx-ingress-controller) echo '^controller-v[0-9]' ;;
+        # kubernetes/autoscaler is a monorepo; the hardened image tracks the
+        # addon-resizer 1.8.x component line.
+        hardened-addon-resizer|addon-resizer) echo '^addon-resizer-1\.8\.' ;;
+        *) echo "" ;;
+    esac
+}
+
 usage() {
     cat <<EOF
 Usage: $0 [branch] [--pr <pr-number|pr-url>] [--output <file>] [--gist <title>] [--prime]
@@ -245,6 +270,9 @@ fi
 go_build_base_cache_file="$work_dir/go_build_base_cache.txt"
 touch "$go_build_base_cache_file"
 
+upstream_cache_file="$work_dir/upstream_cache.txt"
+touch "$upstream_cache_file"
+
 normalize_repo_slug() {
     local repo="$1"
     if [[ "$repo" == */* ]]; then
@@ -364,6 +392,149 @@ find_repo_go_build_base_version() {
     return 1
 }
 
+# Parse an upstream "owner/repo" (on GitHub) out of an image-build repo's
+# Dockerfile/Makefile content. Resolution order: SRC -> PKG -> git clone URL.
+extract_upstream_repo() {
+    local content="$1"
+    local match=""
+    local repo
+
+    # 1. SRC=github.com/owner/repo (ARG SRC=, SRC ?=, quoted or not)
+    match=$(printf '%s\n' "$content" \
+        | grep -oE '(^|[^A-Za-z0-9_])SRC[[:space:]]*\??[:=][[:space:]]*"?github\.com/[A-Za-z0-9._/-]+' \
+        | head -n 1 | grep -oE 'github\.com/[A-Za-z0-9._/-]+' | head -n 1 || true)
+
+    # 2. PKG=github.com/owner/repo
+    if [[ -z "$match" ]]; then
+        match=$(printf '%s\n' "$content" \
+            | grep -oE '(^|[^A-Za-z0-9_])PKG[[:space:]]*\??[:=][[:space:]]*"?github\.com/[A-Za-z0-9._/-]+' \
+            | head -n 1 | grep -oE 'github\.com/[A-Za-z0-9._/-]+' | head -n 1 || true)
+    fi
+
+    # 3. git clone https://github.com/owner/repo[.git]
+    if [[ -z "$match" ]]; then
+        match=$(printf '%s\n' "$content" \
+            | grep -ioE 'git[[:space:]]+clone[^#]*github\.com/[A-Za-z0-9._/-]+' \
+            | head -n 1 | grep -oE 'github\.com/[A-Za-z0-9._/-]+' | head -n 1 || true)
+    fi
+
+    [[ -n "$match" ]] || return 1
+
+    repo="${match#github.com/}"
+    repo="${repo%.git}"
+    # Reduce to the first two path segments (owner/repo), dropping any trailing
+    # path like a Go semantic-import suffix (/v3) or /releases.
+    repo=$(printf '%s\n' "$repo" | awk -F/ 'NF>=2 {print $1"/"$2}')
+    [[ "$repo" == */* ]] || return 1
+    printf '%s\n' "$repo"
+}
+
+# Fetch the Dockerfile and Makefile of a build repo, trying the latest build tag
+# first, then the default branches. Output is the concatenated file contents.
+fetch_build_repo_source_files() {
+    local build_repo="$1"
+    local build_latest_tag="$2"
+    local repo_slug
+    local ref
+    local path
+    local part
+    local content=""
+
+    repo_slug="$(normalize_repo_slug "$build_repo")"
+
+    for ref in "$build_latest_tag" master main; do
+        [[ -n "$ref" && "$ref" != "N/A" ]] || continue
+        content=""
+        for path in Dockerfile Makefile; do
+            part="$(fetch_repo_file_at_ref "$repo_slug" "$ref" "$path")"
+            if [[ -n "$part" ]]; then
+                content+="$part"$'\n'
+            fi
+        done
+        if [[ -n "$content" ]]; then
+            printf '%s' "$content"
+            return 0
+        fi
+    done
+
+    return 1
+}
+
+# Determine the latest stable upstream tag for an image's upstream repo.
+find_upstream_latest_tag() {
+    local upstream_repo="$1"
+    local image_name="$2"
+    local tags
+    local regex
+    local filtered
+    local latest
+
+    tags=$(github_tags "$upstream_repo" || true)
+    [[ -n "$tags" ]] || return 1
+
+    regex="$(upstream_tag_regex_override "$image_name")"
+    if [[ -n "$regex" ]]; then
+        # Explicit override: only consider matching tags, no fallback.
+        filtered=$(printf '%s\n' "$tags" | grep -E "$regex" || true)
+    else
+        # Default: stable semver tags, excluding pre-release markers.
+        filtered=$(printf '%s\n' "$tags" \
+            | grep -E '^v?[0-9]+\.[0-9]+\.[0-9]+' \
+            | grep -viE 'rc|alpha|beta|dev|pre|snapshot|nightly' || true)
+        [[ -n "$filtered" ]] || filtered="$tags"
+    fi
+
+    latest=$(printf '%s\n' "$filtered" | sed '/^\s*$/d' | sort -uV | tail -1)
+    [[ -n "$latest" ]] || return 1
+    printf '%s\n' "$latest"
+}
+
+# Resolve an image's upstream repo and its latest tag. Output: "repo|tag".
+# Results are cached per image name to avoid repeated network calls.
+find_image_upstream() {
+    local image_name="$1"
+    local build_repo="$2"
+    local build_latest_tag="$3"
+    local cached
+    local upstream_repo
+    local content
+    local tag
+
+    cached=$(grep -F "${image_name}|" "$upstream_cache_file" | head -n 1 || true)
+    if [[ -n "$cached" ]]; then
+        printf '%s\n' "${cached#${image_name}|}"
+        return 0
+    fi
+
+    upstream_repo="$(upstream_repo_override "$image_name")"
+
+    if [[ "$upstream_repo" == "none" ]]; then
+        printf '%s|N/A|N/A\n' "$image_name" >> "$upstream_cache_file"
+        printf 'N/A|N/A\n'
+        return 0
+    fi
+
+    if [[ -z "$upstream_repo" && -n "$build_repo" && "$build_repo" != "N/A" ]]; then
+        content="$(fetch_build_repo_source_files "$build_repo" "$build_latest_tag" || true)"
+        if [[ -n "$content" ]]; then
+            upstream_repo="$(extract_upstream_repo "$content" || true)"
+        fi
+    fi
+
+    if [[ -z "$upstream_repo" ]]; then
+        printf '%s|N/A|N/A\n' "$image_name" >> "$upstream_cache_file"
+        printf 'N/A|N/A\n'
+        return 0
+    fi
+
+    tag="$(find_upstream_latest_tag "$upstream_repo" "$image_name" || true)"
+    [[ -n "$tag" ]] || tag="N/A"
+
+    printf '%s|%s|%s\n' "$image_name" "$upstream_repo" "$tag" >> "$upstream_cache_file"
+    printf '%s|%s\n' "$upstream_repo" "$tag"
+    return 0
+}
+
 find_build_repo_and_latest_tag() {
     local image_name="$1"
     local repo_candidate
@@ -444,8 +615,8 @@ extract_image_name_and_tag() {
     echo "- Source: ${source_desc}"
     echo "- Generated: $(date -u '+%Y-%m-%dT%H:%M:%SZ')"
     echo ""
-    echo "| Image | Current Tag | Build Repo | Latest Tag | Go (hardened-build-base) | Status |"
-    echo "|---|---|---|---|---|---|"
+    echo "| Image | Current Tag | Build Repo | Latest Tag | Upstream Repo | Upstream Latest Tag | Go (hardened-build-base) | Status |"
+    echo "|---|---|---|---|---|---|---|---|"
 } >> "$output_file"
 
 total=0
@@ -469,6 +640,10 @@ while IFS= read -r image; do
     latest_tag="${repo_latest##*|}"
     go_build_base_version="N/A"
 
+    upstream_info=$(find_image_upstream "$image_name" "${build_repo:-N/A}" "${latest_tag:-N/A}" || true)
+    upstream_repo="${upstream_info%%|*}"
+    upstream_latest_tag="${upstream_info##*|}"
+
     if [[ -z "$build_repo" || -z "$latest_tag" ]]; then
         status="UNKNOWN"
         unknown=$((unknown + 1))
@@ -483,8 +658,10 @@ while IFS= read -r image; do
         needs_update_stdout+="$image"$'\n'
     fi
 
-    printf '| %s | %s | %s | %s | %s | %s |\n' \
-        "$image" "$current_tag" "${build_repo:-N/A}" "${latest_tag:-N/A}" "${go_build_base_version:-N/A}" "$status" \
+    printf '| %s | %s | %s | %s | %s | %s | %s | %s |\n' \
+        "$image" "$current_tag" "${build_repo:-N/A}" "${latest_tag:-N/A}" \
+        "${upstream_repo:-N/A}" "${upstream_latest_tag:-N/A}" \
+        "${go_build_base_version:-N/A}" "$status" \
         >> "$output_file"
 done < "$images_file"
 
