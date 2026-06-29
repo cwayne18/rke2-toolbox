@@ -258,15 +258,24 @@ if ! PATH="$work_dir/bin:$PATH" \
 fi
 
 if [[ "$use_prime_ingress" == "true" ]]; then
-    ingress_images_file="$work_dir/build/images-ingress-nginx.txt"
+    # The ingress-nginx images may be written to a dedicated
+    # images-ingress-nginx.txt (master) or folded into images-core.txt (release
+    # branches). Rewrite the hardened tag to the prime tag wherever it appears
+    # across the generated lists. The hardened tag only applies to the
+    # ingress-nginx images, so this is safe regardless of layout.
+    prime_rewrote="false"
+    while IFS= read -r -d '' build_file; do
+        if grep -q ":${ingress_nginx_hardened_tag}\$" "$build_file"; then
+            sed -i.bak "s/:${ingress_nginx_hardened_tag}$/:${ingress_nginx_prime_tag}/" "$build_file"
+            rm -f "${build_file}.bak"
+            prime_rewrote="true"
+        fi
+    done < <(find "$work_dir/build" -maxdepth 1 -type f -name 'images-*.txt' -print0)
 
-    if [[ ! -f "$ingress_images_file" ]]; then
-        echo "Error: expected ingress-nginx image list was not generated"
+    if [[ "$prime_rewrote" != "true" ]]; then
+        echo "Error: no ingress-nginx images tagged ${ingress_nginx_hardened_tag} were generated"
         exit 1
     fi
-
-    sed -i.bak "s/:${ingress_nginx_hardened_tag}$/:${ingress_nginx_prime_tag}/" "$ingress_images_file"
-    rm -f "${ingress_images_file}.bak"
 fi
 
 exclude_pattern="multus|harvester|mirrored|rke2-runtime|hardened-kubernetes"
