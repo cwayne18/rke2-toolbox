@@ -11,6 +11,7 @@ import sqlite3
 import html as html_lib
 import urllib.request
 import urllib.error
+import concurrent.futures
 from datetime import datetime, timezone
 
 
@@ -1154,8 +1155,19 @@ def _render_title_cell(text):
         if not p:
             continue
         if p.startswith("https://"):
+            href = p
+            m = re.search(
+                r"avd\.aquasec\.com/(?:nvd|vulnerabilities?)/(CVE-\d{4}-\d+)",
+                p,
+                re.I,
+            )
+            if m:
+                # Trivy references avd.aquasec.com, which 404s for most CVEs;
+                # resolve to a SUSE/NVD URL and show that destination instead.
+                p = _cve_reference_url(m.group(1).upper())
+                href = p
             rendered.append(
-                f'<a href="{esc(p)}" target="_blank" rel="noopener noreferrer">{esc(p)}</a>'
+                f'<a href="{esc(href)}" target="_blank" rel="noopener noreferrer">{esc(p)}</a>'
             )
         else:
             rendered.append(esc(p))
@@ -1166,6 +1178,107 @@ def _cve_id_in_text(text):
     """Extract the canonical upper-cased CVE ID from a cell value, or None."""
     m = re.match(r"CVE-\d{4}-\d+", text.strip(), re.I)
     return m.group(0).upper() if m else None
+
+
+# ---------------------------------------------------------------------------
+# CVE reference URL resolution
+#
+# Trivy emits ``avd.aquasec.com`` links that 404 for the majority of CVEs. Since
+# these images are SUSE/RKE2-based, we instead link to SUSE's security tracker
+# (https://www.suse.com/security/cve/<CVE>.html) whenever a page exists there,
+# and fall back to the authoritative NIST NVD record otherwise. SUSE
+# availability is probed over HTTP once per CVE and cached; any network failure
+# degrades gracefully to the NVD fallback. Set ``SCAN_HTML_NO_NETWORK=1`` to
+# skip probing entirely (always use NVD).
+# ---------------------------------------------------------------------------
+
+_SUSE_CVE_URL = "https://www.suse.com/security/cve/{cve}.html"
+_NVD_CVE_URL = "https://nvd.nist.gov/vuln/detail/{cve}"
+
+# Maps upper-cased CVE ID -> bool (True when a SUSE page exists). Unprobed CVEs
+# are absent; populated by _prefetch_suse_availability / _suse_cve_available.
+_SUSE_CVE_AVAILABLE = {}
+
+
+def _network_checks_disabled():
+    """True when SUSE availability probing should be skipped (offline/opt-out)."""
+    return os.environ.get("SCAN_HTML_NO_NETWORK", "").strip().lower() in (
+        "1",
+        "true",
+        "yes",
+    )
+
+
+def _probe_suse_cve(cve):
+    """Return True if SUSE publishes a security page for *cve*, else False.
+
+    Any network/HTTP error is treated as "not available" so callers fall back to
+    the NVD record.
+    """
+    url = _SUSE_CVE_URL.format(cve=cve)
+    req = urllib.request.Request(
+        url,
+        method="HEAD",
+        headers={"User-Agent": "rke2-toolbox-scan-report/1.0"},
+    )
+    try:
+        with urllib.request.urlopen(req, timeout=6) as resp:
+            status = getattr(resp, "status", None) or resp.getcode()
+            return 200 <= status < 300
+    except urllib.error.HTTPError:
+        return False
+    except (urllib.error.URLError, TimeoutError, ConnectionResetError, OSError):
+        return False
+
+
+def _suse_cve_available(cve):
+    """Cached SUSE availability check for a single CVE ID."""
+    if not cve:
+        return False
+    key = cve.upper()
+    if key in _SUSE_CVE_AVAILABLE:
+        return _SUSE_CVE_AVAILABLE[key]
+    if _network_checks_disabled():
+        _SUSE_CVE_AVAILABLE[key] = False
+        return False
+    result = _probe_suse_cve(key)
+    _SUSE_CVE_AVAILABLE[key] = result
+    return result
+
+
+def _prefetch_suse_availability(cve_ids):
+    """Concurrently warm the SUSE availability cache for a set of CVE IDs."""
+    if _network_checks_disabled():
+        return
+    pending = sorted({c.upper() for c in cve_ids if c} - set(_SUSE_CVE_AVAILABLE))
+    if not pending:
+        return
+    max_workers = min(16, len(pending))
+    try:
+        with concurrent.futures.ThreadPoolExecutor(max_workers=max_workers) as pool:
+            futures = {pool.submit(_probe_suse_cve, cve): cve for cve in pending}
+            for fut in concurrent.futures.as_completed(futures):
+                cve = futures[fut]
+                try:
+                    _SUSE_CVE_AVAILABLE[cve] = fut.result()
+                except Exception:
+                    _SUSE_CVE_AVAILABLE[cve] = False
+    except Exception:
+        # Thread pool / network unavailable: leave cache as-is so callers fall
+        # back to NVD via the lazy per-CVE path.
+        pass
+
+
+def _cve_reference_url(cve):
+    """Return the best reference URL for an upper-cased *cve* ID.
+
+    Prefers the SUSE security tracker when a page exists there, otherwise falls
+    back to the NIST NVD record.
+    """
+    key = (cve or "").upper()
+    if _suse_cve_available(key):
+        return _SUSE_CVE_URL.format(cve=key)
+    return _NVD_CVE_URL.format(cve=key)
 
 
 # CVE IDs introduced by the scan currently being rendered (i.e. absent from the
@@ -1199,7 +1312,7 @@ def render_table(headers, rows, header_text=None):
             v = val.strip()
             cve = _cve_id_in_text(v)
             if cve:
-                url = f"https://avd.aquasec.com/nvd/{v.lower()}"
+                url = _cve_reference_url(cve)
                 link = f'<a href="{esc(url)}" target="_blank" rel="noopener noreferrer">{esc(v)}</a>'
                 if cve in _NEW_CVE_IDS:
                     link += (
@@ -1960,7 +2073,7 @@ def _render_new_cves_section(details):
     for d in details:
         cve = d["cve"]
         cve_link = (
-            f'<a href="https://avd.aquasec.com/nvd/{cve.lower()}" '
+            f'<a href="{esc(_cve_reference_url(cve))}" '
             f'target="_blank" rel="noopener noreferrer">{esc(cve)}</a>'
             if re.match(r"^CVE-\d{4}-\d+$", cve, re.I)
             else esc(cve)
@@ -2856,7 +2969,7 @@ def _render_vex_candidates(candidates):
     for c in candidates:
         cve = c.get("cve", "")
         cve_link = (
-            f'<a href="https://avd.aquasec.com/nvd/{cve.lower()}" '
+            f'<a href="{esc(_cve_reference_url(cve))}" '
             f'target="_blank" rel="noopener noreferrer">{esc(cve)}</a>'
             if re.match(r"^CVE-\d{4}-\d+$", cve, re.I)
             else esc(cve)
@@ -3056,6 +3169,9 @@ def convert(input_path, output_path=None):
             content = _augment_scan_summary(content, input_path)
         if not basename.startswith("check-"):
             content = _move_summary_to_top(content)
+        _prefetch_suse_availability(
+            {m.group(0) for m in re.finditer(r"CVE-\d{4}-\d+", content, re.I)}
+        )
         body_html = _convert_markdown(content)
         title_match = re.search(r"^# (.+)$", content, re.MULTILINE)
         title = title_match.group(1).strip() if title_match else "Report"
