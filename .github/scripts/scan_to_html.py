@@ -588,6 +588,63 @@ code {
   border: 1px solid #C3E6CB;
 }
 
+/* ---- New CVEs since previous scan ---- */
+.new-cves {
+  border: 1px solid var(--sev-high-border, #F0C36D);
+  border-radius: 8px;
+  background: #FFF9F0;
+  padding: 18px 20px 12px;
+  margin-bottom: 22px;
+}
+.new-cves h2 {
+  margin: 0 0 4px;
+}
+.new-cves .new-cves-intro {
+  color: var(--muted);
+  font-size: 13px;
+  margin-bottom: 12px;
+}
+.new-cves table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+.new-cves th {
+  background: var(--table-header-bg);
+  text-align: left;
+  padding: 6px 10px;
+  border: 1px solid var(--border);
+  font-family: 'Poppins', sans-serif;
+  font-size: 12px;
+}
+.new-cves td {
+  padding: 6px 10px;
+  border: 1px solid var(--border);
+  vertical-align: top;
+}
+.new-cves tr:nth-child(even) td {
+  background: var(--box-bg);
+}
+/* "NEW" badge shown next to a newly-introduced CVE in the findings tables */
+.new-cve-badge {
+  display: inline-block;
+  margin-left: 6px;
+  padding: 1px 6px;
+  border-radius: 4px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: .04em;
+  vertical-align: middle;
+  background: #FDE9C8;
+  color: #8A4B00;
+  border: 1px solid #F0C36D;
+}
+/* Highlight the whole row of a newly-introduced CVE */
+tr.new-cve-row > td {
+  background: #FFF6E8 !important;
+  box-shadow: inset 3px 0 0 #E8971E;
+}
+
 /* ---- CVE trend line chart ---- */
 .cve-trend {
   border: 1px solid var(--border);
@@ -764,6 +821,18 @@ _DARK_CSS = """
   background: #1B3A28;
   color: #7FD8A0;
   border-color: #2E5C40;
+}
+:root[data-theme="dark"] .new-cves {
+  background: #241B12;
+}
+:root[data-theme="dark"] .new-cve-badge {
+  background: #3A2A12;
+  color: #F0C36D;
+  border-color: #6B4E1E;
+}
+:root[data-theme="dark"] tr.new-cve-row > td {
+  background: #2A2114 !important;
+  box-shadow: inset 3px 0 0 #E8971E;
 }
 
 /* ---- Theme toggle ---- */
@@ -1093,6 +1162,26 @@ def _render_title_cell(text):
     return "<br>".join(rendered)
 
 
+def _cve_id_in_text(text):
+    """Extract the canonical upper-cased CVE ID from a cell value, or None."""
+    m = re.match(r"CVE-\d{4}-\d+", text.strip(), re.I)
+    return m.group(0).upper() if m else None
+
+
+# CVE IDs introduced by the scan currently being rendered (i.e. absent from the
+# previous comparable scan). Populated per-report in :func:`convert` and read by
+# :func:`render_table` so newly-appeared findings can be badged/highlighted.
+# A module-level value is safe because the converter processes one report at a
+# time; ``convert`` resets it at the start of every run.
+_NEW_CVE_IDS = set()
+
+
+def _set_new_cve_context(cve_ids):
+    """Set the set of newly-introduced CVE IDs used to highlight findings rows."""
+    global _NEW_CVE_IDS
+    _NEW_CVE_IDS = {c.upper() for c in (cve_ids or set())}
+
+
 def render_table(headers, rows, header_text=None):
     """Render (headers, rows) as an HTML table."""
     if not headers or not rows:
@@ -1108,13 +1197,27 @@ def render_table(headers, rows, header_text=None):
             return _vuln_count_cell(val)
         if h_norm == "vulnerability":
             v = val.strip()
-            if re.match(r"CVE-\d{4}-\d+", v, re.I):
+            cve = _cve_id_in_text(v)
+            if cve:
                 url = f"https://avd.aquasec.com/nvd/{v.lower()}"
-                return f'<a href="{esc(url)}" target="_blank" rel="noopener noreferrer">{esc(v)}</a>'
+                link = f'<a href="{esc(url)}" target="_blank" rel="noopener noreferrer">{esc(v)}</a>'
+                if cve in _NEW_CVE_IDS:
+                    link += (
+                        '<span class="new-cve-badge" '
+                        'title="New since the previous scan">NEW</span>'
+                    )
+                return link
             return esc(v)
         if h_norm == "title":
             return _render_title_cell(val)
         return esc(val)
+
+    def row_has_new_cve(row):
+        for h, h_norm in zip(headers, hlo):
+            if h_norm == "vulnerability":
+                cve = _cve_id_in_text(row.get(h, ""))
+                return bool(cve and cve in _NEW_CVE_IDS)
+        return False
 
     out = ['<table class="report-table">']
     out.append("<thead><tr>")
@@ -1123,7 +1226,8 @@ def render_table(headers, rows, header_text=None):
     out.append("</tr></thead><tbody>")
 
     for row in rows:
-        out.append("<tr>")
+        tr_class = ' class="new-cve-row"' if row_has_new_cve(row) else ""
+        out.append(f"<tr{tr_class}>")
         for h, h_norm in zip(headers, hlo):
             val = row.get(h, "")
             td_class = ' class="num"' if h_norm in ("vulnerabilities", "secrets") else ""
@@ -1731,6 +1835,178 @@ def _resolve_scan_source(md, input_path):
 def _strip_scan_metadata(md):
     """Remove embedded ``scan-source-*`` comment lines from report markdown."""
     return _SCAN_METADATA_RE.sub("", md or "")
+
+
+# Severity ordering used when sorting the "New CVEs" summary list.
+_SEVERITY_RANK = {"CRITICAL": 0, "HIGH": 1, "MEDIUM": 2, "LOW": 3, "UNKNOWN": 4}
+
+
+def _new_cves_vs_previous_scan(md, input_path):
+    """Identify CVEs introduced by the current scan relative to the previous one.
+
+    The comparison is scoped to *comparable* scans (same source group, e.g. the
+    ``master`` branch or a given release minor) so a master scan is diffed
+    against the previous master scan rather than an unrelated PR or release run.
+
+    The report currently being converted is matched to its ``scan_metrics`` row
+    by comparing the CVE IDs present in *md* against each candidate scan's stored
+    CVE set; this keeps the diff correct even when older reports are regenerated.
+    The scan immediately preceding the matched one (within the same group) is
+    used as the baseline.
+
+    Returns a ``(new_ids, details)`` tuple where *new_ids* is a set of
+    upper-cased CVE IDs and *details* is a list of dicts (``cve``, ``severity``,
+    ``images``, ``packages``) describing each new CVE for the summary section.
+    Returns ``(set(), [])`` when the DB is unavailable or there is no baseline
+    scan to compare against (e.g. the first scan of a source group).
+    """
+    db_path = _metrics_db_path(input_path)
+    if not db_path:
+        return set(), []
+
+    report_cves = {m.group(0).upper() for m in re.finditer(r"CVE-\d{4}-\d+", md or "", re.I)}
+    source_group, _label = _resolve_scan_source(md, input_path)
+
+    try:
+        with sqlite3.connect(db_path) as conn:
+            cur = conn.cursor()
+            cur.execute(
+                "SELECT id, source_ref FROM scan_metrics ORDER BY scanned_at DESC, id DESC"
+            )
+            scan_rows = cur.fetchall()
+
+            # Restrict to scans in the same source group (newest first).
+            group_scan_ids = []
+            for sid, source_ref in scan_rows:
+                if source_group is not None:
+                    grp, _lbl = _scan_source_group(source_ref)
+                    if grp != source_group:
+                        continue
+                group_scan_ids.append(sid)
+
+            if len(group_scan_ids) < 2:
+                return set(), []
+
+            def cve_set(scan_id):
+                c = conn.cursor()
+                c.execute(
+                    "SELECT DISTINCT UPPER(cve_id) FROM scan_cves WHERE scan_id = ?",
+                    (scan_id,),
+                )
+                return {r[0] for r in c.fetchall() if r[0]}
+
+            # Match the report to its scan row: prefer the candidate whose stored
+            # CVE set overlaps the report the most. When the report carries no
+            # CVE IDs (or nothing matches) fall back to the most recent scan.
+            cve_sets = {sid: cve_set(sid) for sid in group_scan_ids}
+            current_id = group_scan_ids[0]
+            if report_cves:
+                best_overlap = -1
+                for sid in group_scan_ids:
+                    overlap = len(report_cves & cve_sets[sid])
+                    if overlap > best_overlap:
+                        best_overlap = overlap
+                        current_id = sid
+
+            current_index = group_scan_ids.index(current_id)
+            if current_index + 1 >= len(group_scan_ids):
+                return set(), []
+            previous_id = group_scan_ids[current_index + 1]
+
+            new_ids = cve_sets[current_id] - cve_sets[previous_id]
+            if not new_ids:
+                return set(), []
+
+            cur.execute(
+                "SELECT cve_id, severity, image, package FROM scan_cves WHERE scan_id = ?",
+                (current_id,),
+            )
+            grouped = {}
+            for cve_id, severity, image, package in cur.fetchall():
+                key = (cve_id or "").upper()
+                if key not in new_ids:
+                    continue
+                entry = grouped.setdefault(
+                    key,
+                    {"cve": key, "severity": (severity or "").upper(), "images": set(), "packages": set()},
+                )
+                if image:
+                    entry["images"].add(image)
+                if package:
+                    entry["packages"].add(package)
+                # Keep the most severe label seen for the CVE.
+                if _SEVERITY_RANK.get((severity or "").upper(), 4) < _SEVERITY_RANK.get(entry["severity"], 4):
+                    entry["severity"] = (severity or "").upper()
+    except sqlite3.Error:
+        return set(), []
+
+    details = sorted(
+        grouped.values(),
+        key=lambda e: (_SEVERITY_RANK.get(e["severity"], 4), e["cve"]),
+    )
+    return new_ids, details
+
+
+def _render_new_cves_section(details):
+    """Render the "New CVEs Since Previous Scan" summary section as HTML.
+
+    *details* is the list produced by :func:`_new_cves_vs_previous_scan`. Returns
+    an empty string when there are no new CVEs so the caller can omit the block.
+    """
+    if not details:
+        return ""
+
+    rows = []
+    for d in details:
+        cve = d["cve"]
+        cve_link = (
+            f'<a href="https://avd.aquasec.com/nvd/{cve.lower()}" '
+            f'target="_blank" rel="noopener noreferrer">{esc(cve)}</a>'
+            if re.match(r"^CVE-\d{4}-\d+$", cve, re.I)
+            else esc(cve)
+        )
+        severity = _severity_badge(d["severity"]) if d["severity"] else ""
+        packages = ", ".join(sorted(d["packages"])) if d["packages"] else "&mdash;"
+        images = sorted(d["images"])
+        images_html = "<br>".join(
+            f'<code style="font-size:11px;word-break:break-all">{esc(i)}</code>' for i in images
+        ) or "&mdash;"
+        rows.append(
+            "<tr>"
+            f"<td>{cve_link}</td>"
+            f"<td>{severity}</td>"
+            f"<td><code>{esc(packages)}</code></td>"
+            f"<td>{images_html}</td>"
+            "</tr>"
+        )
+    rows_html = "\n".join(rows)
+    count = len(details)
+    plural = "CVE" if count == 1 else "CVEs"
+    return (
+        '<section class="new-cves">'
+        '<h2 id="new-cves-since-previous-scan" class="anchored-heading">'
+        f"New {plural} Since Previous Scan"
+        '<a class="heading-anchor" href="#new-cves-since-previous-scan" aria-label="Link to section">#</a>'
+        "</h2>"
+        '<p class="new-cves-intro">'
+        f"{count} {plural} appeared in this scan that were not present in the previous "
+        "comparable scan. These are also flagged with a "
+        '<span class="new-cve-badge">NEW</span> badge in the findings tables below.'
+        "</p>"
+        '<div class="table-wrap"><details class="table-collapsible" open>'
+        f'<summary><span class="toggle-label">New {plural} ({count} rows)</span></summary>'
+        '<table class="report-table">'
+        "<thead><tr>"
+        "<th>CVE</th>"
+        "<th>Severity</th>"
+        "<th>Package(s)</th>"
+        "<th>Image(s)</th>"
+        "</tr></thead>"
+        f"<tbody>{rows_html}</tbody>"
+        "</table>"
+        "</details></div>"
+        "</section>"
+    )
 
 
 def _trend_history_rows(input_path, crit_col, high_col, source_group, limit):
@@ -2770,6 +3046,12 @@ def convert(input_path, output_path=None):
     if is_markdown:
         source_group, scope_label = _resolve_scan_source(content, input_path)
         content = _strip_scan_metadata(content)
+        # Determine which CVEs are new relative to the previous comparable scan
+        # so findings rows can be badged. Only meaningful for scan-* reports.
+        new_cve_ids, new_cve_details = (set(), [])
+        if basename.startswith("scan-"):
+            new_cve_ids, new_cve_details = _new_cves_vs_previous_scan(content, input_path)
+        _set_new_cve_context(new_cve_ids)
         if basename.startswith("scan-"):
             content = _augment_scan_summary(content, input_path)
         if not basename.startswith("check-"):
@@ -2788,11 +3070,13 @@ def convert(input_path, output_path=None):
             suggested_actions = _copilot_suggested_actions(title, findings_by_image)
             vex_candidates = _copilot_vex_candidates(title, findings_by_image)
             body_html = (
-                _render_suggested_actions(suggested_actions)
+                _render_new_cves_section(new_cve_details)
+                + _render_suggested_actions(suggested_actions)
                 + _render_vex_candidates(vex_candidates)
                 + body_html
             )
     else:
+        _set_new_cve_context(set())
         body_html = _convert_raw(content)
         title = os.path.splitext(basename)[0]
 

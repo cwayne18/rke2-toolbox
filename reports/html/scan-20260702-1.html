@@ -574,6 +574,63 @@ code {
   border: 1px solid #C3E6CB;
 }
 
+/* ---- New CVEs since previous scan ---- */
+.new-cves {
+  border: 1px solid var(--sev-high-border, #F0C36D);
+  border-radius: 8px;
+  background: #FFF9F0;
+  padding: 18px 20px 12px;
+  margin-bottom: 22px;
+}
+.new-cves h2 {
+  margin: 0 0 4px;
+}
+.new-cves .new-cves-intro {
+  color: var(--muted);
+  font-size: 13px;
+  margin-bottom: 12px;
+}
+.new-cves table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+.new-cves th {
+  background: var(--table-header-bg);
+  text-align: left;
+  padding: 6px 10px;
+  border: 1px solid var(--border);
+  font-family: 'Poppins', sans-serif;
+  font-size: 12px;
+}
+.new-cves td {
+  padding: 6px 10px;
+  border: 1px solid var(--border);
+  vertical-align: top;
+}
+.new-cves tr:nth-child(even) td {
+  background: var(--box-bg);
+}
+/* "NEW" badge shown next to a newly-introduced CVE in the findings tables */
+.new-cve-badge {
+  display: inline-block;
+  margin-left: 6px;
+  padding: 1px 6px;
+  border-radius: 4px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: .04em;
+  vertical-align: middle;
+  background: #FDE9C8;
+  color: #8A4B00;
+  border: 1px solid #F0C36D;
+}
+/* Highlight the whole row of a newly-introduced CVE */
+tr.new-cve-row > td {
+  background: #FFF6E8 !important;
+  box-shadow: inset 3px 0 0 #E8971E;
+}
+
 /* ---- CVE trend line chart ---- */
 .cve-trend {
   border: 1px solid var(--border);
@@ -747,6 +804,18 @@ code {
   color: #7FD8A0;
   border-color: #2E5C40;
 }
+:root[data-theme="dark"] .new-cves {
+  background: #241B12;
+}
+:root[data-theme="dark"] .new-cve-badge {
+  background: #3A2A12;
+  color: #F0C36D;
+  border-color: #6B4E1E;
+}
+:root[data-theme="dark"] tr.new-cve-row > td {
+  background: #2A2114 !important;
+  box-shadow: inset 3px 0 0 #E8971E;
+}
 
 /* ---- Theme toggle ---- */
 .theme-toggle {
@@ -796,7 +865,11 @@ code {
     <button type="button" class="theme-toggle" aria-label="Toggle dark mode" title="Toggle dark mode" onclick="(function(){var d=document.documentElement;var dark=d.getAttribute('data-theme')==='dark';if(dark){d.removeAttribute('data-theme');}else{d.setAttribute('data-theme','dark');}try{localStorage.setItem('theme',dark?'light':'dark');}catch(e){}})()"><span class="theme-icon-light" aria-hidden="true">&#127769;</span><span class="theme-icon-dark" aria-hidden="true">&#9728;</span></button>
   </header>
   <main class="page-content">
-    <section class="suggested-actions"><h2>Suggested Actions</h2><ul><li>For `registry.rancher.com/rancher/hardened-flannel:v0.28.5-build20260604`, update vulnerable components to available fixed versions (0.53.0, 0.55.0) and regenerate the image SBOM/scan.</li>
+    <section class="new-cves"><h2 id="new-cves-since-previous-scan" class="anchored-heading">New CVEs Since Previous Scan<a class="heading-anchor" href="#new-cves-since-previous-scan" aria-label="Link to section">#</a></h2><p class="new-cves-intro">5 CVEs appeared in this scan that were not present in the previous comparable scan. These are also flagged with a <span class="new-cve-badge">NEW</span> badge in the findings tables below.</p><div class="table-wrap"><details class="table-collapsible" open><summary><span class="toggle-label">New CVEs (5 rows)</span></summary><table class="report-table"><thead><tr><th>CVE</th><th>Severity</th><th>Package(s)</th><th>Image(s)</th></tr></thead><tbody><tr><td><a href="https://avd.aquasec.com/nvd/cve-2026-11940" target="_blank" rel="noopener noreferrer">CVE-2026-11940</a></td><td><span class="sev sev-CRITICAL">CRITICAL</span></td><td><code>python3, python3-libs</code></td><td><code style="font-size:11px;word-break:break-all">registry.rancher.com/rancher/mirrored-cloud-provider-vsphere-csi-release-driver:v3.6.0</code></td></tr>
+<tr><td><a href="https://avd.aquasec.com/nvd/cve-2026-11972" target="_blank" rel="noopener noreferrer">CVE-2026-11972</a></td><td><span class="sev sev-HIGH">HIGH</span></td><td><code>python3, python3-libs</code></td><td><code style="font-size:11px;word-break:break-all">registry.rancher.com/rancher/mirrored-cloud-provider-vsphere-csi-release-driver:v3.6.0</code></td></tr>
+<tr><td><a href="https://avd.aquasec.com/nvd/cve-2026-50151" target="_blank" rel="noopener noreferrer">CVE-2026-50151</a></td><td><span class="sev sev-HIGH">HIGH</span></td><td><code>oras.land/oras-go/v2</code></td><td><code style="font-size:11px;word-break:break-all">registry.rancher.com/rancher/klipper-helm:v0.11.1-build20260615</code><br><code style="font-size:11px;word-break:break-all">registry.rancher.com/rancher/mirrored-calico-operator:v1.42.0</code></td></tr>
+<tr><td><a href="https://avd.aquasec.com/nvd/cve-2026-50163" target="_blank" rel="noopener noreferrer">CVE-2026-50163</a></td><td><span class="sev sev-HIGH">HIGH</span></td><td><code>oras.land/oras-go/v2</code></td><td><code style="font-size:11px;word-break:break-all">registry.rancher.com/rancher/klipper-helm:v0.11.1-build20260615</code><br><code style="font-size:11px;word-break:break-all">registry.rancher.com/rancher/mirrored-calico-operator:v1.42.0</code></td></tr>
+<tr><td><a href="https://avd.aquasec.com/nvd/cve-2026-9804" target="_blank" rel="noopener noreferrer">CVE-2026-9804</a></td><td><span class="sev sev-HIGH">HIGH</span></td><td><code>kubevirt.io/kubevirt</code></td><td><code style="font-size:11px;word-break:break-all">registry.rancher.com/rancher/harvester-csi-driver:v0.2.8</code></td></tr></tbody></table></details></div></section><section class="suggested-actions"><h2>Suggested Actions</h2><ul><li>For `registry.rancher.com/rancher/hardened-flannel:v0.28.5-build20260604`, update vulnerable components to available fixed versions (0.53.0, 0.55.0) and regenerate the image SBOM/scan.</li>
 <li>For `registry.rancher.com/rancher/hardened-kubernetes:v1.36.2-rke2r1-build20260612`, update vulnerable components to available fixed versions (0.53.0, 0.55.0) and regenerate the image SBOM/scan.</li>
 <li>For `registry.rancher.com/rancher/hardened-cluster-autoscaler:v1.10.3-build20260604`, update vulnerable components to available fixed versions (0.53.0, 0.55.0) and regenerate the image SBOM/scan.</li>
 <li>For `registry.rancher.com/rancher/hardened-dns-node-cache:1.26.8-build20260608`, update vulnerable components to available fixed versions (0.53.0, 0.55.0) and regenerate the image SBOM/scan.</li>
@@ -1444,18 +1517,18 @@ Total: 4 (UNKNOWN: 0, LOW: 0, MEDIUM: 0, HIGH: 4, CRITICAL: 0)</pre></summary><t
 <td>0.55.0</td>
 <td>golang.org/x/net/idna: golang: golang.org/x/net/idna:<br>Privilege escalation via incorrect Punycode label processing<br><a href="https://avd.aquasec.com/nvd/cve-2026-39821" target="_blank" rel="noopener noreferrer">https://avd.aquasec.com/nvd/cve-2026-39821</a></td>
 </tr>
-<tr>
+<tr class="new-cve-row">
 <td>oras.land/oras-go/v2</td>
-<td><a href="https://avd.aquasec.com/nvd/cve-2026-50151" target="_blank" rel="noopener noreferrer">CVE-2026-50151</a></td>
+<td><a href="https://avd.aquasec.com/nvd/cve-2026-50151" target="_blank" rel="noopener noreferrer">CVE-2026-50151</a><span class="new-cve-badge" title="New since the previous scan">NEW</span></td>
 <td><span class="sev sev-HIGH">HIGH</span></td>
 <td>fixed</td>
 <td>v2.6.0</td>
 <td>2.6.1</td>
 <td>oras-go blob upload vulnerable to credential forwarding via<br>unvalidated Location header<br><a href="https://avd.aquasec.com/nvd/cve-2026-50151" target="_blank" rel="noopener noreferrer">https://avd.aquasec.com/nvd/cve-2026-50151</a></td>
 </tr>
-<tr>
+<tr class="new-cve-row">
 <td>oras.land/oras-go/v2</td>
-<td><a href="https://avd.aquasec.com/nvd/cve-2026-50163" target="_blank" rel="noopener noreferrer">CVE-2026-50163</a></td>
+<td><a href="https://avd.aquasec.com/nvd/cve-2026-50163" target="_blank" rel="noopener noreferrer">CVE-2026-50163</a><span class="new-cve-badge" title="New since the previous scan">NEW</span></td>
 <td><span class="sev sev-HIGH">HIGH</span></td>
 <td>affected</td>
 <td>v2.6.0</td>
@@ -1493,18 +1566,18 @@ Total: 4 (UNKNOWN: 0, LOW: 0, MEDIUM: 0, HIGH: 4, CRITICAL: 0)</pre></summary><t
 <td>0.55.0</td>
 <td>golang.org/x/net/idna: golang: golang.org/x/net/idna:<br>Privilege escalation via incorrect Punycode label processing<br><a href="https://avd.aquasec.com/nvd/cve-2026-39821" target="_blank" rel="noopener noreferrer">https://avd.aquasec.com/nvd/cve-2026-39821</a></td>
 </tr>
-<tr>
+<tr class="new-cve-row">
 <td>oras.land/oras-go/v2</td>
-<td><a href="https://avd.aquasec.com/nvd/cve-2026-50151" target="_blank" rel="noopener noreferrer">CVE-2026-50151</a></td>
+<td><a href="https://avd.aquasec.com/nvd/cve-2026-50151" target="_blank" rel="noopener noreferrer">CVE-2026-50151</a><span class="new-cve-badge" title="New since the previous scan">NEW</span></td>
 <td><span class="sev sev-HIGH">HIGH</span></td>
 <td>fixed</td>
 <td>v2.6.0</td>
 <td>2.6.1</td>
 <td>oras-go blob upload vulnerable to credential forwarding via<br>unvalidated Location header<br><a href="https://avd.aquasec.com/nvd/cve-2026-50151" target="_blank" rel="noopener noreferrer">https://avd.aquasec.com/nvd/cve-2026-50151</a></td>
 </tr>
-<tr>
+<tr class="new-cve-row">
 <td>oras.land/oras-go/v2</td>
-<td><a href="https://avd.aquasec.com/nvd/cve-2026-50163" target="_blank" rel="noopener noreferrer">CVE-2026-50163</a></td>
+<td><a href="https://avd.aquasec.com/nvd/cve-2026-50163" target="_blank" rel="noopener noreferrer">CVE-2026-50163</a><span class="new-cve-badge" title="New since the previous scan">NEW</span></td>
 <td><span class="sev sev-HIGH">HIGH</span></td>
 <td>affected</td>
 <td>v2.6.0</td>
@@ -1542,18 +1615,18 @@ Total: 4 (UNKNOWN: 0, LOW: 0, MEDIUM: 0, HIGH: 4, CRITICAL: 0)</pre></summary><t
 <td>0.55.0</td>
 <td>golang.org/x/net/idna: golang: golang.org/x/net/idna:<br>Privilege escalation via incorrect Punycode label processing<br><a href="https://avd.aquasec.com/nvd/cve-2026-39821" target="_blank" rel="noopener noreferrer">https://avd.aquasec.com/nvd/cve-2026-39821</a></td>
 </tr>
-<tr>
+<tr class="new-cve-row">
 <td>oras.land/oras-go/v2</td>
-<td><a href="https://avd.aquasec.com/nvd/cve-2026-50151" target="_blank" rel="noopener noreferrer">CVE-2026-50151</a></td>
+<td><a href="https://avd.aquasec.com/nvd/cve-2026-50151" target="_blank" rel="noopener noreferrer">CVE-2026-50151</a><span class="new-cve-badge" title="New since the previous scan">NEW</span></td>
 <td><span class="sev sev-HIGH">HIGH</span></td>
 <td>fixed</td>
 <td>v2.6.0</td>
 <td>2.6.1</td>
 <td>oras-go blob upload vulnerable to credential forwarding via<br>unvalidated Location header<br><a href="https://avd.aquasec.com/nvd/cve-2026-50151" target="_blank" rel="noopener noreferrer">https://avd.aquasec.com/nvd/cve-2026-50151</a></td>
 </tr>
-<tr>
+<tr class="new-cve-row">
 <td>oras.land/oras-go/v2</td>
-<td><a href="https://avd.aquasec.com/nvd/cve-2026-50163" target="_blank" rel="noopener noreferrer">CVE-2026-50163</a></td>
+<td><a href="https://avd.aquasec.com/nvd/cve-2026-50163" target="_blank" rel="noopener noreferrer">CVE-2026-50163</a><span class="new-cve-badge" title="New since the previous scan">NEW</span></td>
 <td><span class="sev sev-HIGH">HIGH</span></td>
 <td>affected</td>
 <td>v2.6.0</td>
@@ -3856,18 +3929,18 @@ Total: 24 (UNKNOWN: 0, LOW: 0, MEDIUM: 0, HIGH: 24, CRITICAL: 0)</pre></summary>
 <td>0.55.0</td>
 <td>Parsing arbitrary HTML which is then rendered using Render<br>can result ...<br><a href="https://avd.aquasec.com/nvd/cve-2026-42502" target="_blank" rel="noopener noreferrer">https://avd.aquasec.com/nvd/cve-2026-42502</a></td>
 </tr>
-<tr>
+<tr class="new-cve-row">
 <td>oras.land/oras-go/v2</td>
-<td><a href="https://avd.aquasec.com/nvd/cve-2026-50151" target="_blank" rel="noopener noreferrer">CVE-2026-50151</a></td>
+<td><a href="https://avd.aquasec.com/nvd/cve-2026-50151" target="_blank" rel="noopener noreferrer">CVE-2026-50151</a><span class="new-cve-badge" title="New since the previous scan">NEW</span></td>
 <td><span class="sev sev-HIGH">HIGH</span></td>
 <td>fixed</td>
 <td>v2.6.0</td>
 <td>2.6.1</td>
 <td>oras-go blob upload vulnerable to credential forwarding via<br>unvalidated Location header<br><a href="https://avd.aquasec.com/nvd/cve-2026-50151" target="_blank" rel="noopener noreferrer">https://avd.aquasec.com/nvd/cve-2026-50151</a></td>
 </tr>
-<tr>
+<tr class="new-cve-row">
 <td>oras.land/oras-go/v2</td>
-<td><a href="https://avd.aquasec.com/nvd/cve-2026-50163" target="_blank" rel="noopener noreferrer">CVE-2026-50163</a></td>
+<td><a href="https://avd.aquasec.com/nvd/cve-2026-50163" target="_blank" rel="noopener noreferrer">CVE-2026-50163</a><span class="new-cve-badge" title="New since the previous scan">NEW</span></td>
 <td><span class="sev sev-HIGH">HIGH</span></td>
 <td>affected</td>
 <td>v2.6.0</td>
@@ -6135,18 +6208,18 @@ Total: 108 (UNKNOWN: 0, LOW: 0, MEDIUM: 0, HIGH: 90, CRITICAL: 18)</pre></summar
 <td>3.5.7-1.ph5</td>
 <td>openssl: OpenSSL: Denial of Service due to heap<br>out-of-bounds read in CMS...<br><a href="https://avd.aquasec.com/nvd/cve-2026-9076" target="_blank" rel="noopener noreferrer">https://avd.aquasec.com/nvd/cve-2026-9076</a></td>
 </tr>
-<tr>
+<tr class="new-cve-row">
 <td>python3</td>
-<td><a href="https://avd.aquasec.com/nvd/cve-2026-11940" target="_blank" rel="noopener noreferrer">CVE-2026-11940</a></td>
+<td><a href="https://avd.aquasec.com/nvd/cve-2026-11940" target="_blank" rel="noopener noreferrer">CVE-2026-11940</a><span class="new-cve-badge" title="New since the previous scan">NEW</span></td>
 <td><span class="sev sev-CRITICAL">CRITICAL</span></td>
 <td>fixed</td>
 <td>3.11.13-3.ph5</td>
 <td>3.14.5-4.ph5</td>
 <td>tarfile.extractall() with the &#x27;data&#x27; or &#x27;tar&#x27; filter could<br>be bypasse ......<br><a href="https://avd.aquasec.com/nvd/cve-2026-11940" target="_blank" rel="noopener noreferrer">https://avd.aquasec.com/nvd/cve-2026-11940</a></td>
 </tr>
-<tr>
+<tr class="new-cve-row">
 <td>python3</td>
-<td><a href="https://avd.aquasec.com/nvd/cve-2026-11972" target="_blank" rel="noopener noreferrer">CVE-2026-11972</a></td>
+<td><a href="https://avd.aquasec.com/nvd/cve-2026-11972" target="_blank" rel="noopener noreferrer">CVE-2026-11972</a><span class="new-cve-badge" title="New since the previous scan">NEW</span></td>
 <td><span class="sev sev-HIGH">HIGH</span></td>
 <td>fixed</td>
 <td>3.11.13-3.ph5</td>
@@ -6162,18 +6235,18 @@ Total: 108 (UNKNOWN: 0, LOW: 0, MEDIUM: 0, HIGH: 90, CRITICAL: 18)</pre></summar
 <td>3.14.5-2.ph5</td>
 <td>python: expat: Python/Expat: Denial of Service via crafted<br>XML document<br><a href="https://avd.aquasec.com/nvd/cve-2026-7210" target="_blank" rel="noopener noreferrer">https://avd.aquasec.com/nvd/cve-2026-7210</a></td>
 </tr>
-<tr>
+<tr class="new-cve-row">
 <td>python3-libs</td>
-<td><a href="https://avd.aquasec.com/nvd/cve-2026-11940" target="_blank" rel="noopener noreferrer">CVE-2026-11940</a></td>
+<td><a href="https://avd.aquasec.com/nvd/cve-2026-11940" target="_blank" rel="noopener noreferrer">CVE-2026-11940</a><span class="new-cve-badge" title="New since the previous scan">NEW</span></td>
 <td><span class="sev sev-CRITICAL">CRITICAL</span></td>
 <td>fixed</td>
 <td>3.11.13-3.ph5</td>
 <td>3.14.5-4.ph5</td>
 <td>tarfile.extractall() with the &#x27;data&#x27; or &#x27;tar&#x27; filter could<br>be bypasse ......<br><a href="https://avd.aquasec.com/nvd/cve-2026-11940" target="_blank" rel="noopener noreferrer">https://avd.aquasec.com/nvd/cve-2026-11940</a></td>
 </tr>
-<tr>
+<tr class="new-cve-row">
 <td>python3-libs</td>
-<td><a href="https://avd.aquasec.com/nvd/cve-2026-11972" target="_blank" rel="noopener noreferrer">CVE-2026-11972</a></td>
+<td><a href="https://avd.aquasec.com/nvd/cve-2026-11972" target="_blank" rel="noopener noreferrer">CVE-2026-11972</a><span class="new-cve-badge" title="New since the previous scan">NEW</span></td>
 <td><span class="sev sev-HIGH">HIGH</span></td>
 <td>fixed</td>
 <td>3.11.13-3.ph5</td>
@@ -9351,9 +9424,9 @@ Total: 14 (UNKNOWN: 0, LOW: 0, MEDIUM: 0, HIGH: 12, CRITICAL: 2)</pre></summary>
 <td>1.8.3, 1.7.4, 1.6.6</td>
 <td>kubevirt: KubeVirt virt-handler: Privilege escalation and<br>node compromise via symlink following vulnerability...<br><a href="https://avd.aquasec.com/nvd/cve-2026-7374" target="_blank" rel="noopener noreferrer">https://avd.aquasec.com/nvd/cve-2026-7374</a></td>
 </tr>
-<tr>
+<tr class="new-cve-row">
 <td>kubevirt.io/kubevirt</td>
-<td><a href="https://avd.aquasec.com/nvd/cve-2026-9804" target="_blank" rel="noopener noreferrer">CVE-2026-9804</a></td>
+<td><a href="https://avd.aquasec.com/nvd/cve-2026-9804" target="_blank" rel="noopener noreferrer">CVE-2026-9804</a><span class="new-cve-badge" title="New since the previous scan">NEW</span></td>
 <td><span class="sev sev-HIGH">HIGH</span></td>
 <td>affected</td>
 <td>v1.7.0</td>
@@ -11800,7 +11873,7 @@ Total: 15 (UNKNOWN: 0, LOW: 0, MEDIUM: 0, HIGH: 13, CRITICAL: 2)</pre></summary>
 </tbody></table></details></div></div>
 </div></section>
     <div class="page-footer">
-      Generated from <code>scan-20260702-1.md</code> &nbsp;·&nbsp; 2026-07-02 07:16 UTC
+      Generated from <code>scan-20260702-1.md</code> &nbsp;·&nbsp; 2026-07-02 20:02 UTC
     </div>
   </main>
 </body>
