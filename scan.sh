@@ -8,6 +8,10 @@ pr_input=""
 gist_title=""
 use_prime_ingress="false"
 prime_explicit=""
+# Registry used to reproduce PRIME builds. build-images emits the PRIME/hardened
+# image variants (ingress-nginx prime tags, hardened vsphere images, etc.) only
+# when REGISTRY != docker.io, and the final scan targets registry.rancher.com.
+prime_registry="registry.rancher.com"
 release_version=""
 
 usage() {
@@ -254,14 +258,26 @@ esac
 EOF
     chmod +x "$work_dir/bin/git"
 
-    if ! PATH="$work_dir/bin:$PATH" \
-        GOARCH="${GOARCH:-$(go env GOARCH)}" \
-        GOOS="${GOOS:-$(go env GOOS)}" \
-        BUILD_DIR="$work_dir/build" \
-        SKIP_BUILD_IMAGE_RUNTIME=1 \
-        PULL_CMD=echo \
-        PULL_CMD_CORE=echo \
-        bash "$work_dir/scripts/build-images" \
+    # Run scripts/build-images with the scan-specific stubs (echo instead of a
+    # real pull, stubbed git, skipped runtime build). $2, when non-empty, sets
+    # REGISTRY so the PRIME/hardened image variants are emitted.
+    run_build_images() {
+        local out_dir="$1"
+        local registry_override="$2"
+        (
+            export PATH="$work_dir/bin:$PATH"
+            export GOARCH="${GOARCH:-$(go env GOARCH)}"
+            export GOOS="${GOOS:-$(go env GOOS)}"
+            export BUILD_DIR="$out_dir"
+            export SKIP_BUILD_IMAGE_RUNTIME=1
+            export PULL_CMD=echo
+            export PULL_CMD_CORE=echo
+            [[ -n "$registry_override" ]] && export REGISTRY="$registry_override"
+            bash "$work_dir/scripts/build-images"
+        )
+    }
+
+    if ! run_build_images "$work_dir/build" "" \
         > /dev/null 2> "$work_dir/build-images.log"; then
         cat "$work_dir/build-images.log"
         exit 1
@@ -277,6 +293,24 @@ EOF
 
         sed -i.bak "s/:${ingress_nginx_hardened_tag}$/:${ingress_nginx_prime_tag}/" "$ingress_images_file"
         rm -f "${ingress_images_file}.bak"
+
+        # PR rancher/rke2#10696 introduced PRIME-only hardened vsphere images that
+        # build-images emits only when REGISTRY != docker.io. The default run above
+        # uses docker.io and therefore produced the non-hardened (mirrored) vsphere
+        # list. Regenerate just the vsphere list against the prime registry and swap
+        # it in so the scan reflects the hardened images shipped in PRIME builds. On
+        # branches predating #10696 the vsphere list is identical regardless of the
+        # registry, so this is effectively a no-op there.
+        prime_build_dir="$work_dir/build-prime"
+        mkdir -p "$prime_build_dir"
+        if ! run_build_images "$prime_build_dir" "$prime_registry" \
+            > /dev/null 2> "$work_dir/build-images-prime.log"; then
+            cat "$work_dir/build-images-prime.log"
+            exit 1
+        fi
+        if [[ -f "$prime_build_dir/images-vsphere.txt" ]]; then
+            cp "$prime_build_dir/images-vsphere.txt" "$work_dir/build/images-vsphere.txt"
+        fi
     fi
 
 
