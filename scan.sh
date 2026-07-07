@@ -7,10 +7,11 @@ branch=""
 pr_input=""
 gist_title=""
 use_prime_ingress="false"
+prime_explicit=""
 release_version=""
 
 usage() {
-    echo "Usage: $0 [branch] [--pr <pr-number|pr-url>] [--release <version>] [--gist <title>] [--prime]"
+    echo "Usage: $0 [branch] [--pr <pr-number|pr-url>] [--release <version>] [--gist <title>] [--prime] [--no-prime]"
     echo ""
     echo "Examples:"
     echo "  $0"
@@ -21,6 +22,8 @@ usage() {
     echo "  $0 --release v1.36.1+rke2r1"
     echo "  $0 --prime"
     echo "  $0 --gist 'My Scan Results'"
+    echo ""
+    echo "Note: --pr scans default to --prime; pass --no-prime to disable."
 }
 
 while [[ $# -gt 0 ]]; do
@@ -54,6 +57,12 @@ while [[ $# -gt 0 ]]; do
             ;;
         --prime)
             use_prime_ingress="true"
+            prime_explicit="true"
+            shift
+            ;;
+        --no-prime)
+            use_prime_ingress="false"
+            prime_explicit="true"
             shift
             ;;
         -h|--help)
@@ -83,6 +92,12 @@ if [[ -n "$release_version" && -n "$pr_input" ]]; then
     echo "Error: --release and --pr cannot be used together"
     usage
     exit 1
+fi
+
+# PR scans default to using the prime ingress registry unless the caller
+# explicitly opted in/out via --prime/--no-prime.
+if [[ -n "$pr_input" && -z "$prime_explicit" ]]; then
+    use_prime_ingress="true"
 fi
 
 if [[ -n "$release_version" ]]; then
