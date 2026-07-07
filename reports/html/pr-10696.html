@@ -865,7 +865,12 @@ tr.new-cve-row > td {
     <button type="button" class="theme-toggle" aria-label="Toggle dark mode" title="Toggle dark mode" onclick="(function(){var d=document.documentElement;var dark=d.getAttribute('data-theme')==='dark';if(dark){d.removeAttribute('data-theme');}else{d.setAttribute('data-theme','dark');}try{localStorage.setItem('theme',dark?'light':'dark');}catch(e){}})()"><span class="theme-icon-light" aria-hidden="true">&#127769;</span><span class="theme-icon-dark" aria-hidden="true">&#9728;</span></button>
   </header>
   <main class="page-content">
-    <h1 id="trivy-scan-report" class="anchored-heading">Trivy Scan Report<a class="heading-anchor" href="#trivy-scan-report" aria-label="Link to section">#</a></h1>
+    <section class="suggested-actions"><h2>Suggested Actions</h2><ul><li>For `registry.rancher.com/rancher/hardened-flannel:v0.28.5-build20260604`, update vulnerable components to available fixed versions (0.53.0, 0.55.0) and regenerate the image SBOM/scan.</li>
+<li>For `registry.rancher.com/rancher/hardened-kubernetes:v1.36.2-rke2r1-build20260612`, update vulnerable components to available fixed versions (0.53.0, 0.55.0) and regenerate the image SBOM/scan.</li>
+<li>For `registry.rancher.com/rancher/hardened-cluster-autoscaler:v1.10.3-build20260604`, update vulnerable components to available fixed versions (0.53.0, 0.55.0) and regenerate the image SBOM/scan.</li>
+<li>For `registry.rancher.com/rancher/hardened-dns-node-cache:1.26.8-build20260608`, update vulnerable components to available fixed versions (0.53.0, 0.55.0) and regenerate the image SBOM/scan.</li>
+<li>For `registry.rancher.com/rancher/hardened-k8s-metrics-server:v0.8.1-build20260604`, update vulnerable components to available fixed versions (0.53.0, 0.55.0) and regenerate the image SBOM/scan.</li>
+<li>For `registry.rancher.com/rancher/hardened-addon-resizer:1.8.23-build20260604`, update vulnerable components to available fixed versions (0.53.0, 0.55.0) and regenerate the image SBOM/scan.</li></ul></section><h1 id="trivy-scan-report" class="anchored-heading">Trivy Scan Report<a class="heading-anchor" href="#trivy-scan-report" aria-label="Link to section">#</a></h1>
 <h2 id="summary" class="anchored-heading">Summary<a class="heading-anchor" href="#summary" aria-label="Link to section">#</a></h2>
 <h3 id="cves-by-severity" class="anchored-heading">CVEs by Severity<a class="heading-anchor" href="#cves-by-severity" aria-label="Link to section">#</a></h3>
 <div class="scan-card">
@@ -967,6 +972,98 @@ tr.new-cve-row > td {
 <li><code>registry.rancher.com/rancher/hardened-traefik:v3.7.4-build20260608</code></li>
 <li><code>registry.rancher.com/rancher/nginx-ingress-controller:v1.15.1-prime5</code></li>
 </ul>
+<section class="cve-trend" id="cve-trend"><h3 id="cve-trend-over-time" class="anchored-heading">CVE Trend Over Time<a class="heading-anchor" href="#cve-trend-over-time" aria-label="Link to section">#</a></h3><p class="chart-subtitle">Critical &amp; High CVE counts across the last 2 PR #10696 scans. Hover a point for details; click a legend entry to toggle a series.</p><div class="cve-trend-figure"><svg class="cve-trend-svg" viewBox="0 0 760 300" role="img" aria-label="CVE counts over recent scans" preserveAspectRatio="xMidYMid meet"><line class="grid-line" x1="48" y1="24.0" x2="740" y2="24.0"></line><text class="axis-label" x="40" y="27.0" text-anchor="end">64</text><line class="grid-line" x1="48" y1="79.0" x2="740" y2="79.0"></line><text class="axis-label" x="40" y="82.0" text-anchor="end">48</text><line class="grid-line" x1="48" y1="134.0" x2="740" y2="134.0"></line><text class="axis-label" x="40" y="137.0" text-anchor="end">32</text><line class="grid-line" x1="48" y1="189.0" x2="740" y2="189.0"></line><text class="axis-label" x="40" y="192.0" text-anchor="end">16</text><line class="grid-line" x1="48" y1="244.0" x2="740" y2="244.0"></line><text class="axis-label" x="40" y="247.0" text-anchor="end">0</text><line class="axis-line" x1="48" y1="244.0" x2="740" y2="244.0"></line><text class="axis-label" x="48.0" y="260.0" text-anchor="middle" transform="rotate(0 48.0 260.0)">2026-07-07</text><text class="axis-label" x="740.0" y="260.0" text-anchor="middle" transform="rotate(0 740.0 260.0)">2026-07-07</text><polyline class="series-line series-total" data-series="total" points="48.0,34.3 740.0,113.4" stroke="#1F67DB"></polyline><circle class="series-point series-total" data-series="total" cx="48.0" cy="34.3" r="3.5" fill="#1F67DB" data-label="2026-07-07 · PR #10696" data-series-name="Total (Critical + High)" data-value="61"></circle><circle class="series-point series-total" data-series="total" cx="740.0" cy="113.4" r="3.5" fill="#1F67DB" data-label="2026-07-07 · PR #10696" data-series-name="Total (Critical + High)" data-value="38"></circle><polyline class="series-line series-critical" data-series="critical" points="48.0,244.0 740.0,244.0" stroke="#B13333"></polyline><circle class="series-point series-critical" data-series="critical" cx="48.0" cy="244.0" r="3.5" fill="#B13333" data-label="2026-07-07 · PR #10696" data-series-name="Critical" data-value="0"></circle><circle class="series-point series-critical" data-series="critical" cx="740.0" cy="244.0" r="3.5" fill="#B13333" data-label="2026-07-07 · PR #10696" data-series-name="Critical" data-value="0"></circle><polyline class="series-line series-high" data-series="high" points="48.0,34.3 740.0,113.4" stroke="#E45C1E"></polyline><circle class="series-point series-high" data-series="high" cx="48.0" cy="34.3" r="3.5" fill="#E45C1E" data-label="2026-07-07 · PR #10696" data-series-name="High" data-value="61"></circle><circle class="series-point series-high" data-series="high" cx="740.0" cy="113.4" r="3.5" fill="#E45C1E" data-label="2026-07-07 · PR #10696" data-series-name="High" data-value="38"></circle></svg><div class="cve-trend-tooltip" aria-hidden="true"></div></div><div class="cve-trend-legend"><span class="legend-item" data-series="total" role="button" tabindex="0" aria-pressed="true"><span class="legend-swatch" style="background:#1F67DB"></span>Total (Critical + High)</span><span class="legend-item" data-series="critical" role="button" tabindex="0" aria-pressed="true"><span class="legend-swatch" style="background:#B13333"></span>Critical</span><span class="legend-item" data-series="high" role="button" tabindex="0" aria-pressed="true"><span class="legend-swatch" style="background:#E45C1E"></span>High</span></div><script>
+(function () {
+  function initTrend(section) {
+    if (section.dataset.trendReady) return;
+    section.dataset.trendReady = "1";
+    var figure = section.querySelector(".cve-trend-figure");
+    var svg = section.querySelector(".cve-trend-svg");
+    var tip = section.querySelector(".cve-trend-tooltip");
+    if (!figure || !svg || !tip) return;
+
+    section.querySelectorAll(".series-point").forEach(function (pt) {
+      pt.addEventListener("mouseenter", function () {
+        var name = pt.getAttribute("data-series-name") || "";
+        var value = pt.getAttribute("data-value") || "";
+        var label = pt.getAttribute("data-label") || "";
+        tip.innerHTML =
+          '<div class="tt-date">' + label + "</div>" +
+          name + ": " + value;
+        var fr = figure.getBoundingClientRect();
+        var pr = pt.getBoundingClientRect();
+        tip.style.left = (pr.left - fr.left + pr.width / 2) + "px";
+        tip.style.top = (pr.top - fr.top) + "px";
+        tip.classList.add("visible");
+      });
+      pt.addEventListener("mouseleave", function () {
+        tip.classList.remove("visible");
+      });
+    });
+
+    function toggle(item) {
+      var key = item.getAttribute("data-series");
+      var off = item.classList.toggle("legend-off");
+      item.setAttribute("aria-pressed", off ? "false" : "true");
+      section
+        .querySelectorAll('[data-series="' + key + '"].series-line, ' +
+                          '[data-series="' + key + '"].series-point')
+        .forEach(function (el) { el.classList.toggle("series-hidden", off); });
+    }
+
+    section.querySelectorAll(".legend-item").forEach(function (item) {
+      item.addEventListener("click", function () { toggle(item); });
+      item.addEventListener("keydown", function (e) {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          toggle(item);
+        }
+      });
+    });
+  }
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", function () {
+      document.querySelectorAll(".cve-trend").forEach(initTrend);
+    });
+  } else {
+    document.querySelectorAll(".cve-trend").forEach(initTrend);
+  }
+})();
+</script></section><h3 id="cve-delta-vs-previous-scan" class="anchored-heading">CVE Delta vs Previous Scan<a class="heading-anchor" href="#cve-delta-vs-previous-scan" aria-label="Link to section">#</a></h3>
+<div class="scan-card">
+<div class="table-wrap"><details class="table-collapsible" open><summary><span class="toggle-label">Table (3 rows)</span></summary><table class="report-table">
+<thead><tr>
+<th>Metric</th>
+<th>Count</th>
+</tr></thead><tbody>
+<tr>
+<td>Previous scan CVEs</td>
+<td>61</td>
+</tr>
+<tr>
+<td>Current scan CVEs</td>
+<td>38</td>
+</tr>
+<tr>
+<td><strong>Delta</strong></td>
+<td><strong>-23</strong></td>
+</tr>
+</tbody></table></details></div>
+</div>
+<h3 id="scan-coverage" class="anchored-heading">Scan Coverage<a class="heading-anchor" href="#scan-coverage" aria-label="Link to section">#</a></h3>
+<div class="scan-card">
+<div class="table-wrap"><details class="table-collapsible" open><summary><span class="toggle-label">Table (1 rows)</span></summary><table class="report-table">
+<thead><tr>
+<th>Metric</th>
+<th>Count</th>
+</tr></thead><tbody>
+<tr>
+<td>Images scanned</td>
+<td>17</td>
+</tr>
+</tbody></table></details></div>
+</div>
 <h2 id="images-scanned" class="anchored-heading">Images Scanned<a class="heading-anchor" href="#images-scanned" aria-label="Link to section">#</a></h2>
 <ul class="images-list">
 <li><code>`registry.rancher.com/rancher/hardened-flannel:v0.28.5-build20260604`</code></li>
@@ -1620,7 +1717,65 @@ Total: 2 (UNKNOWN: 0, LOW: 0, MEDIUM: 0, HIGH: 2, CRITICAL: 0)</pre></summary><t
 <section class="optional-section" id="optional-images"><input type="checkbox" id="optional-toggle" class="optional-toggle-input" checked><div class="optional-banner"><label class="optional-toggle-label" for="optional-toggle"><span class="optional-switch" aria-hidden="true"></span><span>Show non-default (add-on) images</span></label><p class="optional-note">These images ship with optional RKE2 add-ons (Cilium, Calico, vSphere, Multus, Harvester) and are <strong>not</strong> part of the default airgap tarball. Toggle off to view only the default images.</p></div><div class="optional-body">
 <h2 id="optional-add-on-images-not-in-default-tarball" class="anchored-heading">Optional Add-on Images (Not in Default Tarball)<a class="heading-anchor" href="#optional-add-on-images-not-in-default-tarball" aria-label="Link to section">#</a></h2>
 <blockquote class="callout">⚠️ The images in this section are <strong>not</strong> part of the default RKE2 airgap tarball (<code>images-core</code> + <code>images-canal</code>). They ship with optional add-ons — Cilium, Calico, vSphere, Multus, and Harvester. Use the toggle above to show or hide them.</blockquote>
-<h3 id="optional-cves-by-severity" class="anchored-heading">Optional CVEs by Severity<a class="heading-anchor" href="#optional-cves-by-severity" aria-label="Link to section">#</a></h3>
+<section class="cve-trend" id="optional-cve-trend"><h3 id="optional-cve-trend-over-time" class="anchored-heading">Optional CVE Trend Over Time<a class="heading-anchor" href="#optional-cve-trend-over-time" aria-label="Link to section">#</a></h3><p class="chart-subtitle">Critical &amp; High CVE counts for optional add-on images across the last 2 PR #10696 scans. Hover a point for details; click a legend entry to toggle a series.</p><div class="cve-trend-figure"><svg class="cve-trend-svg" viewBox="0 0 760 300" role="img" aria-label="CVE counts over recent scans" preserveAspectRatio="xMidYMid meet"><line class="grid-line" x1="48" y1="24.0" x2="740" y2="24.0"></line><text class="axis-label" x="40" y="27.0" text-anchor="end">676</text><line class="grid-line" x1="48" y1="79.0" x2="740" y2="79.0"></line><text class="axis-label" x="40" y="82.0" text-anchor="end">507</text><line class="grid-line" x1="48" y1="134.0" x2="740" y2="134.0"></line><text class="axis-label" x="40" y="137.0" text-anchor="end">338</text><line class="grid-line" x1="48" y1="189.0" x2="740" y2="189.0"></line><text class="axis-label" x="40" y="192.0" text-anchor="end">169</text><line class="grid-line" x1="48" y1="244.0" x2="740" y2="244.0"></line><text class="axis-label" x="40" y="247.0" text-anchor="end">0</text><line class="axis-line" x1="48" y1="244.0" x2="740" y2="244.0"></line><text class="axis-label" x="48.0" y="260.0" text-anchor="middle" transform="rotate(0 48.0 260.0)">2026-07-07</text><text class="axis-label" x="740.0" y="260.0" text-anchor="middle" transform="rotate(0 740.0 260.0)">2026-07-07</text><polyline class="series-line series-total" data-series="total" points="48.0,24.7 740.0,119.4" stroke="#1F67DB"></polyline><circle class="series-point series-total" data-series="total" cx="48.0" cy="24.7" r="3.5" fill="#1F67DB" data-label="2026-07-07 · PR #10696" data-series-name="Total (Critical + High)" data-value="674"></circle><circle class="series-point series-total" data-series="total" cx="740.0" cy="119.4" r="3.5" fill="#1F67DB" data-label="2026-07-07 · PR #10696" data-series-name="Total (Critical + High)" data-value="383"></circle><polyline class="series-line series-critical" data-series="critical" points="48.0,230.0 740.0,243.0" stroke="#B13333"></polyline><circle class="series-point series-critical" data-series="critical" cx="48.0" cy="230.0" r="3.5" fill="#B13333" data-label="2026-07-07 · PR #10696" data-series-name="Critical" data-value="43"></circle><circle class="series-point series-critical" data-series="critical" cx="740.0" cy="243.0" r="3.5" fill="#B13333" data-label="2026-07-07 · PR #10696" data-series-name="Critical" data-value="3"></circle><polyline class="series-line series-high" data-series="high" points="48.0,38.6 740.0,120.3" stroke="#E45C1E"></polyline><circle class="series-point series-high" data-series="high" cx="48.0" cy="38.6" r="3.5" fill="#E45C1E" data-label="2026-07-07 · PR #10696" data-series-name="High" data-value="631"></circle><circle class="series-point series-high" data-series="high" cx="740.0" cy="120.3" r="3.5" fill="#E45C1E" data-label="2026-07-07 · PR #10696" data-series-name="High" data-value="380"></circle></svg><div class="cve-trend-tooltip" aria-hidden="true"></div></div><div class="cve-trend-legend"><span class="legend-item" data-series="total" role="button" tabindex="0" aria-pressed="true"><span class="legend-swatch" style="background:#1F67DB"></span>Total (Critical + High)</span><span class="legend-item" data-series="critical" role="button" tabindex="0" aria-pressed="true"><span class="legend-swatch" style="background:#B13333"></span>Critical</span><span class="legend-item" data-series="high" role="button" tabindex="0" aria-pressed="true"><span class="legend-swatch" style="background:#E45C1E"></span>High</span></div><script>
+(function () {
+  function initTrend(section) {
+    if (section.dataset.trendReady) return;
+    section.dataset.trendReady = "1";
+    var figure = section.querySelector(".cve-trend-figure");
+    var svg = section.querySelector(".cve-trend-svg");
+    var tip = section.querySelector(".cve-trend-tooltip");
+    if (!figure || !svg || !tip) return;
+
+    section.querySelectorAll(".series-point").forEach(function (pt) {
+      pt.addEventListener("mouseenter", function () {
+        var name = pt.getAttribute("data-series-name") || "";
+        var value = pt.getAttribute("data-value") || "";
+        var label = pt.getAttribute("data-label") || "";
+        tip.innerHTML =
+          '<div class="tt-date">' + label + "</div>" +
+          name + ": " + value;
+        var fr = figure.getBoundingClientRect();
+        var pr = pt.getBoundingClientRect();
+        tip.style.left = (pr.left - fr.left + pr.width / 2) + "px";
+        tip.style.top = (pr.top - fr.top) + "px";
+        tip.classList.add("visible");
+      });
+      pt.addEventListener("mouseleave", function () {
+        tip.classList.remove("visible");
+      });
+    });
+
+    function toggle(item) {
+      var key = item.getAttribute("data-series");
+      var off = item.classList.toggle("legend-off");
+      item.setAttribute("aria-pressed", off ? "false" : "true");
+      section
+        .querySelectorAll('[data-series="' + key + '"].series-line, ' +
+                          '[data-series="' + key + '"].series-point')
+        .forEach(function (el) { el.classList.toggle("series-hidden", off); });
+    }
+
+    section.querySelectorAll(".legend-item").forEach(function (item) {
+      item.addEventListener("click", function () { toggle(item); });
+      item.addEventListener("keydown", function (e) {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          toggle(item);
+        }
+      });
+    });
+  }
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", function () {
+      document.querySelectorAll(".cve-trend").forEach(initTrend);
+    });
+  } else {
+    document.querySelectorAll(".cve-trend").forEach(initTrend);
+  }
+})();
+</script></section><h3 id="optional-cves-by-severity" class="anchored-heading">Optional CVEs by Severity<a class="heading-anchor" href="#optional-cves-by-severity" aria-label="Link to section">#</a></h3>
 <div class="scan-card">
 <div class="table-wrap"><details class="table-collapsible" open><summary><span class="toggle-label">Table (3 rows)</span></summary><table class="report-table">
 <thead><tr>
@@ -6120,7 +6275,7 @@ Total: 6 (UNKNOWN: 0, LOW: 0, MEDIUM: 0, HIGH: 6, CRITICAL: 0)</pre></summary><t
 </tbody></table></details></div></div>
 </div></section>
     <div class="page-footer">
-      Generated from <code>pr-10696.md</code> &nbsp;·&nbsp; 2026-07-07 20:38 UTC
+      Generated from <code>pr-10696.md</code> &nbsp;·&nbsp; 2026-07-07 20:50 UTC
     </div>
   </main>
 </body>
