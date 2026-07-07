@@ -3157,15 +3157,21 @@ def convert(input_path, output_path=None):
     is_markdown = first_line.startswith("#")
 
     if is_markdown:
+        # Vulnerability scan reports come from scheduled/release runs
+        # (``scan-*``) and per-PR runs (``pr-*``). Both get the same trend
+        # charts, new-CVE badging, summary augmentation, and Copilot
+        # suggestions; the source-group bucketing keeps PR history separate
+        # from branch/release history.
+        is_scan_report = basename.startswith("scan-") or basename.startswith("pr-")
         source_group, scope_label = _resolve_scan_source(content, input_path)
         content = _strip_scan_metadata(content)
         # Determine which CVEs are new relative to the previous comparable scan
-        # so findings rows can be badged. Only meaningful for scan-* reports.
+        # so findings rows can be badged. Only meaningful for scan reports.
         new_cve_ids, new_cve_details = (set(), [])
-        if basename.startswith("scan-"):
+        if is_scan_report:
             new_cve_ids, new_cve_details = _new_cves_vs_previous_scan(content, input_path)
         _set_new_cve_context(new_cve_ids)
-        if basename.startswith("scan-"):
+        if is_scan_report:
             content = _augment_scan_summary(content, input_path)
         if not basename.startswith("check-"):
             content = _move_summary_to_top(content)
@@ -3175,7 +3181,7 @@ def convert(input_path, output_path=None):
         body_html = _convert_markdown(content)
         title_match = re.search(r"^# (.+)$", content, re.MULTILINE)
         title = title_match.group(1).strip() if title_match else "Report"
-        if basename.startswith("scan-"):
+        if is_scan_report:
             body_html = _insert_cve_trend_chart(
                 body_html, input_path, source_group=source_group, scope_label=scope_label
             )
