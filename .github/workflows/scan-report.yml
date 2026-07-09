@@ -164,7 +164,8 @@ jobs:
             fi
 
             echo "Push failed (attempt $attempt/3), retrying..."
-            git reset --soft HEAD~1
+            # Drop the local retry commit and restore a clean index/worktree before rebasing.
+            git reset --hard HEAD~1
             git pull --rebase origin "$BRANCH"
           done
 
