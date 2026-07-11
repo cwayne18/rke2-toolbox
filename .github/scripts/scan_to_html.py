@@ -1831,6 +1831,22 @@ def _metrics_db_path(input_path):
     return None
 
 
+def _channel_select(conn):
+    """Return a SELECT expression yielding the row channel, tolerant of metrics
+    databases created before the ``channel`` column existed.
+
+    When the column is present it is selected directly; otherwise a literal
+    ``'prime'`` is substituted so every legacy row is treated as a prime scan
+    (matching the migration default). This keeps the index/report charts working
+    even when regenerated against an un-migrated DB (e.g. by the deploy-pages or
+    check-images workflows, which do not run scan.sh)."""
+    try:
+        cols = [r[1] for r in conn.execute("PRAGMA table_info(scan_metrics)").fetchall()]
+    except sqlite3.Error:
+        cols = []
+    return "channel" if "channel" in cols else "'prime' AS channel"
+
+
 def _recent_cve_totals_from_db(input_path):
     """Return most recent CVE totals from metrics DB (latest first)."""
     db_path = _metrics_db_path(input_path)
@@ -1839,10 +1855,12 @@ def _recent_cve_totals_from_db(input_path):
     try:
         with sqlite3.connect(db_path) as conn:
             cur = conn.cursor()
+            prime_only = "WHERE channel = 'prime'" if _channel_select(conn) == "channel" else ""
             cur.execute(
-                """
+                f"""
                 SELECT (critical_cves + high_cves) AS total_cves
                 FROM scan_metrics
+                {prime_only}
                 ORDER BY scanned_at DESC, id DESC
                 LIMIT 2
                 """
@@ -1868,6 +1886,30 @@ _SCAN_METADATA_RE = re.compile(
     r"^[ \t]*<!--\s*scan-source-(?:ref|desc):.*?-->[ \t]*\n?",
     re.MULTILINE,
 )
+
+# Image channels recorded per scan. ``prime`` = registry.rancher.com hardened
+# images; ``community`` = default/DockerHub images (scanned without --prime).
+_PRIME_CHANNEL = "prime"
+_COMMUNITY_CHANNEL = "community"
+
+
+def _row_channel(value):
+    """Normalise a stored channel value, defaulting blanks to ``prime`` so rows
+    that predate the channel column behave like the historical prime scans."""
+    ch = (value or "").strip().lower()
+    return ch if ch else _PRIME_CHANNEL
+
+
+def _primary_channel(channels):
+    """Pick the channel whose history forms the primary trend line for a source
+    group. Prefer ``prime`` when present so a group carrying both prime and
+    community rows (e.g. the master branch) draws the prime baseline and leaves
+    community for the comparison overlay. Groups with only community rows (e.g.
+    release scans of published DockerHub images) fall back to community."""
+    seen = {_row_channel(c) for c in channels}
+    if _PRIME_CHANNEL in seen or not seen:
+        return _PRIME_CHANNEL
+    return _COMMUNITY_CHANNEL
 
 
 def _scan_source_group(source_ref):
@@ -1984,18 +2026,25 @@ def _new_cves_vs_previous_scan(md, input_path):
         with sqlite3.connect(db_path) as conn:
             cur = conn.cursor()
             cur.execute(
-                "SELECT id, source_ref FROM scan_metrics ORDER BY scanned_at DESC, id DESC"
+                f"SELECT id, source_ref, {_channel_select(conn)} FROM scan_metrics ORDER BY scanned_at DESC, id DESC"
             )
             scan_rows = cur.fetchall()
 
-            # Restrict to scans in the same source group (newest first).
-            group_scan_ids = []
-            for sid, source_ref in scan_rows:
+            # Restrict to scans in the same source group (newest first), then to
+            # a single channel so a prime report is diffed against the previous
+            # prime scan rather than the same night's community scan.
+            group_rows = []
+            for sid, source_ref, channel in scan_rows:
                 if source_group is not None:
                     grp, _lbl = _scan_source_group(source_ref)
                     if grp != source_group:
                         continue
-                group_scan_ids.append(sid)
+                group_rows.append((sid, channel))
+
+            primary = _primary_channel(ch for _sid, ch in group_rows)
+            group_scan_ids = [
+                sid for sid, ch in group_rows if _row_channel(ch) == primary
+            ]
 
             if len(group_scan_ids) < 2:
                 return set(), []
@@ -2137,7 +2186,7 @@ def _trend_history_rows(input_path, crit_col, high_col, source_group, limit):
             cur = conn.cursor()
             cur.execute(
                 f"""
-                SELECT scanned_at, source_ref, source_desc, {crit_col}, {high_col}
+                SELECT scanned_at, source_ref, source_desc, {_channel_select(conn)}, {crit_col}, {high_col}
                 FROM scan_metrics
                 ORDER BY scanned_at DESC, id DESC
                 """
@@ -2146,14 +2195,28 @@ def _trend_history_rows(input_path, crit_col, high_col, source_group, limit):
     except sqlite3.Error:
         return []
 
-    history = []
-    # rows come newest-first; collect up to *limit* matches then reverse so the
-    # chart reads left-to-right in time.
-    for scanned_at, source_ref, source_desc, critical, high in rows:
+    # Rows in this source group (or all rows for the global fallback).
+    matched = []
+    for scanned_at, source_ref, source_desc, channel, critical, high in rows:
         if source_group is not None:
             grp, _label = _scan_source_group(source_ref)
             if grp != source_group:
                 continue
+        matched.append((scanned_at, source_desc, channel, critical, high))
+
+    # Restrict to a single channel so prime and community history never share a
+    # line. The global fallback always tracks the prime baseline.
+    if source_group is None:
+        primary = _PRIME_CHANNEL
+    else:
+        primary = _primary_channel(r[2] for r in matched)
+
+    history = []
+    # rows come newest-first; collect up to *limit* matches then reverse so the
+    # chart reads left-to-right in time.
+    for scanned_at, source_desc, channel, critical, high in matched:
+        if _row_channel(channel) != primary:
+            continue
         try:
             crit = int(critical)
             hi = int(high)
@@ -2223,6 +2286,10 @@ _TREND_SERIES = (
     ("critical", "Critical", "#B13333"),
     ("high", "High", "#E45C1E"),
 )
+
+# Colour for the community/DockerHub overlay line (drawn dashed to distinguish
+# it from the prime baseline series).
+_COMMUNITY_SERIES_COLOR = "#8250DF"
 
 
 def render_cve_trend_chart(
@@ -3220,6 +3287,66 @@ def convert(input_path, output_path=None):
 # ---------------------------------------------------------------------------
 
 _INDEX_CSS_EXTRA = """
+/* ---- Prime vs Community callout ---- */
+.channel-callout {
+  border: 1px solid var(--border);
+  border-left: 4px solid #8250DF;
+  border-radius: 8px;
+  background: var(--body-bg);
+  padding: 16px 20px;
+  margin: 4px 0 20px;
+}
+.channel-callout .cc-main {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.channel-callout .cc-figure {
+  font-size: 30px;
+  font-weight: 700;
+  line-height: 1;
+  color: #8250DF;
+  font-variant-numeric: tabular-nums;
+}
+.channel-callout.cc-negative .cc-figure { color: #B13333; }
+.channel-callout.cc-positive .cc-figure { color: #1A7F37; }
+.channel-callout .cc-text {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text);
+}
+.channel-callout .cc-detail {
+  margin-top: 8px;
+  font-size: 13px;
+  color: var(--muted);
+}
+.channel-callout .cc-breakdown {
+  margin-top: 10px;
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.channel-callout .cc-chip {
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+  padding: 2px 10px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  color: var(--muted);
+}
+.channel-callout .cc-source {
+  margin-top: 10px;
+  font-size: 11px;
+  color: var(--muted);
+  opacity: 0.85;
+}
+.cve-trend-legend .legend-swatch-dashed {
+  background: transparent !important;
+  border-top: 3px dashed #8250DF;
+  height: 0;
+  align-self: center;
+}
 /* ---- Index card grid ---- */
 .index-intro {
   color: var(--muted);
@@ -3542,39 +3669,43 @@ _INDEX_TREND_RANGES = (
 )
 
 
-def _index_trend_dataset(html_dir):
-    """Build the per-source CVE history dataset embedded in the index page.
+def _load_trend_groups(html_dir, all_images):
+    """Load metrics rows bucketed by source group and channel.
 
-    Reads every row from the metrics DB and buckets it by source group (see
-    :func:`_scan_source_group`) so the client-side chart can switch between
-    branches / release lines. Returns ``None`` when the DB is missing/unreadable
-    or holds no usable rows. The returned structure is intentionally compact::
-
-        {"default": "branch:master",
-         "groups": [{"key": ..., "label": ..., "points": [[iso, desc, crit, high], ...]}]}
-
-    ``points`` are oldest-first so the chart reads left-to-right in time.
+    Returns ``(groups, order)`` where *groups* maps a group key to
+    ``{"key", "label", "prime": [...], "community": [...]}`` and each point is
+    ``[iso, desc, crit, high]`` (oldest-first). When *all_images* is true the
+    counts combine the default (bundle) and optional add-on images; otherwise
+    only the default bundle counts are used. Returns ``(None, None)`` when the
+    DB is missing/unreadable or holds no usable rows.
     """
     db_path = _metrics_db_path(os.path.join(html_dir, "index.html"))
     if not db_path:
-        return None
+        return None, None
+    if all_images:
+        crit_expr = "critical_cves + COALESCE(optional_critical_cves, 0)"
+        high_expr = "high_cves + COALESCE(optional_high_cves, 0)"
+    else:
+        crit_expr = "critical_cves"
+        high_expr = "high_cves"
     try:
         with sqlite3.connect(db_path) as conn:
             cur = conn.cursor()
             cur.execute(
-                """
-                SELECT scanned_at, source_ref, source_desc, critical_cves, high_cves
+                f"""
+                SELECT scanned_at, source_ref, source_desc, {_channel_select(conn)},
+                       {crit_expr}, {high_expr}
                 FROM scan_metrics
                 ORDER BY scanned_at ASC, id ASC
                 """
             )
             rows = cur.fetchall()
     except sqlite3.Error:
-        return None
+        return None, None
 
     groups = {}
     order = []
-    for scanned_at, source_ref, source_desc, critical, high in rows:
+    for scanned_at, source_ref, source_desc, channel, critical, high in rows:
         grp, label = _scan_source_group(source_ref)
         if grp is None:
             grp, label = "other", "Other scans"
@@ -3584,39 +3715,213 @@ def _index_trend_dataset(html_dir):
         except (TypeError, ValueError):
             continue
         if grp not in groups:
-            groups[grp] = {"key": grp, "label": label or grp, "points": []}
+            groups[grp] = {"key": grp, "label": label or grp,
+                           "prime": [], "community": []}
             order.append(grp)
-        groups[grp]["points"].append(
+        bucket = "community" if _row_channel(channel) == _COMMUNITY_CHANNEL else "prime"
+        groups[grp][bucket].append(
             [scanned_at or "", source_desc or label or "", crit, hi]
         )
 
     if not order:
+        return None, None
+    return groups, order
+
+
+def _index_trend_dataset(html_dir):
+    """Build the main index CVE-trend dataset: one line per source group.
+
+    Plots the *default* (bundle) image counts only. Each group draws a single
+    primary-channel line -- prime history when the group has any prime scans
+    (so the master branch shows the hardened Prime baseline), falling back to
+    community for community-only groups such as release scans. No community
+    overlay or comparison is attached here; that lives in the dedicated
+    Community-vs-Prime section. Returns ``None`` when there is no usable data.
+
+    Structure::
+
+        {"default": "branch:master",
+         "groups": [{"key": ..., "label": ..., "points": [[iso, desc, crit, high], ...]}]}
+    """
+    groups, order = _load_trend_groups(html_dir, all_images=False)
+    if not order:
         return None
+
+    out_groups = []
+    for grp in order:
+        g = groups[grp]
+        # Prefer the prime baseline; only fall back to community when a group
+        # carries no prime scans (release lines of published DockerHub images).
+        points = g["prime"] if g["prime"] else g["community"]
+        out_groups.append({"key": g["key"], "label": g["label"], "points": points})
+
+    def _group_size(grp):
+        return len(groups[grp]["prime"]) + len(groups[grp]["community"])
 
     # Default to the master branch when present, else the busiest series.
     default_key = "branch:master" if "branch:master" in groups else max(
-        order, key=lambda k: len(groups[k]["points"])
+        order, key=_group_size
     )
 
     # Default series first, then most-populated series, then alphabetical.
     ordered = sorted(
-        (groups[k] for k in order),
+        out_groups,
         key=lambda g: (g["key"] != default_key, -len(g["points"]), g["label"].lower()),
     )
     return {"default": default_key, "groups": ordered}
 
 
-def _render_index_trend_section(dataset):
-    """Render the interactive CVE trend section (controls + chart shell + data).
+def _community_trend_dataset(html_dir):
+    """Build the Community-vs-Prime dataset: all-images prime line + community
+    overlay, for the source groups that carry *both* channels.
 
-    The chart itself is drawn client-side by :data:`_INDEX_TREND_SCRIPT` from
-    the embedded JSON so the source and history-range selectors can redraw it
-    without a page reload. Returns an empty string when no data is available so
-    the index simply omits the section.
+    Counts combine default (bundle) and optional add-on images so the comparison
+    spans the full image set. Only groups with both a prime baseline and a
+    community/DockerHub history are included (nothing to compare otherwise), so
+    this returns ``None`` until at least one non-prime community scan has run.
+
+    Structure::
+
+        {"default": "branch:master",
+         "groups": [{"key", "label", "points": [...], "communityPoints": [...]}],
+         "comparison": {...}}
     """
-    if not dataset or not dataset.get("groups"):
+    groups, order = _load_trend_groups(html_dir, all_images=True)
+    if not order:
+        return None
+
+    out_groups = []
+    kept = []
+    for grp in order:
+        g = groups[grp]
+        if not g["prime"] or not g["community"]:
+            continue
+        out_groups.append({
+            "key": g["key"], "label": g["label"],
+            "points": g["prime"], "communityPoints": g["community"],
+        })
+        kept.append(grp)
+
+    if not kept:
+        return None
+
+    default_key = "branch:master" if "branch:master" in kept else max(
+        kept, key=lambda grp: len(groups[grp]["community"])
+    )
+    ordered = sorted(
+        out_groups,
+        key=lambda g: (g["key"] != default_key, -len(g["points"]), g["label"].lower()),
+    )
+    dataset = {"default": default_key, "groups": ordered}
+    comparison = _channel_comparison_summary(groups.get(default_key))
+    if comparison:
+        dataset["comparison"] = comparison
+    return dataset
+
+
+def _channel_comparison_summary(group):
+    """Summarise the latest prime-vs-community CVE gap for a source group.
+
+    *group* is the internal bucket dict (``prime``/``community`` point lists,
+    oldest first). Returns a dict describing the most recent prime and community
+    scans and the extra CVEs carried by the community/DockerHub images, or
+    ``None`` when the group lacks both channels (nothing to compare)."""
+    if not group or not group.get("prime") or not group.get("community"):
+        return None
+    prime = group["prime"][-1]
+    comm = group["community"][-1]
+    p_crit, p_high = prime[2], prime[3]
+    c_crit, c_high = comm[2], comm[3]
+    p_total, c_total = p_crit + p_high, c_crit + c_high
+    return {
+        "label": group.get("label", ""),
+        "primeDate": prime[0][:10],
+        "communityDate": comm[0][:10],
+        "primeTotal": p_total,
+        "communityTotal": c_total,
+        "primeCritical": p_crit,
+        "communityCritical": c_crit,
+        "primeHigh": p_high,
+        "communityHigh": c_high,
+        "extraTotal": c_total - p_total,
+        "extraCritical": c_crit - p_crit,
+        "extraHigh": c_high - p_high,
+    }
+
+
+def _render_channel_callout(comparison):
+    """Render the headline Prime-vs-Community CVE gap card from the comparison
+    summary produced by :func:`_channel_comparison_summary`. Returns an empty
+    string when there is nothing to compare."""
+    if not comparison:
         return ""
 
+    extra = comparison["extraTotal"]
+    prime_total = comparison["primeTotal"]
+    community_total = comparison["communityTotal"]
+
+    if prime_total > 0 and extra > 0:
+        pct = f" &nbsp;·&nbsp; {round(extra / prime_total * 100)}% more than Prime"
+    else:
+        pct = ""
+
+    if extra > 0:
+        figure = f"+{extra}"
+        headline = (
+            "more Critical + High CVEs across all images (default + optional) "
+            "in community / DockerHub than in Prime"
+        )
+        tone = "cc-negative"
+    elif extra < 0:
+        figure = f"{extra}"
+        headline = (
+            "fewer Critical + High CVEs across all images (default + optional) "
+            "in community than in Prime"
+        )
+        tone = "cc-positive"
+    else:
+        figure = "0"
+        headline = "difference between community / DockerHub and Prime CVE counts"
+        tone = "cc-neutral"
+
+    extra_crit = comparison["extraCritical"]
+    extra_high = comparison["extraHigh"]
+
+    def _signed(n):
+        return f"+{n}" if n > 0 else str(n)
+
+    detail = (
+        f'Prime <strong>{prime_total}</strong> vs '
+        f'Community <strong>{community_total}</strong>{pct}'
+    )
+    breakdown = (
+        f'<span class="cc-chip">Critical {_signed(extra_crit)}</span>'
+        f'<span class="cc-chip">High {_signed(extra_high)}</span>'
+    )
+    source = (
+        f'{esc(comparison["label"])} &nbsp;·&nbsp; '
+        f'prime {esc(comparison["primeDate"])}, '
+        f'community {esc(comparison["communityDate"])}'
+    )
+
+    return (
+        f'<div class="channel-callout {tone}">'
+        '<div class="cc-main">'
+        f'<span class="cc-figure">{esc(figure)}</span>'
+        f'<span class="cc-text">{headline}</span>'
+        "</div>"
+        f'<div class="cc-detail">{detail}</div>'
+        f'<div class="cc-breakdown">{breakdown}</div>'
+        f'<div class="cc-source">{source}</div>'
+        "</div>"
+    )
+
+
+def _trend_controls_html(dataset, select_id):
+    """Render the shared Source selector + History range controls for a trend
+    section. *select_id* must be unique per section so labels stay unambiguous;
+    the client script targets the ``.trend-source-select`` class within each
+    section rather than the id."""
     options = []
     for grp in dataset["groups"]:
         sel = " selected" if grp["key"] == dataset["default"] else ""
@@ -3633,27 +3938,11 @@ def _render_index_trend_section(dataset):
             f'aria-pressed="{"true" if active else "false"}">{esc(label)}</button>'
         )
 
-    legend_items = []
-    for key, label, colour in _TREND_SERIES:
-        legend_items.append(
-            f'<span class="legend-item" data-series="{key}" role="button" '
-            f'tabindex="0" aria-pressed="true">'
-            f'<span class="legend-swatch" style="background:{colour}"></span>'
-            f"{esc(label)}</span>"
-        )
-
-    data_json = json.dumps(dataset, separators=(",", ":"))
-
     return (
-        '<section class="cve-trend index-trend" id="index-cve-trend">'
-        '<h2 id="cve-trends" class="anchored-heading">CVE Trends'
-        '<a class="heading-anchor" href="#cve-trends" aria-label="Link to section">#</a>'
-        "</h2>"
-        '<p class="chart-subtitle" id="index-trend-subtitle"></p>'
         '<div class="trend-controls">'
         '<div class="trend-control">'
-        '<label class="trend-control-label" for="trend-source-select">Source</label>'
-        '<select class="trend-select" id="trend-source-select" '
+        f'<label class="trend-control-label" for="{esc(select_id)}">Source</label>'
+        f'<select class="trend-select trend-source-select" id="{esc(select_id)}" '
         'aria-label="Scan source">'
         + "".join(options)
         + "</select></div>"
@@ -3662,7 +3951,46 @@ def _render_index_trend_section(dataset):
         '<div class="trend-range" role="group" aria-label="History range">'
         + "".join(range_btns)
         + "</div></div></div>"
-        '<div class="cve-trend-figure">'
+    )
+
+
+def _trend_base_legend():
+    """Legend entries for the three base series (Total / Critical / High)."""
+    items = []
+    for key, label, colour in _TREND_SERIES:
+        items.append(
+            f'<span class="legend-item" data-series="{key}" role="button" '
+            f'tabindex="0" aria-pressed="true">'
+            f'<span class="legend-swatch" style="background:{colour}"></span>'
+            f"{esc(label)}</span>"
+        )
+    return items
+
+
+def _render_index_trend_section(dataset):
+    """Render the main interactive CVE trend section (Prime, default images).
+
+    Plots the default (bundle) image counts for the selected source as a single
+    line, with a CVEs-Resolved breakdown beneath. The chart is drawn client-side
+    by :data:`_INDEX_TREND_SCRIPT` from the embedded JSON so the source and
+    history-range selectors can redraw it without a page reload. Returns an empty
+    string when no data is available so the index simply omits the section.
+    """
+    if not dataset or not dataset.get("groups"):
+        return ""
+
+    legend_items = _trend_base_legend()
+    data_json = json.dumps(dataset, separators=(",", ":"))
+
+    return (
+        '<section class="cve-trend index-trend js-trend" id="index-cve-trend" '
+        'data-trend-mode="default">'
+        '<h2 id="cve-trends" class="anchored-heading">CVE Trends'
+        '<a class="heading-anchor" href="#cve-trends" aria-label="Link to section">#</a>'
+        "</h2>"
+        '<p class="chart-subtitle trend-subtitle" id="index-trend-subtitle"></p>'
+        + _trend_controls_html(dataset, "trend-source-select")
+        + '<div class="cve-trend-figure">'
         '<div class="index-trend-canvas"></div>'
         '<div class="cve-trend-tooltip" aria-hidden="true"></div>'
         "</div>"
@@ -3670,16 +3998,62 @@ def _render_index_trend_section(dataset):
         '<div class="trend-resolved">'
         '<div class="trend-resolved-head">'
         '<h3 id="cves-resolved">CVEs Resolved</h3>'
-        '<p class="chart-subtitle" id="resolved-subtitle"></p>'
+        '<p class="chart-subtitle resolved-subtitle" id="resolved-subtitle"></p>'
         "</div>"
         '<div class="resolved-stats" id="resolved-stats"></div>'
         '<div class="resolved-bars-figure">'
         '<div class="resolved-bars-canvas"></div>'
-        '<div class="cve-trend-tooltip" id="resolved-tooltip" aria-hidden="true"></div>'
+        '<div class="cve-trend-tooltip resolved-tooltip" id="resolved-tooltip" '
+        'aria-hidden="true"></div>'
         "</div>"
         "</div>"
-        f'<script type="application/json" id="index-trend-data">{data_json}</script>'
-        f"{_INDEX_TREND_SCRIPT}"
+        f'<script type="application/json" class="trend-json">{data_json}</script>'
+        "</section>"
+    )
+
+
+def _render_community_trend_section(dataset):
+    """Render the Community-vs-Prime trend section (all images).
+
+    Draws the Prime baseline plus a dashed Community / DockerHub overlay for the
+    selected source, using the combined default + optional (all images) counts,
+    and leads with the headline gap callout. Shares the client renderer with the
+    main section (:data:`_INDEX_TREND_SCRIPT`). Returns an empty string when no
+    source carries both prime and community history (nothing to compare).
+    """
+    if not dataset or not dataset.get("groups"):
+        return ""
+
+    legend_items = _trend_base_legend()
+    # Community overlay legend entry (visible: every group here has community
+    # data). The client script keeps it in sync with the selected source.
+    legend_items.append(
+        f'<span class="legend-item legend-community" data-series="community" '
+        f'role="button" tabindex="0" aria-pressed="true">'
+        f'<span class="legend-swatch legend-swatch-dashed" '
+        f'style="background:{_COMMUNITY_SERIES_COLOR}"></span>'
+        f"Community / DockerHub (Total)</span>"
+    )
+
+    callout = _render_channel_callout(dataset.get("comparison"))
+    data_json = json.dumps(dataset, separators=(",", ":"))
+
+    return (
+        '<section class="cve-trend index-trend js-trend" id="community-cve-trend" '
+        'data-trend-mode="community">'
+        '<h2 id="community-vs-prime" class="anchored-heading">Community vs Prime Trends'
+        '<a class="heading-anchor" href="#community-vs-prime" '
+        'aria-label="Link to section">#</a>'
+        "</h2>"
+        + callout
+        + '<p class="chart-subtitle trend-subtitle" id="community-trend-subtitle"></p>'
+        + _trend_controls_html(dataset, "community-source-select")
+        + '<div class="cve-trend-figure">'
+        '<div class="index-trend-canvas"></div>'
+        '<div class="cve-trend-tooltip" aria-hidden="true"></div>'
+        "</div>"
+        '<div class="cve-trend-legend">' + "".join(legend_items) + "</div>"
+        f'<script type="application/json" class="trend-json">{data_json}</script>'
         "</section>"
     )
 
@@ -3697,6 +4071,9 @@ _INDEX_TREND_SCRIPT = """<script>
       val: function (p) { return p[3]; } }
   ];
 
+  var COMMUNITY = { key: "community", name: "Community / DockerHub (Total)",
+    color: "%COMMUNITY_COLOR%", val: function (p) { return p[2] + p[3]; } };
+
   function esc(s) {
     return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;")
       .replace(/>/g, "&gt;").replace(/"/g, "&quot;");
@@ -3705,18 +4082,34 @@ _INDEX_TREND_SCRIPT = """<script>
   function dayMs(iso) { return Date.parse(String(iso).slice(0, 10) + "T00:00:00Z"); }
 
   function filterPoints(all, mode, value) {
-    if (!all.length) return all;
+    if (!all || !all.length) return all || [];
     if (mode === "count") return all.slice(Math.max(0, all.length - value));
     var ref = dayMs(all[all.length - 1][0]);
     var cutoff = ref - value * 86400000;
     return all.filter(function (p) { return dayMs(p[0]) >= cutoff; });
   }
 
-  function buildSvg(points, hidden) {
+  function buildSvg(points, commPoints, hidden) {
     var W = 760, H = 300, pl = 48, pr = 20, pt = 24, pb = 56;
     var pw = W - pl - pr, ph = H - pt - pb, n = points.length;
+
+    // Map each prime scan date to its x index so the community overlay can be
+    // aligned onto the same axis (prime and community scans share a night).
+    var dateIndex = {};
+    points.forEach(function (p, i) { dateIndex[fmtDate(p[0])] = i; });
+    var commPlot = [];
+    (commPoints || []).forEach(function (cp) {
+      var i = dateIndex[fmtDate(cp[0])];
+      if (i === undefined) return;
+      commPlot.push({ i: i, point: cp });
+    });
+    var showComm = commPlot.length > 0 && !hidden.community;
+
     var maxVal = 0;
     points.forEach(function (p) { var t = p[2] + p[3]; if (t > maxVal) maxVal = t; });
+    commPlot.forEach(function (c) {
+      var t = c.point[2] + c.point[3]; if (t > maxVal) maxVal = t;
+    });
     if (maxVal <= 0) maxVal = 1;
     var step = Math.max(1, Math.ceil(maxVal / 4));
     var yMax = step * 4;
@@ -3769,6 +4162,34 @@ _INDEX_TREND_SCRIPT = """<script>
           '" data-value="' + s.val(p) + '"></circle>');
       });
     });
+
+    // Community / DockerHub overlay: a single dashed "total" line so the gap
+    // above the prime total is immediately visible.
+    if (commPlot.length) {
+      var coff = hidden.community ? " series-hidden" : "";
+      var cxy = commPlot.map(function (c) {
+        return [xFor(c.i), yFor(COMMUNITY.val(c.point))];
+      });
+      if (cxy.length >= 2) {
+        var cd = cxy.map(function (xy) {
+          return xy[0].toFixed(1) + "," + xy[1].toFixed(1);
+        }).join(" ");
+        out.push('<polyline class="series-line series-community' + coff +
+          '" data-series="community" points="' + cd +
+          '" stroke="' + COMMUNITY.color +
+          '" stroke-dasharray="5 4"></polyline>');
+      }
+      cxy.forEach(function (xy, j) {
+        var cp = commPlot[j].point;
+        var src = cp[1] || "";
+        var tip = src ? fmtDate(cp[0]) + " \\u00b7 " + src : fmtDate(cp[0]);
+        out.push('<circle class="series-point series-community' + coff +
+          '" data-series="community" cx="' + xy[0].toFixed(1) +
+          '" cy="' + xy[1].toFixed(1) + '" r="3.5" fill="' + COMMUNITY.color +
+          '" data-label="' + esc(tip) + '" data-series-name="' + esc(COMMUNITY.name) +
+          '" data-value="' + COMMUNITY.val(cp) + '"></circle>');
+      });
+    }
 
     out.push("</svg>");
     return out.join("");
@@ -3844,21 +4265,22 @@ _INDEX_TREND_SCRIPT = """<script>
     return out.join("");
   }
 
-  function initIndexTrend(section) {
-    var dataEl = document.getElementById("index-trend-data");
+  function initTrend(section) {
+    var dataEl = section.querySelector("script.trend-json");
     if (!dataEl) return;
+    var mode = section.getAttribute("data-trend-mode") || "default";
     var data;
     try { data = JSON.parse(dataEl.textContent); } catch (e) { return; }
     var byKey = {};
     data.groups.forEach(function (g) { byKey[g.key] = g; });
 
-    var select = section.querySelector("#trend-source-select");
+    var select = section.querySelector(".trend-source-select");
     var rangeBtns = Array.prototype.slice.call(
       section.querySelectorAll(".trend-range-btn"));
     var canvas = section.querySelector(".index-trend-canvas");
     var figure = section.querySelector(".cve-trend-figure");
     var tip = section.querySelector(".cve-trend-tooltip");
-    var subtitle = section.querySelector("#index-trend-subtitle");
+    var subtitle = section.querySelector(".trend-subtitle");
     var resolvedStats = section.querySelector("#resolved-stats");
     var resolvedCanvas = section.querySelector(".resolved-bars-canvas");
     var resolvedFigure = section.querySelector(".resolved-bars-figure");
@@ -3866,9 +4288,11 @@ _INDEX_TREND_SCRIPT = """<script>
     var resolvedSubtitle = section.querySelector("#resolved-subtitle");
     if (!select || !canvas || !figure || !tip) return;
 
-    var hidden = { total: false, critical: false, high: false };
+    var hidden = { total: false, critical: false, high: false, community: false };
     var current = data.default;
     var range = { mode: "count", value: 30 };
+
+    var communityLegend = section.querySelector(".legend-community");
 
     function attachTips() {
       section.querySelectorAll(".series-point").forEach(function (point) {
@@ -3946,6 +4370,11 @@ _INDEX_TREND_SCRIPT = """<script>
     function render() {
       var group = byKey[current] || data.groups[0];
       var pts = filterPoints(group.points, range.mode, range.value);
+      var commPts = filterPoints(group.communityPoints || [], range.mode, range.value);
+      var hasComm = (group.communityPoints || []).length > 0;
+      if (communityLegend) {
+        communityLegend.style.display = hasComm ? "" : "none";
+      }
       if (!pts.length) {
         canvas.innerHTML = '<p class="cve-trend-empty">' +
           'No scans for this source in the selected range.</p>';
@@ -3958,12 +4387,16 @@ _INDEX_TREND_SCRIPT = """<script>
         if (resolvedSubtitle) resolvedSubtitle.textContent = "";
         return;
       }
-      canvas.innerHTML = buildSvg(pts, hidden);
+      canvas.innerHTML = buildSvg(pts, commPts, hidden);
       attachTips();
       if (subtitle) {
-        subtitle.textContent = "Critical & High CVE counts for " + group.label +
+        var scope = mode === "community"
+          ? "Critical & High CVEs across all images (default + optional) for "
+          : "Critical & High CVE counts (default images) for ";
+        subtitle.textContent = scope + group.label +
           " across the last " + pts.length + " scan" +
           (pts.length === 1 ? "" : "s") +
+          (hasComm ? ", with the community / DockerHub total overlaid" : "") +
           ". Hover a point for details; click a legend entry to toggle a series.";
       }
       renderResolved(pts, group.label);
@@ -4014,8 +4447,8 @@ _INDEX_TREND_SCRIPT = """<script>
   }
 
   function boot() {
-    var section = document.getElementById("index-cve-trend");
-    if (section) initIndexTrend(section);
+    Array.prototype.slice.call(
+      document.querySelectorAll(".cve-trend.js-trend")).forEach(initTrend);
   }
   if (document.readyState === "loading") {
     document.addEventListener("DOMContentLoaded", boot);
@@ -4023,7 +4456,7 @@ _INDEX_TREND_SCRIPT = """<script>
     boot();
   }
 })();
-</script>"""
+</script>""".replace("%COMMUNITY_COLOR%", _COMMUNITY_SERIES_COLOR)
 
 
 # Client-side search + collapse behaviour for the report card lists.
@@ -4224,9 +4657,21 @@ def generate_index(html_dir):
         "No check-images reports found yet.",
     )
 
+    trend_section = _render_index_trend_section(_index_trend_dataset(html_dir))
+    community_section = _render_community_trend_section(
+        _community_trend_dataset(html_dir)
+    )
+    # The client renderer boots every ".cve-trend.js-trend" section, so include
+    # it once after both trend sections have been emitted.
+    trend_script = _INDEX_TREND_SCRIPT if (trend_section or community_section) else ""
+
     body_html = (
         "<h1>RKE2 Toolbox Reports</h1>\n"
-        + _render_index_trend_section(_index_trend_dataset(html_dir))
+        + trend_section
+        + "\n"
+        + community_section
+        + "\n"
+        + trend_script
         + "\n"
         + toolbar
         + "\n"
