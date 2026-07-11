@@ -112,6 +112,20 @@ jobs:
         with:
           python-version: '3.x'
 
+      - name: Run community (non-prime) scan for CVE comparison
+        # Scheduled nightly only: scan the same master images without --prime so
+        # the metrics DB captures community/DockerHub CVE counts alongside the
+        # prime run. This intentionally produces no committed markdown/HTML
+        # report; only reports/scan_metrics.db is updated (and committed below).
+        # Runs before HTML generation so the index reflects the community line.
+        if: steps.scan_args.outputs.mode == 'scheduled'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TRIVY_DISABLE_VEX_NOTICE: "true"
+        run: |
+          bash scan.sh master --no-prime
+          rm -f trivy_scan_report.txt images.txt images-optional.txt
+
       - name: Convert Markdown report to HTML
         id: convert
         env:

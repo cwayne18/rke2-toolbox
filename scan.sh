@@ -677,6 +677,10 @@ CREATE TABLE IF NOT EXISTS scan_metrics (
     go_stdlib_cves INTEGER NOT NULL,
     go_module_cves INTEGER NOT NULL,
     base_image_cves INTEGER NOT NULL,
+    -- Image channel scanned: 'prime' (registry.rancher.com hardened images) or
+    -- 'community' (default/DockerHub images). Enables prime-vs-community CVE
+    -- comparisons. Older rows predate this column and default to 'prime'.
+    channel TEXT NOT NULL DEFAULT 'prime',
     optional_total_images INTEGER NOT NULL DEFAULT 0,
     optional_images_with_cves INTEGER NOT NULL DEFAULT 0,
     optional_critical_cves INTEGER NOT NULL DEFAULT 0,
@@ -686,18 +690,6 @@ CREATE TABLE IF NOT EXISTS scan_metrics (
 CREATE INDEX IF NOT EXISTS idx_scan_metrics_scanned_at ON scan_metrics(scanned_at);
 CREATE INDEX IF NOT EXISTS idx_scan_metrics_source_ref_scanned_at
     ON scan_metrics(source_ref, scanned_at);
-CREATE UNIQUE INDEX IF NOT EXISTS uq_scan_metrics_run_signature
-    ON scan_metrics(
-        scanned_at,
-        source_ref,
-        total_images,
-        images_with_cves,
-        critical_cves,
-        high_cves,
-        go_stdlib_cves,
-        go_module_cves,
-        base_image_cves
-    );
 
 -- Per-CVE identities captured per scan run. Enables precise fix tracking:
 -- a CVE present for a source in one scan but absent in the next was resolved
@@ -734,6 +726,37 @@ SQL
             sqlite3 "$db_file" "ALTER TABLE scan_metrics ADD COLUMN ${col} INTEGER NOT NULL DEFAULT 0;"
         fi
     done
+
+    # Backfill the image channel column on pre-existing databases. Rows created
+    # before this column existed did not pass --prime for release scans (which
+    # download published DockerHub image lists), so classify those as
+    # 'community'; every other historical scan (master nightly, PRs) used the
+    # prime registry and matches the column default.
+    if ! grep -qx "channel" <<<"$existing_cols"; then
+        sqlite3 "$db_file" "ALTER TABLE scan_metrics ADD COLUMN channel TEXT NOT NULL DEFAULT 'prime';"
+        sqlite3 "$db_file" "UPDATE scan_metrics SET channel='community' WHERE source_ref LIKE 'release:%';"
+    fi
+
+    # (Re)create the run-signature unique index so it includes the channel column.
+    # Databases created before channel existed carry a 9-column signature that
+    # would treat a same-day prime and community scan as duplicates, so drop and
+    # recreate it. Idempotent: safe to run on every init.
+    sqlite3 "$db_file" <<'SQL'
+DROP INDEX IF EXISTS uq_scan_metrics_run_signature;
+CREATE UNIQUE INDEX IF NOT EXISTS uq_scan_metrics_run_signature
+    ON scan_metrics(
+        scanned_at,
+        source_ref,
+        channel,
+        total_images,
+        images_with_cves,
+        critical_cves,
+        high_cves,
+        go_stdlib_cves,
+        go_module_cves,
+        base_image_cves
+    );
+SQL
 }
 
 classify_cve_sources() {
@@ -1083,12 +1106,20 @@ if init_metrics_db; then
     scanned_at="$(date -u '+%Y-%m-%dT%H:%M:%SZ')"
     source_desc_db="$(sqlite_escape "$source_desc")"
     source_ref_db="$(sqlite_escape "${source_ref}")"
+    # Record which image channel this run scanned so the dashboard can compare
+    # prime (registry.rancher.com) against community/DockerHub CVE counts.
+    if [[ "$use_prime_ingress" == "true" ]]; then
+        channel_db="prime"
+    else
+        channel_db="community"
+    fi
 
     sqlite3 "$db_file" <<SQL
 INSERT OR IGNORE INTO scan_metrics (
     scanned_at,
     source_desc,
     source_ref,
+    channel,
     total_images,
     images_with_cves,
     critical_cves,
@@ -1104,6 +1135,7 @@ INSERT OR IGNORE INTO scan_metrics (
     '${scanned_at}',
     '${source_desc_db}',
     '${source_ref_db}',
+    '${channel_db}',
     $(wc -l < "$input_file" | tr -d ' '),
     ${bundle_images_with_cves},
     ${total_critical},
@@ -1129,7 +1161,7 @@ SQL
     # new. No-op when no rows were collected (e.g. python3 unavailable).
     if [[ -s "$cve_rows_file" ]]; then
         scan_id="$(sqlite3 "$db_file" \
-            "SELECT id FROM scan_metrics WHERE scanned_at='${scanned_at}' AND source_ref='${source_ref_db}' ORDER BY id DESC LIMIT 1;")"
+            "SELECT id FROM scan_metrics WHERE scanned_at='${scanned_at}' AND source_ref='${source_ref_db}' AND channel='${channel_db}' ORDER BY id DESC LIMIT 1;")"
         if [[ -n "$scan_id" ]] && command -v python3 >/dev/null 2>&1; then
             if python3 - "$cve_rows_file" "$scan_id" "$scanned_at" "$source_ref" <<'PY' | sqlite3 "$db_file"
 import sys
