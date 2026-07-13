@@ -727,6 +727,20 @@ SQL
         fi
     done
 
+    # Non-destructively add EPSS (Exploit Prediction Scoring System) columns to
+    # the per-CVE table. EPSS estimates the probability a CVE will be exploited
+    # in the next 30 days (epss_score) and its relative ranking (epss_percentile).
+    # Adding nullable columns preserves every existing row; enrichment is a
+    # separate best-effort step (see epss_enrich.py) so a network outage never
+    # blocks or wipes a scan.
+    local scan_cves_cols scan_cves_col
+    scan_cves_cols="$(sqlite3 "$db_file" "SELECT name FROM pragma_table_info('scan_cves');" 2>/dev/null)"
+    for scan_cves_col in epss_score epss_percentile; do
+        if ! grep -qx "$scan_cves_col" <<<"$scan_cves_cols"; then
+            sqlite3 "$db_file" "ALTER TABLE scan_cves ADD COLUMN ${scan_cves_col} REAL;"
+        fi
+    done
+
     # Backfill the image channel column on pre-existing databases. Rows created
     # before this column existed did not pass --prime for release scans (which
     # download published DockerHub image lists), so classify those as
@@ -1206,6 +1220,17 @@ PY
             then
                 cve_row_count="$(sqlite3 "$db_file" "SELECT count(*) FROM scan_cves WHERE scan_id=${scan_id};")"
                 echo "Recorded ${cve_row_count} per-CVE rows for scan ${scan_id} in $db_file"
+
+                # Enrich this scan's CVEs with EPSS exploitation-probability
+                # scores. Best-effort: the script exits 0 without touching the
+                # database on any network/parse failure, so a transient outage
+                # never blocks the scan or clears existing scores.
+                epss_script="$(dirname "$0")/.github/scripts/epss_enrich.py"
+                if command -v python3 >/dev/null 2>&1 && [[ -f "$epss_script" ]]; then
+                    echo "Enriching scan ${scan_id} CVEs with EPSS scores..."
+                    python3 "$epss_script" --db "$db_file" --scan-id "$scan_id" || \
+                        echo "Warning: EPSS enrichment step failed; continuing" >&2
+                fi
             else
                 echo "Warning: failed to persist per-CVE rows to $db_file" >&2
             fi
