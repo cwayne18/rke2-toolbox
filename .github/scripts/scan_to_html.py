@@ -314,6 +314,46 @@ ul.generic-list li code {
 .sev-LOW      { background: var(--sev-low-bg);      color: var(--sev-low-text);      border-color: var(--sev-low-border);      }
 .sev-UNKNOWN  { background: var(--sev-unknown-bg);  color: var(--sev-unknown-text);  border-color: var(--sev-unknown-border);  }
 
+/* ---- EPSS badges (exploit-likelihood) ---- */
+/* Pill shape + percentile meter distinguishes EPSS (exploit probability) from
+   the square Severity badge (impact) sitting next to it. */
+.epss {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 700;
+  white-space: nowrap;
+  border-width: 1px;
+  border-style: solid;
+  font-variant-numeric: tabular-nums;
+}
+.epss-meter {
+  width: 34px;
+  height: 5px;
+  border-radius: 3px;
+  background: rgba(0, 0, 0, .18);
+  overflow: hidden;
+  flex: 0 0 auto;
+}
+.epss-meter-fill {
+  display: block;
+  height: 100%;
+  border-radius: 3px;
+  background: currentColor;
+  opacity: .85;
+}
+.epss-crit { background: var(--sev-critical-bg); color: var(--sev-critical-text); border-color: var(--sev-critical-border); }
+.epss-high { background: var(--sev-high-bg);     color: var(--sev-high-text);     border-color: var(--sev-high-border);     }
+.epss-med  { background: var(--sev-medium-bg);   color: var(--sev-medium-text);   border-color: var(--sev-medium-border);   }
+.epss-low  { background: var(--sev-low-bg);      color: var(--sev-low-text);      border-color: var(--sev-low-border);      }
+.epss-none { background: var(--sev-unknown-bg);  color: var(--sev-unknown-text);  border-color: var(--sev-unknown-border);  }
+.epss-none { padding: 2px 10px; }
+.epss-cell { white-space: nowrap; }
+.epss-th { white-space: nowrap; }
+
 /* ---- Status badges (check-images) ---- */
 .status {
   display: inline-flex;
@@ -1295,6 +1335,126 @@ def _set_new_cve_context(cve_ids):
     _NEW_CVE_IDS = {c.upper() for c in (cve_ids or set())}
 
 
+# ---------------------------------------------------------------------------
+# EPSS (Exploit Prediction Scoring System) enrichment
+#
+# EPSS estimates the probability that a CVE is exploited in the wild within the
+# next 30 days (score, 0..1) and its relative ranking among all scored CVEs
+# (percentile, 0..1). Scores are written onto scan_cves by epss_enrich.py; here
+# we read the latest value per CVE and surface it in the findings tables so
+# reviewers can prioritise by real-world exploit likelihood, not just severity.
+# ---------------------------------------------------------------------------
+
+# Maps upper-cased CVE ID -> (score, percentile). Populated per-report in
+# :func:`convert` and read by :func:`render_table` / the new-CVE section. Safe as
+# a module global because the converter processes one report at a time.
+_EPSS_MAP = {}
+
+
+def _set_epss_context(epss_map):
+    """Set the CVE->(score, percentile) map used to badge findings with EPSS."""
+    global _EPSS_MAP
+    _EPSS_MAP = epss_map or {}
+
+
+def _epss_map_from_db(input_path):
+    """Return ``{CVE_ID: (score, percentile)}`` from the metrics DB (latest wins).
+
+    Returns ``{}`` when the DB, the ``scan_cves`` table, or the EPSS columns are
+    absent (e.g. a database that predates enrichment), so rendering degrades
+    gracefully to no EPSS column.
+    """
+    db_path = _metrics_db_path(input_path)
+    if not db_path:
+        return {}
+    try:
+        with sqlite3.connect(db_path) as conn:
+            cols = {r[1] for r in conn.execute("PRAGMA table_info(scan_cves)").fetchall()}
+            if "epss_score" not in cols:
+                return {}
+            cur = conn.execute(
+                "SELECT UPPER(cve_id), epss_score, epss_percentile FROM scan_cves "
+                "WHERE epss_score IS NOT NULL ORDER BY scanned_at ASC, id ASC"
+            )
+            result = {}
+            for cve, score, pct in cur.fetchall():
+                if cve is not None and score is not None:
+                    result[cve] = (float(score), float(pct) if pct is not None else 0.0)
+            return result
+    except (sqlite3.Error, ValueError):
+        return {}
+
+
+def _epss_ordinal(n):
+    """Return an ordinal string for an integer percentile rank (e.g. 87 -> 87th)."""
+    if 10 <= (n % 100) <= 20:
+        suffix = "th"
+    else:
+        suffix = {1: "st", 2: "nd", 3: "rd"}.get(n % 10, "th")
+    return f"{n}{suffix}"
+
+
+def _epss_score_pct(score):
+    """Format an EPSS score (0..1 probability) as a compact percentage string."""
+    pct = score * 100
+    if pct >= 1:
+        return f"{pct:.1f}%"
+    if pct >= 0.01:
+        return f"{pct:.2f}%"
+    return "<0.01%"
+
+
+def _epss_tier(score):
+    """Map an EPSS score to a badge tier class (heat scale by exploit likelihood)."""
+    if score >= 0.5:
+        return "epss-crit"
+    if score >= 0.1:
+        return "epss-high"
+    if score >= 0.01:
+        return "epss-med"
+    return "epss-low"
+
+
+def _epss_none_badge():
+    return (
+        '<span class="epss epss-none" '
+        'title="No EPSS score published for this advisory">&mdash;</span>'
+    )
+
+
+def _epss_badge(cve):
+    """Render the EPSS cell for a CVE ID: a tiered badge with a percentile meter."""
+    if not cve:
+        return _epss_none_badge()
+    data = _EPSS_MAP.get(cve.upper())
+    if not data:
+        return _epss_none_badge()
+    score, percentile = data
+    tier = _epss_tier(score)
+    rank = max(0, min(100, round(percentile * 100)))
+    fill = max(3, rank)  # keep a sliver visible even at the low end
+    title = (
+        f"EPSS {score:.5f} \u00b7 {_epss_ordinal(rank)} percentile \u2014 "
+        "estimated probability of exploitation in the next 30 days (FIRST.org)"
+    )
+    return (
+        f'<span class="epss {tier}" title="{esc(title)}">'
+        f'<span class="epss-meter"><span class="epss-meter-fill" style="width:{fill}%"></span></span>'
+        f'<span class="epss-val">{esc(_epss_score_pct(score))}</span>'
+        "</span>"
+    )
+
+
+def _epss_header_th():
+    """The synthetic ``EPSS`` column header, with an explanatory tooltip."""
+    return (
+        '<th class="epss-th" title="EPSS: estimated probability this CVE is '
+        'exploited in the next 30 days (FIRST.org). The bar shows the CVE\'s '
+        'percentile rank among all scored CVEs.">EPSS</th>'
+    )
+
+
+
 def render_table(headers, rows, header_text=None):
     """Render (headers, rows) as an HTML table."""
     if not headers or not rows:
@@ -1334,17 +1494,32 @@ def render_table(headers, rows, header_text=None):
 
     out = ['<table class="report-table">']
     out.append("<thead><tr>")
-    for h in headers:
+
+    # For CVE findings tables, surface an EPSS column next to Severity so the
+    # exploit-likelihood signal sits alongside the impact rating. Only injected
+    # when EPSS data is loaded and the table actually lists vulnerabilities.
+    vuln_header = None
+    if "vulnerability" in hlo:
+        vuln_header = headers[hlo.index("vulnerability")]
+    epss_after = "severity" if "severity" in hlo else "vulnerability"
+    add_epss = bool(_EPSS_MAP) and vuln_header is not None and epss_after in hlo
+
+    for h, h_norm in zip(headers, hlo):
         out.append(f"<th>{esc(h)}</th>")
+        if add_epss and h_norm == epss_after:
+            out.append(_epss_header_th())
     out.append("</tr></thead><tbody>")
 
     for row in rows:
         tr_class = ' class="new-cve-row"' if row_has_new_cve(row) else ""
         out.append(f"<tr{tr_class}>")
+        row_cve = _cve_id_in_text(row.get(vuln_header, "")) if vuln_header else None
         for h, h_norm in zip(headers, hlo):
             val = row.get(h, "")
             td_class = ' class="num"' if h_norm in ("vulnerabilities", "secrets") else ""
             out.append(f"<td{td_class}>{col_html(h, h_norm, val)}</td>")
+            if add_epss and h_norm == epss_after:
+                out.append(f'<td class="epss-cell">{_epss_badge(row_cve)}</td>')
         out.append("</tr>")
 
     out.append("</tbody></table>")
@@ -2128,6 +2303,7 @@ def _render_new_cves_section(details):
             else esc(cve)
         )
         severity = _severity_badge(d["severity"]) if d["severity"] else ""
+        epss_cell = _epss_badge(cve) if re.match(r"^CVE-\d{4}-\d+$", cve, re.I) else _epss_none_badge()
         packages = ", ".join(sorted(d["packages"])) if d["packages"] else "&mdash;"
         images = sorted(d["images"])
         images_html = "<br>".join(
@@ -2137,6 +2313,7 @@ def _render_new_cves_section(details):
             "<tr>"
             f"<td>{cve_link}</td>"
             f"<td>{severity}</td>"
+            f'<td class="epss-cell">{epss_cell}</td>'
             f"<td><code>{esc(packages)}</code></td>"
             f"<td>{images_html}</td>"
             "</tr>"
@@ -2161,7 +2338,8 @@ def _render_new_cves_section(details):
         "<thead><tr>"
         "<th>CVE</th>"
         "<th>Severity</th>"
-        "<th>Package(s)</th>"
+        + _epss_header_th()
+        + "<th>Package(s)</th>"
         "<th>Image(s)</th>"
         "</tr></thead>"
         f"<tbody>{rows_html}</tbody>"
@@ -3238,6 +3416,9 @@ def convert(input_path, output_path=None):
         if is_scan_report:
             new_cve_ids, new_cve_details = _new_cves_vs_previous_scan(content, input_path)
         _set_new_cve_context(new_cve_ids)
+        # Load EPSS scores once per report so findings tables and the new-CVE
+        # section can badge each CVE with its exploit-likelihood.
+        _set_epss_context(_epss_map_from_db(input_path))
         if is_scan_report:
             content = _augment_scan_summary(content, input_path)
         if not basename.startswith("check-"):
@@ -3266,6 +3447,7 @@ def convert(input_path, output_path=None):
             )
     else:
         _set_new_cve_context(set())
+        _set_epss_context({})
         body_html = _convert_raw(content)
         title = os.path.splitext(basename)[0]
 
