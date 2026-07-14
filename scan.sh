@@ -545,20 +545,39 @@ if [[ -n "$runtime_lookup_sha" || -n "$runtime_lookup_ref" ]]; then
         fi
 fi
 
-# Download the Rancher OpenVEX Trivy report
-if curl -fsSL https://github.com/rancher/vexhub/raw/refs/heads/main/reports/rancher.openvex.json \
-    -o rancher.openvex.json 2>/dev/null && [[ -s rancher.openvex.json ]]; then
-    # Validate it's actually valid JSON/VEX by checking for opening brace
-    if head -c 1 rancher.openvex.json | grep -q '{'; then
-        vex_flag="--vex rancher.openvex.json"
-    else
-        echo "Warning: Downloaded OpenVEX file appears invalid; continuing without VEX suppression"
-        rm -f rancher.openvex.json
-        vex_flag=""
+# Download the Rancher OpenVEX Trivy report.
+#
+# This file is large (~85MB) and the GitHub raw endpoint frequently flakes with
+# HTTP/2 stream errors (curl exit 92, PROTOCOL_ERROR) mid-transfer. Force
+# HTTP/1.1 and retry aggressively. VEX suppression is essential: without it,
+# previously-vexed CVEs reappear and massively inflate the report. If we can't
+# get a valid file, abort rather than silently scanning unsuppressed and
+# publishing misleading counts.
+vex_url="https://github.com/rancher/vexhub/raw/refs/heads/main/reports/rancher.openvex.json"
+vex_flag=""
+vex_downloaded="false"
+for attempt in 1 2 3 4 5; do
+    if curl -fSL --http1.1 \
+        --retry 5 --retry-all-errors --retry-delay 5 \
+        --connect-timeout 30 --max-time 600 \
+        "$vex_url" -o rancher.openvex.json \
+        && [[ -s rancher.openvex.json ]] \
+        && head -c 1 rancher.openvex.json | grep -q '{'; then
+        vex_downloaded="true"
+        break
     fi
+    echo "Warning: attempt ${attempt}/5 to download Rancher OpenVEX report failed; retrying..." >&2
+    rm -f rancher.openvex.json
+    sleep 10
+done
+
+if [[ "$vex_downloaded" == "true" ]]; then
+    vex_flag="--vex rancher.openvex.json"
 else
-    echo "Warning: Failed to download Rancher OpenVEX report; continuing without VEX suppression"
-    vex_flag=""
+    echo "Error: Failed to download a valid Rancher OpenVEX report after 5 attempts." >&2
+    echo "Aborting: scanning without VEX suppression would produce misleading CVE counts." >&2
+    rm -f rancher.openvex.json
+    exit 1
 fi
 
 # Write markdown header and the list of images being scanned to the output file
