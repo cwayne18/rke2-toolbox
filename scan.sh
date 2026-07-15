@@ -389,6 +389,11 @@ input_file="./images.txt"
 # Input file containing the list of optional (non-default) add-on images
 optional_input_file="./images-optional.txt"
 
+if ! command -v trivy >/dev/null 2>&1; then
+    echo "Error: trivy CLI not found in PATH. Install Trivy and re-run scan.sh." >&2
+    exit 1
+fi
+
 # The rke2-runtime image is only built and published during a real CI run; for an
 # unreleased build (a branch tip or a PR head) it never exists in a registry, so a
 # plain `trivy image rancher/rke2-runtime:<dev-version>` cannot pull anything. To
