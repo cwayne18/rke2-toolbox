@@ -1972,7 +1972,7 @@ def _count_binaries_with_findings(md):
 
     NOTE: This only counts binaries that appear in the severity-filtered Trivy
     table output (i.e. binaries *with* CRITICAL/HIGH findings). It is NOT the
-    total number of binaries scanned. Use the value written by scan.sh into the
+    total number of binaries scanned. Use the value written by scan.py into the
     ``### Scan Coverage`` markdown section for the authoritative total.
     """
     return len(re.findall(r"(?im)^\s*.+\((?:go)?binary\)\s*$", md))
@@ -1984,7 +1984,7 @@ def _count_binaries_from_summary_tables(md):
     Older reports embed a full 'Report Summary' box-drawing table per image that
     lists every scanned target (including those with 0 vulnerabilities) with its
     type.  Counting rows whose type cell is 'gobinary' or 'binary' gives the true
-    total number of binaries scanned, equivalent to the value scan.sh writes into
+    total number of binaries scanned, equivalent to the value scan.py writes into
     the ``### Scan Coverage`` section of newer reports.
 
     Returns 0 when no such tables are present (e.g. reports that already carry a
@@ -2014,7 +2014,7 @@ def _channel_select(conn):
     ``'prime'`` is substituted so every legacy row is treated as a prime scan
     (matching the migration default). This keeps the index/report charts working
     even when regenerated against an un-migrated DB (e.g. by the deploy-pages or
-    check-images workflows, which do not run scan.sh)."""
+    check-images workflows, which do not run scan.py)."""
     try:
         cols = [r[1] for r in conn.execute("PRAGMA table_info(scan_metrics)").fetchall()]
     except sqlite3.Error:
@@ -2053,7 +2053,7 @@ def _recent_cve_totals_from_db(input_path):
 # Number of most-recent scans plotted on the trend chart.
 _TREND_HISTORY_LIMIT = 30
 
-# Metadata comment scan.sh embeds in the report header so the converter can
+# Metadata comment scan.py embeds in the report header so the converter can
 # recover the scan's source (branch / release tag / PR) and filter the trend
 # chart to comparable scans.
 _SOURCE_REF_RE = re.compile(r"<!--\s*scan-source-ref:\s*(.*?)\s*-->")

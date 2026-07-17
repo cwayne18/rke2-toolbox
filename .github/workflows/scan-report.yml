@@ -53,7 +53,7 @@ jobs:
           rm -rf "${TMP_TRIVY_DIR}"
           trivy --version
 
-      - name: Build scan.sh arguments
+      - name: Build scan.py arguments
         id: scan_args
         run: |
           ARGS="master --prime"
@@ -68,11 +68,16 @@ jobs:
           echo "args=$ARGS" >> "$GITHUB_OUTPUT"
           echo "mode=$MODE" >> "$GITHUB_OUTPUT"
 
-      - name: Run scan.sh
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+
+      - name: Run scan.py
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           TRIVY_DISABLE_VEX_NOTICE: "true"
-        run: bash scan.sh ${{ steps.scan_args.outputs.args }}
+        run: python3 scan.py ${{ steps.scan_args.outputs.args }}
 
       - name: Determine output filename
         id: filename
@@ -107,11 +112,6 @@ jobs:
       - name: Move report to reports directory
         run: mv trivy_scan_report.txt "${{ steps.filename.outputs.filename }}"
 
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.x'
-
       - name: Run community (non-prime) scan for CVE comparison
         # Scheduled nightly only: scan the same master images without --prime so
         # the metrics DB captures community/DockerHub CVE counts alongside the
@@ -123,7 +123,7 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           TRIVY_DISABLE_VEX_NOTICE: "true"
         run: |
-          bash scan.sh master --no-prime
+          python3 scan.py master --no-prime
           rm -f trivy_scan_report.txt images.txt images-optional.txt
 
       - name: Convert Markdown report to HTML
