@@ -478,7 +478,7 @@ def fetch_runtime_tarball(src):
     elif src.mode != "release":
         lookup_ref, lookup_desc = src.branch, f"branch '{src.branch}'"
 
-    if not lookup_sha and not lookup_ref:
+    if not lookup_sha and not lookup_ref and not src.pr_number:
         return None, None
 
     log(f"Fetching workflow runs for {lookup_desc}...")
