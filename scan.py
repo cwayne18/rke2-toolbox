@@ -618,7 +618,8 @@ def download_vex():
 
 def trivy_scan(ref, vex_flag, is_tarball=False):
     """Scan an image (or tarball) and return (table_text, parsed_json_or_None)."""
-    json_tmp = tempfile.mktemp()
+    fd, json_tmp = tempfile.mkstemp(prefix="trivy-", suffix=".json")
+    os.close(fd)
     try:
         cmd = ["trivy", "image"]
         if is_tarball:
