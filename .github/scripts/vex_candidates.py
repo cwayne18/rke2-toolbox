@@ -441,17 +441,25 @@ def analyze(images: list[str], findings: list[dict], modules: list[str]) -> dict
                         # OSV knows the advisory but publishes no package-level
                         # import paths (e.g. GitHub-only GHSA records such as
                         # google.golang.org/grpc GHSA-hrxh-6v49-42gf). Fall back
-                        # to module-granularity: if none of the module's symbols
-                        # are linked, the vulnerable code cannot be present.
+                        # to module-granularity. This is only sound in one
+                        # direction: if the module isn't linked at all the
+                        # vulnerable code cannot be present. If the module *is*
+                        # linked we still can't tell whether the specific
+                        # vulnerable sub-package is present, so such rows are left
+                        # undetermined rather than asserted as genuine.
                         pkgs = [f["module"]]
                         granularity = "module"
                         linked = module_present(blob, f["module"])
+
                     rec = {**f, "pkgs": pkgs, "stripped": stripped, "granularity": granularity}
                     if not linked:
                         rec["justification"] = "vulnerable_code_not_present"
                         rec["method"] = "pclntab-module" if granularity == "module" else "pclntab"
                         candidates.append(rec)
-                    elif granularity == "package" and not stripped and (f["cve"] in gv_ids or entry["goid"] in gv_ids):
+                    elif granularity == "module":
+                        # Module linked but sub-package presence is unknown.
+                        undetermined.append({**f, "reason": "module_linked_package_unknown"})
+                    elif not stripped and (f["cve"] in gv_ids or entry["goid"] in gv_ids):
                         rec["justification"] = "vulnerable_code_not_in_execute_path"
                         rec["method"] = "govulncheck"
                         candidates.append(rec)
@@ -513,8 +521,11 @@ def render_issue(report_name: str, result: dict, modules: list[str]) -> str:
         "unreachable package ⇒ `vulnerable_code_not_in_execute_path`. Skipped on stripped "
         "binaries where it over-reports.\n"
         "- **Module-granularity fallback**: for advisories where OSV publishes no package-level "
-        "import paths (e.g. GitHub-only GHSA records), absence is asserted for the whole module "
-        "instead. These candidates are coarser — validate carefully before transferring.\n"
+        "import paths (e.g. GitHub-only GHSA records), presence is evaluated for the whole module. "
+        "This only proves *absence*: if the module isn't linked at all ⇒ `vulnerable_code_not_present`. "
+        "If the module is linked, the specific vulnerable sub-package can't be resolved, so the row is "
+        "left **undetermined** (reason `module_linked_package_unknown`) for manual review rather than "
+        "assumed genuine.\n"
         "- Genuinely-linked packages (e.g. `x/net/http2`, `x/net/idna`) are intentionally left "
         "as real findings."
     )
