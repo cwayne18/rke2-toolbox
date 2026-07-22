@@ -100,7 +100,14 @@ def parse_report(path: str) -> tuple[list[str], list[dict]]:
     header_re = re.compile(r"^##\s+Scan Results:\s+`([^`]+)`")
     img_bullet_re = re.compile(r"^[-*]\s+`([^`]+)`")
     target_re = re.compile(r"^(\S.*?)\s+\((\w[\w-]*)\)\s*$")
-    cve_re = re.compile(r"^CVE-\d{4}-\d+$")
+    # Trivy reports a finding by whatever primary advisory id it has. Most Go
+    # advisories carry a CVE, but some are only assigned a GHSA (or a Go-vulndb
+    # GO-id), e.g. google.golang.org/grpc GHSA-hrxh-6v49-42gf. Accept all three
+    # so those rows are not silently dropped.
+    vuln_id_re = re.compile(
+        r"^(?:CVE-\d{4}-\d+|GHSA-[0-9a-z]{4}-[0-9a-z]{4}-[0-9a-z]{4}|GO-\d{4}-\d+)$",
+        re.IGNORECASE,
+    )
     section = None  # None | "images"
 
     for line in lines:
@@ -150,7 +157,7 @@ def parse_report(path: str) -> tuple[list[str], list[dict]]:
             last_installed = installed
         if fixed:
             last_fixed = fixed
-        if cve_re.match(vuln):
+        if vuln_id_re.match(vuln):
             findings.append({
                 "image": cur_image,
                 "target": cur_target,
@@ -184,7 +191,15 @@ def osv_query(module: str, version: str) -> dict:
 
 
 def build_osv_map(module: str, version: str) -> dict[str, dict]:
-    """Return {CVE: {"pkgs": set(import paths), "goid": GO-id}} for module@version."""
+    """Return {vuln_id: {"pkgs": set(import paths), "goid": OSV id}} for module@version.
+
+    Keyed by *every* identifier the advisory is known by (its own OSV id plus all
+    aliases: CVE-, GHSA-, GO-). A finding row may reference any one of these, so
+    all of them must resolve to the same package set. When the same key is
+    contributed by more than one source record (e.g. a GitHub GHSA record with no
+    import paths and a Go-vulndb GO record that has them), the record that
+    actually carries import paths wins.
+    """
     out: dict[str, dict] = {}
     data = osv_query(module, version)
     for v in data.get("vulns", []):
@@ -196,11 +211,13 @@ def build_osv_map(module: str, version: str) -> dict[str, dict]:
             for imp in aff.get("ecosystem_specific", {}).get("imports", []):
                 if imp.get("path"):
                     pkgs.add(imp["path"])
-        cves = [a for a in v.get("aliases", []) if a.startswith("CVE-")]
-        if goid.startswith("CVE-"):
-            cves.append(goid)
-        for cve in cves:
-            out[cve] = {"pkgs": pkgs, "goid": goid}
+        keys = {k for k in ([goid] + list(v.get("aliases", []) or [])) if k}
+        for key in keys:
+            existing = out.get(key)
+            # Prefer whichever record carries import paths so an import-less
+            # GHSA record never clobbers a richer GO record's package list.
+            if existing is None or (not existing["pkgs"] and pkgs):
+                out[key] = {"pkgs": pkgs, "goid": goid}
     return out
 
 
@@ -262,6 +279,19 @@ def package_present(blob: str, pkg: str) -> bool:
     return re.search(esc + r"\.[A-Za-z(]", blob) is not None
 
 
+def module_present(blob: str, module: str) -> bool:
+    """True if *any* part of `module` (root or a sub-package) appears in the blob.
+
+    Used as a coarse fallback when OSV lists no package-level import paths for an
+    advisory. Deliberately broad — matching either ``module.<sym>`` or
+    ``module/<subpkg>`` — so a genuinely-linked module is never mistaken for
+    absent. The ``[./]`` guard keeps ``google.golang.org/grpc`` from matching an
+    unrelated prefix like ``google.golang.org/grpcfoo``.
+    """
+    esc = re.escape(module)
+    return re.search(esc + r"[./]", blob) is not None
+
+
 def govulncheck_not_affected(binary: Path) -> set[str]:
     """Return GO-ids govulncheck binary mode marks not_affected (best effort)."""
     exe = shutil.which("govulncheck")
@@ -315,9 +345,15 @@ def github_run_url() -> str | None:
     return None
 
 
-def vex_note(target: str, pkgs: list[str], module: str, installed: str, justification: str) -> str:
+def vex_note(target: str, pkgs: list[str], module: str, installed: str, justification: str,
+             granularity: str = "package") -> str:
     pkg_list = ", ".join(pkgs)
     if justification == "vulnerable_code_not_present":
+        if granularity == "module":
+            return (f"`{target}` does not link module {module}; the Go function-name table "
+                    f"(pclntab, retained despite -s -w stripping) contains no {module} symbols at "
+                    f"{installed}. OSV publishes no package-level import paths for this advisory, so "
+                    f"absence is asserted at module granularity. Vulnerable code not present.")
         return (f"`{target}` does not link {pkg_list}; the Go function-name table (pclntab, retained "
                 f"despite -s -w stripping) contains no matching symbols at {module} {installed}. "
                 f"Vulnerable code not present.")
@@ -394,17 +430,28 @@ def analyze(images: list[str], findings: list[dict], modules: list[str]) -> dict
                 for f in tfs:
                     omap = osv_for(f["module"], f["installed"])
                     entry = omap.get(f["cve"])
-                    if not entry or not entry["pkgs"]:
+                    if not entry:
                         undetermined.append({**f, "reason": "no_osv_package_mapping"})
                         continue
-                    pkgs = sorted(entry["pkgs"])
-                    linked = any(package_present(blob, p) for p in pkgs)
-                    rec = {**f, "pkgs": pkgs, "stripped": stripped}
+                    if entry["pkgs"]:
+                        pkgs = sorted(entry["pkgs"])
+                        granularity = "package"
+                        linked = any(package_present(blob, p) for p in pkgs)
+                    else:
+                        # OSV knows the advisory but publishes no package-level
+                        # import paths (e.g. GitHub-only GHSA records such as
+                        # google.golang.org/grpc GHSA-hrxh-6v49-42gf). Fall back
+                        # to module-granularity: if none of the module's symbols
+                        # are linked, the vulnerable code cannot be present.
+                        pkgs = [f["module"]]
+                        granularity = "module"
+                        linked = module_present(blob, f["module"])
+                    rec = {**f, "pkgs": pkgs, "stripped": stripped, "granularity": granularity}
                     if not linked:
                         rec["justification"] = "vulnerable_code_not_present"
-                        rec["method"] = "pclntab"
+                        rec["method"] = "pclntab-module" if granularity == "module" else "pclntab"
                         candidates.append(rec)
-                    elif not stripped and (f["cve"] in gv_ids or entry["goid"] in gv_ids):
+                    elif granularity == "package" and not stripped and (f["cve"] in gv_ids or entry["goid"] in gv_ids):
                         rec["justification"] = "vulnerable_code_not_in_execute_path"
                         rec["method"] = "govulncheck"
                         candidates.append(rec)
@@ -430,7 +477,8 @@ def render_textvex(candidates: list[dict]) -> str:
         ver = c["installed"]
         if not ver.startswith("v"):
             ver = "v" + ver
-        note = vex_note(target, c["pkgs"], c["module"], ver, c["justification"])
+        note = vex_note(target, c["pkgs"], c["module"], ver, c["justification"],
+                        c.get("granularity", "package"))
         rows.append(f'{img},{c["cve"]},{c["module"]},{ver},{target},not_affected,{c["justification"]},"{note}"')
     return "\n".join(rows)
 
@@ -464,6 +512,9 @@ def render_issue(report_name: str, result: dict, modules: list[str]) -> str:
         "- **govulncheck binary mode** (secondary, non-stripped binaries only): a linked-but-"
         "unreachable package ⇒ `vulnerable_code_not_in_execute_path`. Skipped on stripped "
         "binaries where it over-reports.\n"
+        "- **Module-granularity fallback**: for advisories where OSV publishes no package-level "
+        "import paths (e.g. GitHub-only GHSA records), absence is asserted for the whole module "
+        "instead. These candidates are coarser — validate carefully before transferring.\n"
         "- Genuinely-linked packages (e.g. `x/net/http2`, `x/net/idna`) are intentionally left "
         "as real findings."
     )
