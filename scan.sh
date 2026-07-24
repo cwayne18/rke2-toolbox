@@ -604,7 +604,7 @@ fi
         echo ""
         printf -- '- `%s`\n' "$pr_runtime_tar"
         if [[ -n "$pr_runtime_run_url" ]]; then
-printf -- '- Source CI Run: %s\n' "$pr_runtime_run_url"
+            printf -- '- Source CI Run: %s\n' "$pr_runtime_run_url"
         fi
     fi
     echo ""
