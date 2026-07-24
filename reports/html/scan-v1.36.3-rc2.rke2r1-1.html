@@ -1,0 +1,1184 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Trivy Scan Report</title>
+  <style>
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&family=Lato:ital,wght@0,400;0,700;1,400&family=Roboto+Mono:wght@400;500&display=swap');
+
+:root {
+  --body-bg:          #FFFFFF;
+  --body-text:        #141419;
+  --muted:            #6C6C76;
+  --border:           #DCDEE7;
+  --box-bg:           #F4F5FA;
+  --header-bg:        #FFFFFF;
+  --header-border:    #DCDEE7;
+  --link:             #1F67DB;
+  --code-bg:          #F4F5FA;
+  --table-header-bg:  #F4F5FA;
+  --table-hover-bg:   #F4F5FA;
+
+  /* Severity */
+  --sev-critical-bg:     #B13333;
+  --sev-critical-text:   #FFFFFF;
+  --sev-critical-border: #7C0015;
+  --sev-high-bg:         #E45C1E;
+  --sev-high-text:       #FFFFFF;
+  --sev-high-border:     #B03A0A;
+  --sev-medium-bg:       #FFE47A;
+  --sev-medium-text:     #473900;
+  --sev-medium-border:   #E5A200;
+  --sev-low-bg:          #DFE6F2;
+  --sev-low-text:        #1F67DB;
+  --sev-low-border:      #2673A6;
+  --sev-unknown-bg:      #EDEFF3;
+  --sev-unknown-text:    #6C6C76;
+  --sev-unknown-border:  #DCDEE7;
+
+  /* Check-images status */
+  --status-needs-bg:     #E45C1E;
+  --status-needs-text:   #FFFFFF;
+  --status-needs-border: #B03A0A;
+  --status-ok-bg:        #27AE60;
+  --status-ok-text:      #FFFFFF;
+  --status-ok-border:    #1A7A41;
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+
+html, body {
+  margin: 0; padding: 0;
+  background: var(--body-bg);
+  color: var(--body-text);
+  font-family: 'Lato', arial, helvetica, sans-serif;
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+/* ---- Header ---- */
+.page-header {
+  background: var(--header-bg);
+  border-bottom: 1px solid var(--header-border);
+  padding: 0 32px;
+  height: 55px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  box-shadow: 0 1px 4px rgba(0,0,0,.06);
+}
+.page-header .brand {
+  font-family: 'Poppins', sans-serif;
+  font-weight: 600;
+  font-size: 17px;
+  color: var(--body-text);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.page-header .brand svg { width: 28px; height: 28px; flex-shrink: 0; }
+.page-header .subtitle {
+  font-size: 13px;
+  color: var(--muted);
+  margin-left: 4px;
+}
+
+/* ---- Layout ---- */
+.page-content {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 32px 24px 64px;
+}
+
+/* ---- Headings ---- */
+h1, h2, h3, h4 {
+  font-family: 'Poppins', sans-serif;
+  color: var(--body-text);
+  margin-top: 0;
+}
+h1 {
+  font-size: 24px; font-weight: 600;
+  margin-bottom: 24px;
+  padding-bottom: 12px;
+  border-bottom: 2px solid var(--border);
+}
+h2 {
+  font-size: 17px; font-weight: 600;
+  margin-top: 36px; margin-bottom: 10px;
+}
+.anchored-heading {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.heading-anchor {
+  color: var(--muted);
+  text-decoration: none;
+  font-size: 12px;
+  opacity: 0;
+  transition: opacity .15s ease;
+}
+.anchored-heading:hover .heading-anchor,
+.anchored-heading:focus-within .heading-anchor {
+  opacity: 1;
+}
+.heading-anchor:hover {
+  color: var(--link);
+}
+h2 code {
+  font-family: 'Roboto Mono', monospace;
+  font-size: 13px;
+  background: var(--code-bg);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 2px 7px;
+  font-weight: 400;
+}
+h3 {
+  font-size: 15px; font-weight: 600;
+  margin-top: 24px; margin-bottom: 8px;
+}
+
+/* ---- Images list ---- */
+ul.images-list {
+  list-style: none;
+  padding: 0; margin: 0 0 24px;
+  display: flex; flex-wrap: wrap; gap: 6px;
+}
+ul.images-list li code {
+  font-family: 'Roboto Mono', monospace;
+  font-size: 12px;
+  background: var(--code-bg);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 3px 8px;
+  display: inline-block;
+}
+
+/* Generic list */
+ul.generic-list { margin: 8px 0 16px; padding-left: 20px; }
+ul.generic-list li { margin-bottom: 3px; }
+ul.generic-list li code {
+  font-family: 'Roboto Mono', monospace;
+  font-size: 12px;
+  background: var(--code-bg);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 1px 5px;
+}
+
+/* ---- Scan result card ---- */
+.scan-card {
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  overflow: hidden;
+  margin-bottom: 8px;
+}
+
+/* ---- Tables ---- */
+.report-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+  background: var(--body-bg);
+}
+.report-table thead tr { background: var(--table-header-bg); }
+.report-table th {
+  padding: 10px 14px;
+  text-align: left;
+  font-family: 'Poppins', sans-serif;
+  font-weight: 600;
+  font-size: 11px;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: .05em;
+  border-bottom: 1px solid var(--border);
+  white-space: nowrap;
+}
+.report-table td {
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--border);
+  vertical-align: top;
+  word-break: break-word;
+}
+.report-table tbody tr:last-child td { border-bottom: none; }
+.report-table tbody tr:hover { background: var(--table-hover-bg); }
+.report-table a {
+  color: var(--link);
+  text-decoration: none;
+}
+.report-table a:hover { text-decoration: underline; }
+.report-table a.image-scan-link { display: inline-block; }
+.report-table a.image-scan-link code {
+  color: var(--link);
+  cursor: pointer;
+  transition: border-color .15s, background .15s;
+}
+.report-table a.image-scan-link:hover code {
+  border-color: var(--link);
+  text-decoration: underline;
+}
+.report-table .num { text-align: center; font-variant-numeric: tabular-nums; }
+.table-wrap { margin: 8px 0 14px; }
+.table-collapsible {
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--body-bg);
+  overflow: hidden;
+}
+.table-collapsible summary {
+  cursor: pointer;
+  list-style: none;
+  font-family: 'Poppins', sans-serif;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--muted);
+  background: var(--table-header-bg);
+  border-bottom: 1px solid var(--border);
+  padding: 10px 14px;
+}
+.table-collapsible summary::-webkit-details-marker { display: none; }
+.table-collapsible .toggle-label::before {
+  content: "▾";
+  display: inline-block;
+  margin-right: 8px;
+  transition: transform .15s ease;
+}
+.table-collapsible:not([open]) .toggle-label::before {
+  transform: rotate(-90deg);
+}
+
+/* scan target box used as the collapsible header */
+.scan-collapsible summary.scan-summary {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  padding: 0;
+  background: var(--box-bg);
+  border-bottom: none;
+}
+.scan-collapsible[open] summary.scan-summary {
+  border-bottom: 1px solid var(--border);
+}
+.scan-collapsible summary.scan-summary .toggle-label {
+  padding: 14px 0 0 14px;
+  color: var(--muted);
+}
+.scan-collapsible summary.scan-summary .toggle-label::before {
+  margin-right: 0;
+}
+.scan-collapsible summary.scan-summary pre.raw-output {
+  flex: 1;
+  padding-left: 6px;
+}
+
+/* vuln count colouring */
+.vuln-count { font-weight: 700; }
+.vuln-count.has-vulns { color: #B13333; }
+
+/* ---- Severity badges ---- */
+.sev {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: .04em;
+  white-space: nowrap;
+  border-width: 1px;
+  border-style: solid;
+}
+.sev-CRITICAL { background: var(--sev-critical-bg); color: var(--sev-critical-text); border-color: var(--sev-critical-border); }
+.sev-HIGH     { background: var(--sev-high-bg);     color: var(--sev-high-text);     border-color: var(--sev-high-border);     }
+.sev-MEDIUM   { background: var(--sev-medium-bg);   color: var(--sev-medium-text);   border-color: var(--sev-medium-border);   }
+.sev-LOW      { background: var(--sev-low-bg);      color: var(--sev-low-text);      border-color: var(--sev-low-border);      }
+.sev-UNKNOWN  { background: var(--sev-unknown-bg);  color: var(--sev-unknown-text);  border-color: var(--sev-unknown-border);  }
+
+/* ---- EPSS badges (exploit-likelihood) ---- */
+/* Pill shape + percentile meter distinguishes EPSS (exploit probability) from
+   the square Severity badge (impact) sitting next to it. */
+.epss {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 700;
+  white-space: nowrap;
+  border-width: 1px;
+  border-style: solid;
+  font-variant-numeric: tabular-nums;
+}
+.epss-meter {
+  width: 34px;
+  height: 5px;
+  border-radius: 3px;
+  background: rgba(0, 0, 0, .18);
+  overflow: hidden;
+  flex: 0 0 auto;
+}
+.epss-meter-fill {
+  display: block;
+  height: 100%;
+  border-radius: 3px;
+  background: currentColor;
+  opacity: .85;
+}
+.epss-crit { background: var(--sev-critical-bg); color: var(--sev-critical-text); border-color: var(--sev-critical-border); }
+.epss-high { background: var(--sev-high-bg);     color: var(--sev-high-text);     border-color: var(--sev-high-border);     }
+.epss-med  { background: var(--sev-medium-bg);   color: var(--sev-medium-text);   border-color: var(--sev-medium-border);   }
+.epss-low  { background: var(--sev-low-bg);      color: var(--sev-low-text);      border-color: var(--sev-low-border);      }
+.epss-none { background: var(--sev-unknown-bg);  color: var(--sev-unknown-text);  border-color: var(--sev-unknown-border);  }
+.epss-none { padding: 2px 10px; }
+.epss-cell { white-space: nowrap; }
+.epss-th { white-space: nowrap; }
+
+/* ---- Status badges (check-images) ---- */
+.status {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: .04em;
+  white-space: nowrap;
+  border-width: 1px;
+  border-style: solid;
+}
+.status-NEEDS_UPDATE { background: var(--status-needs-bg); color: var(--status-needs-text); border-color: var(--status-needs-border); }
+.status-UP_TO_DATE   { background: var(--status-ok-bg);    color: var(--status-ok-text);    border-color: var(--status-ok-border);    }
+.status-UNKNOWN      { background: var(--sev-unknown-bg);  color: var(--sev-unknown-text);  border-color: var(--sev-unknown-border);  }
+
+/* ---- All-clean banner ---- */
+.all-clean-banner {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 18px;
+  background: #EAF7EF;
+  border: 1px solid var(--status-ok-border);
+  border-radius: 6px;
+  color: #1A7A41;
+  font-weight: 600;
+  font-size: 13px;
+  margin-bottom: 8px;
+}
+.all-clean-banner .all-clean-icon {
+  font-size: 18px;
+  line-height: 1;
+}
+
+/* ---- No-CVE celebration graphic ---- */
+.no-cve-celebration {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  text-align: center;
+  padding: 22px 18px 26px;
+  margin: 6px 0 16px;
+  background: linear-gradient(180deg, #EAF7EF 0%, #F4FBF7 100%);
+  border: 1px solid var(--status-ok-border);
+  border-radius: 12px;
+}
+.no-cve-celebration .no-cve-geeko {
+  width: 200px;
+  max-width: 70%;
+  height: auto;
+  filter: drop-shadow(0 6px 10px rgba(31,169,104,.16));
+}
+.no-cve-celebration .no-cve-caption {
+  margin: 6px 0 0;
+  font-weight: 700;
+  font-size: 15px;
+  color: #1A7A41;
+}
+.no-cve-celebration .no-cve-subcaption {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--muted);
+}
+
+/* ---- Optional (non-default) add-on images section ---- */
+.optional-section {
+  margin-top: 36px;
+  border: 1px solid var(--border);
+  border-left: 4px solid #B8860B;
+  border-radius: 8px;
+  background: #FBF8EF;
+  padding: 18px 20px 8px;
+}
+/* The toggle checkbox is visually hidden; the styled label/switch drives it. */
+.optional-toggle-input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  pointer-events: none;
+}
+.optional-banner {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+.optional-toggle-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 14px;
+  color: #7A5C00;
+  user-select: none;
+  width: fit-content;
+}
+.optional-switch {
+  position: relative;
+  flex: 0 0 auto;
+  width: 40px;
+  height: 22px;
+  border-radius: 999px;
+  background: #C9CBD6;
+  transition: background .15s ease;
+}
+.optional-switch::after {
+  content: "";
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: #FFFFFF;
+  box-shadow: 0 1px 2px rgba(0,0,0,.25);
+  transition: transform .15s ease;
+}
+.optional-toggle-input:checked ~ .optional-banner .optional-switch {
+  background: #1A7A41;
+}
+.optional-toggle-input:checked ~ .optional-banner .optional-switch::after {
+  transform: translateX(18px);
+}
+.optional-toggle-input:focus-visible ~ .optional-banner .optional-switch {
+  outline: 2px solid var(--link);
+  outline-offset: 2px;
+}
+.optional-note {
+  margin: 0;
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.5;
+}
+.optional-body {
+  border-top: 1px dashed var(--border);
+  padding-top: 4px;
+}
+.optional-toggle-input:not(:checked) ~ .optional-body {
+  display: none;
+}
+
+/* ---- Blockquote / callout ---- */
+blockquote.callout {
+  margin: 0 0 16px;
+  padding: 10px 14px;
+  border-left: 3px solid var(--link);
+  background: var(--box-bg);
+  border-radius: 0 6px 6px 0;
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+/* ---- Pre / fallback ---- */
+pre.raw-output {
+  background: var(--box-bg);
+  margin: 0;
+  padding: 14px 16px;
+  font-family: 'Roboto Mono', monospace;
+  font-size: 12px;
+  color: var(--muted);
+  white-space: pre-wrap;
+  word-break: break-all;
+  overflow-x: auto;
+}
+
+/* ---- Code inline ---- */
+code {
+  font-family: 'Roboto Mono', monospace;
+  font-size: 12px;
+  background: var(--code-bg);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 1px 5px;
+}
+
+/* ---- Footer ---- */
+.page-footer {
+  margin-top: 48px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
+  text-align: center;
+  color: var(--muted);
+  font-size: 12px;
+}
+.page-footer code {
+  font-family: 'Roboto Mono', monospace;
+  font-size: 11px;
+}
+
+/* ---- Legend ---- */
+.legend {
+  font-size: 12px;
+  color: var(--muted);
+  padding: 8px 14px;
+  background: var(--box-bg);
+  border-top: 1px solid var(--border);
+}
+
+/* ---- Suggested actions ---- */
+.suggested-actions {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: #F8FAFF;
+  padding: 18px 20px 8px;
+  margin-bottom: 22px;
+}
+.suggested-actions h2 {
+  margin: 0 0 10px;
+}
+.suggested-actions ul {
+  margin: 0;
+  padding-left: 20px;
+}
+.suggested-actions li {
+  margin-bottom: 8px;
+}
+
+/* ---- VEX candidates ---- */
+.vex-candidates {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: #F5FFF8;
+  padding: 18px 20px 12px;
+  margin-bottom: 22px;
+}
+.vex-candidates h2 {
+  margin: 0 0 4px;
+}
+.vex-candidates .vex-intro {
+  color: var(--muted);
+  font-size: 13px;
+  margin-bottom: 12px;
+}
+.vex-candidates .vex-intro a {
+  color: var(--link);
+}
+.vex-candidates table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+.vex-candidates th {
+  background: var(--table-header-bg);
+  text-align: left;
+  padding: 6px 10px;
+  border: 1px solid var(--border);
+  font-family: 'Poppins', sans-serif;
+  font-size: 12px;
+}
+.vex-candidates td {
+  padding: 6px 10px;
+  border: 1px solid var(--border);
+  vertical-align: top;
+}
+.vex-candidates tr:nth-child(even) td {
+  background: var(--box-bg);
+}
+.vex-status {
+  display: inline-block;
+  padding: 2px 7px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 600;
+  background: #D4EDDA;
+  color: #155724;
+  border: 1px solid #C3E6CB;
+}
+
+/* ---- New CVEs since previous scan ---- */
+.new-cves {
+  border: 1px solid var(--sev-high-border, #F0C36D);
+  border-radius: 8px;
+  background: #FFF9F0;
+  padding: 18px 20px 12px;
+  margin-bottom: 22px;
+}
+.new-cves h2 {
+  margin: 0 0 4px;
+}
+.new-cves .new-cves-intro {
+  color: var(--muted);
+  font-size: 13px;
+  margin-bottom: 12px;
+}
+.new-cves table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+.new-cves th {
+  background: var(--table-header-bg);
+  text-align: left;
+  padding: 6px 10px;
+  border: 1px solid var(--border);
+  font-family: 'Poppins', sans-serif;
+  font-size: 12px;
+}
+.new-cves td {
+  padding: 6px 10px;
+  border: 1px solid var(--border);
+  vertical-align: top;
+}
+.new-cves tr:nth-child(even) td {
+  background: var(--box-bg);
+}
+/* "NEW" badge shown next to a newly-introduced CVE in the findings tables */
+.new-cve-badge {
+  display: inline-block;
+  margin-left: 6px;
+  padding: 1px 6px;
+  border-radius: 4px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: .04em;
+  vertical-align: middle;
+  background: #FDE9C8;
+  color: #8A4B00;
+  border: 1px solid #F0C36D;
+}
+/* Highlight the whole row of a newly-introduced CVE */
+tr.new-cve-row > td {
+  background: #FFF6E8 !important;
+  box-shadow: inset 3px 0 0 #E8971E;
+}
+
+/* ---- CVE trend line chart ---- */
+.cve-trend {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--body-bg);
+  padding: 18px 20px 14px;
+  margin: 8px 0 22px;
+}
+.cve-trend h3 {
+  margin: 0 0 4px;
+}
+.cve-trend .chart-subtitle {
+  margin: 0 0 12px;
+  font-size: 12px;
+  color: var(--muted);
+}
+.cve-trend-figure {
+  position: relative;
+}
+.cve-trend-svg {
+  width: 100%;
+  height: auto;
+  display: block;
+  overflow: visible;
+  font-family: 'Lato', sans-serif;
+}
+.cve-trend-svg .grid-line {
+  stroke: var(--border);
+  stroke-width: 1;
+}
+.cve-trend-svg .axis-line {
+  stroke: var(--border);
+  stroke-width: 1;
+}
+.cve-trend-svg .axis-label {
+  fill: var(--muted);
+  font-size: 10px;
+}
+.cve-trend-svg .series-line {
+  fill: none;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.cve-trend-svg .series-point {
+  cursor: pointer;
+  transition: r .1s ease;
+}
+.cve-trend-svg .series-point:hover {
+  r: 6;
+}
+.cve-trend-svg .series-hidden {
+  display: none;
+}
+.cve-trend-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 16px;
+  margin-top: 12px;
+}
+.cve-trend-legend .legend-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--body-text);
+  cursor: pointer;
+  user-select: none;
+  padding: 2px 4px;
+  border-radius: 4px;
+}
+.cve-trend-legend .legend-item.legend-off {
+  color: var(--muted);
+  opacity: .55;
+}
+.cve-trend-legend .legend-swatch {
+  width: 14px;
+  height: 3px;
+  border-radius: 2px;
+  display: inline-block;
+}
+.cve-trend-tooltip {
+  position: absolute;
+  pointer-events: none;
+  background: var(--body-text);
+  color: #FFFFFF;
+  font-size: 11px;
+  line-height: 1.5;
+  padding: 6px 9px;
+  border-radius: 6px;
+  white-space: nowrap;
+  transform: translate(-50%, -115%);
+  opacity: 0;
+  transition: opacity .1s ease;
+  z-index: 5;
+  box-shadow: 0 2px 8px rgba(0,0,0,.18);
+}
+.cve-trend-tooltip.visible {
+  opacity: 1;
+}
+.cve-trend-tooltip .tt-date {
+  font-weight: 700;
+  margin-bottom: 2px;
+}
+.cve-trend-empty {
+  color: var(--muted);
+  font-size: 13px;
+  padding: 12px 0;
+}
+
+/* ---- Dark mode ---- */
+:root[data-theme="dark"] {
+  --body-bg:          #16171C;
+  --body-text:        #E6E6EC;
+  --muted:            #9B9BA6;
+  --border:           #2D2F39;
+  --box-bg:           #1E1F26;
+  --header-bg:        #1A1B21;
+  --header-border:    #2D2F39;
+  --link:             #5B9BFF;
+  --code-bg:          #22232B;
+  --table-header-bg:  #22232B;
+  --table-hover-bg:   #24262F;
+
+  /* Severity */
+  --sev-low-bg:          #1E2A40;
+  --sev-low-text:        #8FB6FF;
+  --sev-low-border:      #2673A6;
+  --sev-unknown-bg:      #2A2C35;
+  --sev-unknown-text:    #9B9BA6;
+  --sev-unknown-border:  #3A3C46;
+}
+
+:root[data-theme="dark"] .page-header {
+  box-shadow: 0 1px 4px rgba(0,0,0,.4);
+}
+:root[data-theme="dark"] .cve-trend-tooltip {
+  background: #000000;
+  color: #E6E6EC;
+  box-shadow: 0 2px 8px rgba(0,0,0,.5);
+}
+
+/* Themed banner boxes that use hard-coded light fills */
+:root[data-theme="dark"] .all-clean-banner {
+  background: #15291E;
+  color: #5FCF8C;
+}
+:root[data-theme="dark"] .no-cve-celebration {
+  background: linear-gradient(180deg, #15291E 0%, #11201A 100%);
+  border-color: #1F4D34;
+}
+:root[data-theme="dark"] .no-cve-celebration .no-cve-caption { color: #5FCF8C; }
+:root[data-theme="dark"] .no-cve-celebration .no-cve-subcaption { color: #8FB7A1; }
+:root[data-theme="dark"] .optional-section {
+  background: #241F14;
+}
+:root[data-theme="dark"] .optional-toggle-label {
+  color: #E0B84D;
+}
+:root[data-theme="dark"] .optional-switch {
+  background: #3A3C46;
+}
+:root[data-theme="dark"] .suggested-actions {
+  background: #161B26;
+}
+:root[data-theme="dark"] .vex-candidates {
+  background: #14241B;
+}
+:root[data-theme="dark"] .vex-status {
+  background: #1B3A28;
+  color: #7FD8A0;
+  border-color: #2E5C40;
+}
+:root[data-theme="dark"] .new-cves {
+  background: #241B12;
+}
+:root[data-theme="dark"] .new-cve-badge {
+  background: #3A2A12;
+  color: #F0C36D;
+  border-color: #6B4E1E;
+}
+:root[data-theme="dark"] tr.new-cve-row > td {
+  background: #2A2114 !important;
+  box-shadow: inset 3px 0 0 #E8971E;
+}
+
+/* ---- Theme toggle ---- */
+.theme-toggle {
+  margin-left: auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  padding: 0;
+  font-size: 16px;
+  line-height: 1;
+  cursor: pointer;
+  background: var(--box-bg);
+  color: var(--body-text);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  transition: background .15s ease, border-color .15s ease;
+}
+.theme-toggle:hover {
+  border-color: var(--link);
+}
+.theme-toggle .theme-icon-dark { display: none; }
+:root[data-theme="dark"] .theme-toggle .theme-icon-light { display: none; }
+:root[data-theme="dark"] .theme-toggle .theme-icon-dark { display: inline; }
+</style>
+  <script>
+(function () {
+  try {
+    var stored = localStorage.getItem('theme');
+    var prefersDark = window.matchMedia &&
+      window.matchMedia('(prefers-color-scheme: dark)').matches;
+    if (stored === 'dark' || (!stored && prefersDark)) {
+      document.documentElement.setAttribute('data-theme', 'dark');
+    }
+  } catch (e) {}
+})();
+</script>
+</head>
+<body>
+  <header class="page-header">
+    <div class="brand">
+      <svg viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="16" cy="16" r="14" fill="#2F68DF"/><path d="M9 16.5l4.5 4.5 9.5-9.5" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      RKE2 Toolbox
+    </div>
+    <span class="subtitle">— Trivy Scan Report</span>
+    <button type="button" class="theme-toggle" aria-label="Toggle dark mode" title="Toggle dark mode" onclick="(function(){var d=document.documentElement;var dark=d.getAttribute('data-theme')==='dark';if(dark){d.removeAttribute('data-theme');}else{d.setAttribute('data-theme','dark');}try{localStorage.setItem('theme',dark?'light':'dark');}catch(e){}})()"><span class="theme-icon-light" aria-hidden="true">&#127769;</span><span class="theme-icon-dark" aria-hidden="true">&#9728;</span></button>
+  </header>
+  <main class="page-content">
+    <section class="new-cves"><h2 id="new-cves-since-previous-scan" class="anchored-heading">New CVEs Since Previous Scan<a class="heading-anchor" href="#new-cves-since-previous-scan" aria-label="Link to section">#</a></h2><p class="new-cves-intro">3 CVEs appeared in this scan that were not present in the previous comparable scan. These are also flagged with a <span class="new-cve-badge">NEW</span> badge in the findings tables below.</p><div class="table-wrap"><details class="table-collapsible" open><summary><span class="toggle-label">New CVEs (3 rows)</span></summary><table class="report-table"><thead><tr><th>CVE</th><th>Severity</th><th class="epss-th" title="EPSS: estimated probability this CVE is exploited in the next 30 days (FIRST.org). The bar shows the CVE's percentile rank among all scored CVEs.">EPSS</th><th>Package(s)</th><th>Image(s)</th></tr></thead><tbody><tr><td><a href="https://www.suse.com/security/cve/CVE-2026-25681.html" target="_blank" rel="noopener noreferrer">CVE-2026-25681</a></td><td><span class="sev sev-HIGH">HIGH</span></td><td class="epss-cell"><span class="epss epss-low" title="EPSS 0.00223 · 13th percentile — estimated probability of exploitation in the next 30 days (FIRST.org)"><span class="epss-meter"><span class="epss-meter-fill" style="width:13%"></span></span><span class="epss-val">0.22%</span></span></td><td><code>golang.org/x/net</code></td><td><code style="font-size:11px;word-break:break-all">docker.io/rancher/rke2-runtime:v1.36.3-rc2-rke2r1</code></td></tr>
+<tr><td><a href="https://www.suse.com/security/cve/CVE-2026-27136.html" target="_blank" rel="noopener noreferrer">CVE-2026-27136</a></td><td><span class="sev sev-HIGH">HIGH</span></td><td class="epss-cell"><span class="epss epss-low" title="EPSS 0.00223 · 13th percentile — estimated probability of exploitation in the next 30 days (FIRST.org)"><span class="epss-meter"><span class="epss-meter-fill" style="width:13%"></span></span><span class="epss-val">0.22%</span></span></td><td><code>golang.org/x/net</code></td><td><code style="font-size:11px;word-break:break-all">docker.io/rancher/rke2-runtime:v1.36.3-rc2-rke2r1</code></td></tr>
+<tr><td>GHSA-HRXH-6V49-42GF</td><td><span class="sev sev-HIGH">HIGH</span></td><td class="epss-cell"><span class="epss epss-none" title="No EPSS score published for this advisory">&mdash;</span></td><td><code>google.golang.org/grpc</code></td><td><code style="font-size:11px;word-break:break-all">docker.io/rancher/rke2-cloud-provider:v1.36.2-0.20260610225606-10b320a3ba51-build20260709</code></td></tr></tbody></table></details></div></section><section class="suggested-actions"><h2>Suggested Actions</h2><ul><li>For `docker.io/rancher/rke2-runtime:v1.36.3-rc2-rke2r1`, update vulnerable components to available fixed versions (0.55.0) and regenerate the image SBOM/scan.</li></ul></section><h1 id="trivy-scan-report" class="anchored-heading">Trivy Scan Report<a class="heading-anchor" href="#trivy-scan-report" aria-label="Link to section">#</a></h1>
+<h2 id="summary" class="anchored-heading">Summary<a class="heading-anchor" href="#summary" aria-label="Link to section">#</a></h2>
+<h3 id="cves-by-severity" class="anchored-heading">CVEs by Severity<a class="heading-anchor" href="#cves-by-severity" aria-label="Link to section">#</a></h3>
+<div class="scan-card">
+<div class="table-wrap"><details class="table-collapsible" open><summary><span class="toggle-label">Table (3 rows)</span></summary><table class="report-table">
+<thead><tr>
+<th>Severity</th>
+<th>Count</th>
+</tr></thead><tbody>
+<tr>
+<td>CRITICAL</td>
+<td>0</td>
+</tr>
+<tr>
+<td>HIGH</td>
+<td>4</td>
+</tr>
+<tr>
+<td><strong>Total</strong></td>
+<td><strong>4</strong></td>
+</tr>
+</tbody></table></details></div>
+</div>
+<h3 id="images-with-cves-2" class="anchored-heading">Images with CVEs (2)<a class="heading-anchor" href="#images-with-cves-2" aria-label="Link to section">#</a></h3>
+<div class="scan-card">
+<div class="table-wrap"><details class="table-collapsible" open><summary><span class="toggle-label">Table (2 rows)</span></summary><table class="report-table">
+<thead><tr>
+<th>Image</th>
+<th>CRITICAL</th>
+<th>HIGH</th>
+</tr></thead><tbody>
+<tr>
+<td><a class="image-scan-link" href="#scan-results-docker-io-rancher-rke2-runtime-v1-36-3-rc2-rke2r1" title="Jump to scan results for docker.io/rancher/rke2-runtime:v1.36.3-rc2-rke2r1"><code style="font-size:11px;word-break:break-all">docker.io/rancher/rke2-runtime:v1.36.3-rc2-rke2r1</code></a></td>
+<td>0</td>
+<td>3</td>
+</tr>
+<tr>
+<td><a class="image-scan-link" href="#scan-results-docker-io-rancher-rke2-cloud-provider-v1-36-2-0-20260610225606-10b320a3ba51-build20260709" title="Jump to scan results for docker.io/rancher/rke2-cloud-provider:v1.36.2-0.20260610225606-10b320a3ba51-build20260709"><code style="font-size:11px;word-break:break-all">docker.io/rancher/rke2-cloud-provider:v1.36.2-0.20260610225606-10b320a3ba51-build20260709</code></a></td>
+<td>0</td>
+<td>1</td>
+</tr>
+</tbody></table></details></div>
+</div>
+<h3 id="cve-free-images-14" class="anchored-heading">CVE-free Images (14)<a class="heading-anchor" href="#cve-free-images-14" aria-label="Link to section">#</a></h3>
+<ul class="generic-list">
+<li><code>docker.io/rancher/hardened-kubernetes:v1.36.3-rke2r1-build20260723</code></li>
+<li><code>docker.io/rancher/hardened-coredns:v1.14.6-build20260722</code></li>
+<li><code>docker.io/rancher/hardened-cluster-autoscaler:v1.10.3-build20260717</code></li>
+<li><code>docker.io/rancher/hardened-dns-node-cache:1.26.8-build20260722</code></li>
+<li><code>docker.io/rancher/hardened-etcd:v3.6.14-k3s1-build20260723</code></li>
+<li><code>docker.io/rancher/hardened-k8s-metrics-server:v0.9.0-build20260722</code></li>
+<li><code>docker.io/rancher/hardened-addon-resizer:1.8.23-build20260717</code></li>
+<li><code>docker.io/rancher/klipper-helm:v0.13.2-build20260716</code></li>
+<li><code>docker.io/rancher/klipper-lb:v0.4.17</code></li>
+<li><code>docker.io/rancher/mirrored-pause:3.10.2</code></li>
+<li><code>docker.io/rancher/hardened-snapshot-controller:v8.6.0-build20260722</code></li>
+<li><code>docker.io/rancher/hardened-traefik:v3.7.8-build20260717</code></li>
+<li><code>docker.io/rancher/hardened-calico:v3.32.1-build20260722</code></li>
+<li><code>docker.io/rancher/hardened-flannel:v0.28.8-build20260722</code></li>
+</ul>
+<section class="cve-trend" id="cve-trend"><h3 id="cve-trend-over-time" class="anchored-heading">CVE Trend Over Time<a class="heading-anchor" href="#cve-trend-over-time" aria-label="Link to section">#</a></h3><p class="chart-subtitle">Critical &amp; High CVE counts across the last 17 v1.36 release scans. Hover a point for details; click a legend entry to toggle a series.</p><div class="cve-trend-figure"><svg class="cve-trend-svg" viewBox="0 0 760 300" role="img" aria-label="CVE counts over recent scans" preserveAspectRatio="xMidYMid meet"><line class="grid-line" x1="48" y1="24.0" x2="740" y2="24.0"></line><text class="axis-label" x="40" y="27.0" text-anchor="end">136</text><line class="grid-line" x1="48" y1="79.0" x2="740" y2="79.0"></line><text class="axis-label" x="40" y="82.0" text-anchor="end">102</text><line class="grid-line" x1="48" y1="134.0" x2="740" y2="134.0"></line><text class="axis-label" x="40" y="137.0" text-anchor="end">68</text><line class="grid-line" x1="48" y1="189.0" x2="740" y2="189.0"></line><text class="axis-label" x="40" y="192.0" text-anchor="end">34</text><line class="grid-line" x1="48" y1="244.0" x2="740" y2="244.0"></line><text class="axis-label" x="40" y="247.0" text-anchor="end">0</text><line class="axis-line" x1="48" y1="244.0" x2="740" y2="244.0"></line><text class="axis-label" x="48.0" y="260.0" text-anchor="middle" transform="rotate(0 48.0 260.0)">2026-05-21</text><text class="axis-label" x="177.8" y="260.0" text-anchor="middle" transform="rotate(0 177.8 260.0)">2026-05-28</text><text class="axis-label" x="307.5" y="260.0" text-anchor="middle" transform="rotate(0 307.5 260.0)">2026-05-29</text><text class="axis-label" x="437.2" y="260.0" text-anchor="middle" transform="rotate(0 437.2 260.0)">2026-06-04</text><text class="axis-label" x="567.0" y="260.0" text-anchor="middle" transform="rotate(0 567.0 260.0)">2026-06-24</text><text class="axis-label" x="696.8" y="260.0" text-anchor="middle" transform="rotate(0 696.8 260.0)">2026-07-14</text><text class="axis-label" x="740.0" y="260.0" text-anchor="middle" transform="rotate(0 740.0 260.0)">2026-07-24</text><polyline class="series-line series-total" data-series="total" points="48.0,177.7 91.2,177.7 134.5,227.8 177.8,221.4 221.0,218.1 264.2,218.1 307.5,218.1 350.8,218.1 394.0,224.6 437.2,226.2 480.5,244.0 523.8,25.6 567.0,93.6 610.2,119.4 653.5,171.2 696.8,180.9 740.0,237.5" stroke="#1F67DB"></polyline><circle class="series-point series-total" data-series="total" cx="48.0" cy="177.7" r="3.5" fill="#1F67DB" data-label="2026-05-21 · release v1.36.1+rke2r1" data-series-name="Total (Critical + High)" data-value="41"></circle><circle class="series-point series-total" data-series="total" cx="91.2" cy="177.7" r="3.5" fill="#1F67DB" data-label="2026-05-21 · release v1.36.1+rke2r1" data-series-name="Total (Critical + High)" data-value="41"></circle><circle class="series-point series-total" data-series="total" cx="134.5" cy="227.8" r="3.5" fill="#1F67DB" data-label="2026-05-22 · release v1.36.1-rc2+rke2r2" data-series-name="Total (Critical + High)" data-value="10"></circle><circle class="series-point series-total" data-series="total" cx="177.8" cy="221.4" r="3.5" fill="#1F67DB" data-label="2026-05-28 · release v1.36.1-rc3+rke2r2" data-series-name="Total (Critical + High)" data-value="14"></circle><circle class="series-point series-total" data-series="total" cx="221.0" cy="218.1" r="3.5" fill="#1F67DB" data-label="2026-05-28 · release v1.36.1-rc3+rke2r2" data-series-name="Total (Critical + High)" data-value="16"></circle><circle class="series-point series-total" data-series="total" cx="264.2" cy="218.1" r="3.5" fill="#1F67DB" data-label="2026-05-28 · release v1.36.1-rc3+rke2r2" data-series-name="Total (Critical + High)" data-value="16"></circle><circle class="series-point series-total" data-series="total" cx="307.5" cy="218.1" r="3.5" fill="#1F67DB" data-label="2026-05-29 · release v1.36.1+rke2r2" data-series-name="Total (Critical + High)" data-value="16"></circle><circle class="series-point series-total" data-series="total" cx="350.8" cy="218.1" r="3.5" fill="#1F67DB" data-label="2026-06-01 · release v1.36.1+rke2r2" data-series-name="Total (Critical + High)" data-value="16"></circle><circle class="series-point series-total" data-series="total" cx="394.0" cy="224.6" r="3.5" fill="#1F67DB" data-label="2026-06-01 · release v1.36.1+rke2r2" data-series-name="Total (Critical + High)" data-value="12"></circle><circle class="series-point series-total" data-series="total" cx="437.2" cy="226.2" r="3.5" fill="#1F67DB" data-label="2026-06-04 · release v1.36.1+rke2r2" data-series-name="Total (Critical + High)" data-value="11"></circle><circle class="series-point series-total" data-series="total" cx="480.5" cy="244.0" r="3.5" fill="#1F67DB" data-label="2026-06-16 · release v1.36.2-rc2+rke2r1" data-series-name="Total (Critical + High)" data-value="0"></circle><circle class="series-point series-total" data-series="total" cx="523.8" cy="25.6" r="3.5" fill="#1F67DB" data-label="2026-06-23 · release v1.36.2-rc4+rke2r1" data-series-name="Total (Critical + High)" data-value="135"></circle><circle class="series-point series-total" data-series="total" cx="567.0" cy="93.6" r="3.5" fill="#1F67DB" data-label="2026-06-24 · release v1.36.2-rc4+rke2r1" data-series-name="Total (Critical + High)" data-value="93"></circle><circle class="series-point series-total" data-series="total" cx="610.2" cy="119.4" r="3.5" fill="#1F67DB" data-label="2026-06-25 · release v1.36.2+rke2r1" data-series-name="Total (Critical + High)" data-value="77"></circle><circle class="series-point series-total" data-series="total" cx="653.5" cy="171.2" r="3.5" fill="#1F67DB" data-label="2026-06-25 · release v1.36.2+rke2r1" data-series-name="Total (Critical + High)" data-value="45"></circle><circle class="series-point series-total" data-series="total" cx="696.8" cy="180.9" r="3.5" fill="#1F67DB" data-label="2026-07-14 · release v1.36.2+rke2r1" data-series-name="Total (Critical + High)" data-value="39"></circle><circle class="series-point series-total" data-series="total" cx="740.0" cy="237.5" r="3.5" fill="#1F67DB" data-label="2026-07-24 · release v1.36.3-rc2+rke2r1" data-series-name="Total (Critical + High)" data-value="4"></circle><polyline class="series-line series-critical" data-series="critical" points="48.0,244.0 91.2,244.0 134.5,244.0 177.8,244.0 221.0,244.0 264.2,244.0 307.5,244.0 350.8,244.0 394.0,244.0 437.2,244.0 480.5,244.0 523.8,244.0 567.0,244.0 610.2,244.0 653.5,244.0 696.8,244.0 740.0,244.0" stroke="#B13333"></polyline><circle class="series-point series-critical" data-series="critical" cx="48.0" cy="244.0" r="3.5" fill="#B13333" data-label="2026-05-21 · release v1.36.1+rke2r1" data-series-name="Critical" data-value="0"></circle><circle class="series-point series-critical" data-series="critical" cx="91.2" cy="244.0" r="3.5" fill="#B13333" data-label="2026-05-21 · release v1.36.1+rke2r1" data-series-name="Critical" data-value="0"></circle><circle class="series-point series-critical" data-series="critical" cx="134.5" cy="244.0" r="3.5" fill="#B13333" data-label="2026-05-22 · release v1.36.1-rc2+rke2r2" data-series-name="Critical" data-value="0"></circle><circle class="series-point series-critical" data-series="critical" cx="177.8" cy="244.0" r="3.5" fill="#B13333" data-label="2026-05-28 · release v1.36.1-rc3+rke2r2" data-series-name="Critical" data-value="0"></circle><circle class="series-point series-critical" data-series="critical" cx="221.0" cy="244.0" r="3.5" fill="#B13333" data-label="2026-05-28 · release v1.36.1-rc3+rke2r2" data-series-name="Critical" data-value="0"></circle><circle class="series-point series-critical" data-series="critical" cx="264.2" cy="244.0" r="3.5" fill="#B13333" data-label="2026-05-28 · release v1.36.1-rc3+rke2r2" data-series-name="Critical" data-value="0"></circle><circle class="series-point series-critical" data-series="critical" cx="307.5" cy="244.0" r="3.5" fill="#B13333" data-label="2026-05-29 · release v1.36.1+rke2r2" data-series-name="Critical" data-value="0"></circle><circle class="series-point series-critical" data-series="critical" cx="350.8" cy="244.0" r="3.5" fill="#B13333" data-label="2026-06-01 · release v1.36.1+rke2r2" data-series-name="Critical" data-value="0"></circle><circle class="series-point series-critical" data-series="critical" cx="394.0" cy="244.0" r="3.5" fill="#B13333" data-label="2026-06-01 · release v1.36.1+rke2r2" data-series-name="Critical" data-value="0"></circle><circle class="series-point series-critical" data-series="critical" cx="437.2" cy="244.0" r="3.5" fill="#B13333" data-label="2026-06-04 · release v1.36.1+rke2r2" data-series-name="Critical" data-value="0"></circle><circle class="series-point series-critical" data-series="critical" cx="480.5" cy="244.0" r="3.5" fill="#B13333" data-label="2026-06-16 · release v1.36.2-rc2+rke2r1" data-series-name="Critical" data-value="0"></circle><circle class="series-point series-critical" data-series="critical" cx="523.8" cy="244.0" r="3.5" fill="#B13333" data-label="2026-06-23 · release v1.36.2-rc4+rke2r1" data-series-name="Critical" data-value="0"></circle><circle class="series-point series-critical" data-series="critical" cx="567.0" cy="244.0" r="3.5" fill="#B13333" data-label="2026-06-24 · release v1.36.2-rc4+rke2r1" data-series-name="Critical" data-value="0"></circle><circle class="series-point series-critical" data-series="critical" cx="610.2" cy="244.0" r="3.5" fill="#B13333" data-label="2026-06-25 · release v1.36.2+rke2r1" data-series-name="Critical" data-value="0"></circle><circle class="series-point series-critical" data-series="critical" cx="653.5" cy="244.0" r="3.5" fill="#B13333" data-label="2026-06-25 · release v1.36.2+rke2r1" data-series-name="Critical" data-value="0"></circle><circle class="series-point series-critical" data-series="critical" cx="696.8" cy="244.0" r="3.5" fill="#B13333" data-label="2026-07-14 · release v1.36.2+rke2r1" data-series-name="Critical" data-value="0"></circle><circle class="series-point series-critical" data-series="critical" cx="740.0" cy="244.0" r="3.5" fill="#B13333" data-label="2026-07-24 · release v1.36.3-rc2+rke2r1" data-series-name="Critical" data-value="0"></circle><polyline class="series-line series-high" data-series="high" points="48.0,177.7 91.2,177.7 134.5,227.8 177.8,221.4 221.0,218.1 264.2,218.1 307.5,218.1 350.8,218.1 394.0,224.6 437.2,226.2 480.5,244.0 523.8,25.6 567.0,93.6 610.2,119.4 653.5,171.2 696.8,180.9 740.0,237.5" stroke="#E45C1E"></polyline><circle class="series-point series-high" data-series="high" cx="48.0" cy="177.7" r="3.5" fill="#E45C1E" data-label="2026-05-21 · release v1.36.1+rke2r1" data-series-name="High" data-value="41"></circle><circle class="series-point series-high" data-series="high" cx="91.2" cy="177.7" r="3.5" fill="#E45C1E" data-label="2026-05-21 · release v1.36.1+rke2r1" data-series-name="High" data-value="41"></circle><circle class="series-point series-high" data-series="high" cx="134.5" cy="227.8" r="3.5" fill="#E45C1E" data-label="2026-05-22 · release v1.36.1-rc2+rke2r2" data-series-name="High" data-value="10"></circle><circle class="series-point series-high" data-series="high" cx="177.8" cy="221.4" r="3.5" fill="#E45C1E" data-label="2026-05-28 · release v1.36.1-rc3+rke2r2" data-series-name="High" data-value="14"></circle><circle class="series-point series-high" data-series="high" cx="221.0" cy="218.1" r="3.5" fill="#E45C1E" data-label="2026-05-28 · release v1.36.1-rc3+rke2r2" data-series-name="High" data-value="16"></circle><circle class="series-point series-high" data-series="high" cx="264.2" cy="218.1" r="3.5" fill="#E45C1E" data-label="2026-05-28 · release v1.36.1-rc3+rke2r2" data-series-name="High" data-value="16"></circle><circle class="series-point series-high" data-series="high" cx="307.5" cy="218.1" r="3.5" fill="#E45C1E" data-label="2026-05-29 · release v1.36.1+rke2r2" data-series-name="High" data-value="16"></circle><circle class="series-point series-high" data-series="high" cx="350.8" cy="218.1" r="3.5" fill="#E45C1E" data-label="2026-06-01 · release v1.36.1+rke2r2" data-series-name="High" data-value="16"></circle><circle class="series-point series-high" data-series="high" cx="394.0" cy="224.6" r="3.5" fill="#E45C1E" data-label="2026-06-01 · release v1.36.1+rke2r2" data-series-name="High" data-value="12"></circle><circle class="series-point series-high" data-series="high" cx="437.2" cy="226.2" r="3.5" fill="#E45C1E" data-label="2026-06-04 · release v1.36.1+rke2r2" data-series-name="High" data-value="11"></circle><circle class="series-point series-high" data-series="high" cx="480.5" cy="244.0" r="3.5" fill="#E45C1E" data-label="2026-06-16 · release v1.36.2-rc2+rke2r1" data-series-name="High" data-value="0"></circle><circle class="series-point series-high" data-series="high" cx="523.8" cy="25.6" r="3.5" fill="#E45C1E" data-label="2026-06-23 · release v1.36.2-rc4+rke2r1" data-series-name="High" data-value="135"></circle><circle class="series-point series-high" data-series="high" cx="567.0" cy="93.6" r="3.5" fill="#E45C1E" data-label="2026-06-24 · release v1.36.2-rc4+rke2r1" data-series-name="High" data-value="93"></circle><circle class="series-point series-high" data-series="high" cx="610.2" cy="119.4" r="3.5" fill="#E45C1E" data-label="2026-06-25 · release v1.36.2+rke2r1" data-series-name="High" data-value="77"></circle><circle class="series-point series-high" data-series="high" cx="653.5" cy="171.2" r="3.5" fill="#E45C1E" data-label="2026-06-25 · release v1.36.2+rke2r1" data-series-name="High" data-value="45"></circle><circle class="series-point series-high" data-series="high" cx="696.8" cy="180.9" r="3.5" fill="#E45C1E" data-label="2026-07-14 · release v1.36.2+rke2r1" data-series-name="High" data-value="39"></circle><circle class="series-point series-high" data-series="high" cx="740.0" cy="237.5" r="3.5" fill="#E45C1E" data-label="2026-07-24 · release v1.36.3-rc2+rke2r1" data-series-name="High" data-value="4"></circle></svg><div class="cve-trend-tooltip" aria-hidden="true"></div></div><div class="cve-trend-legend"><span class="legend-item" data-series="total" role="button" tabindex="0" aria-pressed="true"><span class="legend-swatch" style="background:#1F67DB"></span>Total (Critical + High)</span><span class="legend-item" data-series="critical" role="button" tabindex="0" aria-pressed="true"><span class="legend-swatch" style="background:#B13333"></span>Critical</span><span class="legend-item" data-series="high" role="button" tabindex="0" aria-pressed="true"><span class="legend-swatch" style="background:#E45C1E"></span>High</span></div><script>
+(function () {
+  function initTrend(section) {
+    if (section.dataset.trendReady) return;
+    section.dataset.trendReady = "1";
+    var figure = section.querySelector(".cve-trend-figure");
+    var svg = section.querySelector(".cve-trend-svg");
+    var tip = section.querySelector(".cve-trend-tooltip");
+    if (!figure || !svg || !tip) return;
+
+    section.querySelectorAll(".series-point").forEach(function (pt) {
+      pt.addEventListener("mouseenter", function () {
+        var name = pt.getAttribute("data-series-name") || "";
+        var value = pt.getAttribute("data-value") || "";
+        var label = pt.getAttribute("data-label") || "";
+        tip.innerHTML =
+          '<div class="tt-date">' + label + "</div>" +
+          name + ": " + value;
+        var fr = figure.getBoundingClientRect();
+        var pr = pt.getBoundingClientRect();
+        tip.style.left = (pr.left - fr.left + pr.width / 2) + "px";
+        tip.style.top = (pr.top - fr.top) + "px";
+        tip.classList.add("visible");
+      });
+      pt.addEventListener("mouseleave", function () {
+        tip.classList.remove("visible");
+      });
+    });
+
+    function toggle(item) {
+      var key = item.getAttribute("data-series");
+      var off = item.classList.toggle("legend-off");
+      item.setAttribute("aria-pressed", off ? "false" : "true");
+      section
+        .querySelectorAll('[data-series="' + key + '"].series-line, ' +
+                          '[data-series="' + key + '"].series-point')
+        .forEach(function (el) { el.classList.toggle("series-hidden", off); });
+    }
+
+    section.querySelectorAll(".legend-item").forEach(function (item) {
+      item.addEventListener("click", function () { toggle(item); });
+      item.addEventListener("keydown", function (e) {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          toggle(item);
+        }
+      });
+    });
+  }
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", function () {
+      document.querySelectorAll(".cve-trend").forEach(initTrend);
+    });
+  } else {
+    document.querySelectorAll(".cve-trend").forEach(initTrend);
+  }
+})();
+</script></section><h3 id="cve-delta-vs-previous-scan" class="anchored-heading">CVE Delta vs Previous Scan<a class="heading-anchor" href="#cve-delta-vs-previous-scan" aria-label="Link to section">#</a></h3>
+<div class="scan-card">
+<div class="table-wrap"><details class="table-collapsible" open><summary><span class="toggle-label">Table (3 rows)</span></summary><table class="report-table">
+<thead><tr>
+<th>Metric</th>
+<th>Count</th>
+</tr></thead><tbody>
+<tr>
+<td>Previous scan CVEs</td>
+<td>0</td>
+</tr>
+<tr>
+<td>Current scan CVEs</td>
+<td>4</td>
+</tr>
+<tr>
+<td><strong>Delta</strong></td>
+<td><strong>+4</strong></td>
+</tr>
+</tbody></table></details></div>
+</div>
+<h3 id="scan-coverage" class="anchored-heading">Scan Coverage<a class="heading-anchor" href="#scan-coverage" aria-label="Link to section">#</a></h3>
+<div class="scan-card">
+<div class="table-wrap"><details class="table-collapsible" open><summary><span class="toggle-label">Table (1 rows)</span></summary><table class="report-table">
+<thead><tr>
+<th>Metric</th>
+<th>Count</th>
+</tr></thead><tbody>
+<tr>
+<td>Images scanned</td>
+<td>16</td>
+</tr>
+</tbody></table></details></div>
+</div>
+<h2 id="images-scanned" class="anchored-heading">Images Scanned<a class="heading-anchor" href="#images-scanned" aria-label="Link to section">#</a></h2>
+<ul class="images-list">
+<li><code>`docker.io/rancher/rke2-runtime:v1.36.3-rc2-rke2r1`</code></li>
+<li><code>`docker.io/rancher/hardened-kubernetes:v1.36.3-rke2r1-build20260723`</code></li>
+<li><code>`docker.io/rancher/hardened-coredns:v1.14.6-build20260722`</code></li>
+<li><code>`docker.io/rancher/hardened-cluster-autoscaler:v1.10.3-build20260717`</code></li>
+<li><code>`docker.io/rancher/hardened-dns-node-cache:1.26.8-build20260722`</code></li>
+<li><code>`docker.io/rancher/hardened-etcd:v3.6.14-k3s1-build20260723`</code></li>
+<li><code>`docker.io/rancher/hardened-k8s-metrics-server:v0.9.0-build20260722`</code></li>
+<li><code>`docker.io/rancher/hardened-addon-resizer:1.8.23-build20260717`</code></li>
+<li><code>`docker.io/rancher/klipper-helm:v0.13.2-build20260716`</code></li>
+<li><code>`docker.io/rancher/klipper-lb:v0.4.17`</code></li>
+<li><code>`docker.io/rancher/mirrored-pause:3.10.2`</code></li>
+<li><code>`docker.io/rancher/rke2-cloud-provider:v1.36.2-0.20260610225606-10b320a3ba51-build20260709`</code></li>
+<li><code>`docker.io/rancher/hardened-snapshot-controller:v8.6.0-build20260722`</code></li>
+<li><code>`docker.io/rancher/hardened-traefik:v3.7.8-build20260717`</code></li>
+<li><code>`docker.io/rancher/hardened-calico:v3.32.1-build20260722`</code></li>
+<li><code>`docker.io/rancher/hardened-flannel:v0.28.8-build20260722`</code></li>
+</ul>
+<h2 id="scan-results-docker-io-rancher-rke2-runtime-v1-36-3-rc2-rke2r1" class="anchored-heading">Scan Results: <code>docker.io/rancher/rke2-runtime:v1.36.3-rc2-rke2r1</code><a class="heading-anchor" href="#scan-results-docker-io-rancher-rke2-runtime-v1-36-3-rc2-rke2r1" aria-label="Link to section">#</a></h2>
+<div class="scan-card"><div class="table-wrap"><details class="table-collapsible scan-collapsible" open><summary class="scan-summary"><span class="toggle-label" aria-hidden="true"></span><pre class="raw-output">bin/crictl (gobinary)
+=====================
+Total: 3 (UNKNOWN: 0, LOW: 0, MEDIUM: 0, HIGH: 3, CRITICAL: 0)</pre></summary><table class="report-table">
+<thead><tr>
+<th>Library</th>
+<th>Vulnerability</th>
+<th>Severity</th>
+<th class="epss-th" title="EPSS: estimated probability this CVE is exploited in the next 30 days (FIRST.org). The bar shows the CVE's percentile rank among all scored CVEs.">EPSS</th>
+<th>Status</th>
+<th>Installed Version</th>
+<th>Fixed Version</th>
+<th>Title</th>
+</tr></thead><tbody>
+<tr class="new-cve-row">
+<td>golang.org/x/net</td>
+<td><a href="https://www.suse.com/security/cve/CVE-2026-25681.html" target="_blank" rel="noopener noreferrer">CVE-2026-25681</a><span class="new-cve-badge" title="New since the previous scan">NEW</span></td>
+<td><span class="sev sev-HIGH">HIGH</span></td>
+<td class="epss-cell"><span class="epss epss-low" title="EPSS 0.00223 · 13th percentile — estimated probability of exploitation in the next 30 days (FIRST.org)"><span class="epss-meter"><span class="epss-meter-fill" style="width:13%"></span></span><span class="epss-val">0.22%</span></span></td>
+<td>fixed</td>
+<td>v0.53.0</td>
+<td>0.55.0</td>
+<td>golang.org/x/net/html: golang.org/x/net/html: Arbitrary code<br>execution via Cross-Site Scripting<br><a href="https://www.suse.com/security/cve/CVE-2026-25681.html" target="_blank" rel="noopener noreferrer">https://www.suse.com/security/cve/CVE-2026-25681.html</a></td>
+</tr>
+<tr class="new-cve-row">
+<td>golang.org/x/net</td>
+<td><a href="https://www.suse.com/security/cve/CVE-2026-27136.html" target="_blank" rel="noopener noreferrer">CVE-2026-27136</a><span class="new-cve-badge" title="New since the previous scan">NEW</span></td>
+<td><span class="sev sev-HIGH">HIGH</span></td>
+<td class="epss-cell"><span class="epss epss-low" title="EPSS 0.00223 · 13th percentile — estimated probability of exploitation in the next 30 days (FIRST.org)"><span class="epss-meter"><span class="epss-meter-fill" style="width:13%"></span></span><span class="epss-val">0.22%</span></span></td>
+<td>fixed</td>
+<td>v0.53.0</td>
+<td>0.55.0</td>
+<td>golang.org/x/net/html: golang: golang.org/x/net/html:<br>Cross-Site Scripting via HTML parsing bypass<br><a href="https://www.suse.com/security/cve/CVE-2026-27136.html" target="_blank" rel="noopener noreferrer">https://www.suse.com/security/cve/CVE-2026-27136.html</a></td>
+</tr>
+<tr>
+<td>golang.org/x/net</td>
+<td><a href="https://www.suse.com/security/cve/CVE-2026-39821.html" target="_blank" rel="noopener noreferrer">CVE-2026-39821</a></td>
+<td><span class="sev sev-HIGH">HIGH</span></td>
+<td class="epss-cell"><span class="epss epss-low" title="EPSS 0.00655 · 48th percentile — estimated probability of exploitation in the next 30 days (FIRST.org)"><span class="epss-meter"><span class="epss-meter-fill" style="width:48%"></span></span><span class="epss-val">0.66%</span></span></td>
+<td>fixed</td>
+<td>v0.53.0</td>
+<td>0.55.0</td>
+<td>golang.org/x/net/idna: golang: net/http:<br>golang.org/x/net/idna: Privilege escalation via incorrect<br>Punycode label processing<br><a href="https://www.suse.com/security/cve/CVE-2026-39821.html" target="_blank" rel="noopener noreferrer">https://www.suse.com/security/cve/CVE-2026-39821.html</a></td>
+</tr>
+</tbody></table></details></div></div>
+<h2 id="scan-results-docker-io-rancher-hardened-kubernetes-v1-36-3-rke2r1-build20260723" class="anchored-heading">Scan Results: <code>docker.io/rancher/hardened-kubernetes:v1.36.3-rke2r1-build20260723</code><a class="heading-anchor" href="#scan-results-docker-io-rancher-hardened-kubernetes-v1-36-3-rke2r1-build20260723" aria-label="Link to section">#</a></h2>
+<div class="all-clean-banner"><span class="all-clean-icon">✓</span>No vulnerabilities found — this image is clean</div>
+<h2 id="scan-results-docker-io-rancher-hardened-coredns-v1-14-6-build20260722" class="anchored-heading">Scan Results: <code>docker.io/rancher/hardened-coredns:v1.14.6-build20260722</code><a class="heading-anchor" href="#scan-results-docker-io-rancher-hardened-coredns-v1-14-6-build20260722" aria-label="Link to section">#</a></h2>
+<div class="all-clean-banner"><span class="all-clean-icon">✓</span>No vulnerabilities found — this image is clean</div>
+<h2 id="scan-results-docker-io-rancher-hardened-cluster-autoscaler-v1-10-3-build20260717" class="anchored-heading">Scan Results: <code>docker.io/rancher/hardened-cluster-autoscaler:v1.10.3-build20260717</code><a class="heading-anchor" href="#scan-results-docker-io-rancher-hardened-cluster-autoscaler-v1-10-3-build20260717" aria-label="Link to section">#</a></h2>
+<div class="all-clean-banner"><span class="all-clean-icon">✓</span>No vulnerabilities found — this image is clean</div>
+<h2 id="scan-results-docker-io-rancher-hardened-dns-node-cache-1-26-8-build20260722" class="anchored-heading">Scan Results: <code>docker.io/rancher/hardened-dns-node-cache:1.26.8-build20260722</code><a class="heading-anchor" href="#scan-results-docker-io-rancher-hardened-dns-node-cache-1-26-8-build20260722" aria-label="Link to section">#</a></h2>
+<div class="all-clean-banner"><span class="all-clean-icon">✓</span>No vulnerabilities found — this image is clean</div>
+<h2 id="scan-results-docker-io-rancher-hardened-etcd-v3-6-14-k3s1-build20260723" class="anchored-heading">Scan Results: <code>docker.io/rancher/hardened-etcd:v3.6.14-k3s1-build20260723</code><a class="heading-anchor" href="#scan-results-docker-io-rancher-hardened-etcd-v3-6-14-k3s1-build20260723" aria-label="Link to section">#</a></h2>
+<div class="all-clean-banner"><span class="all-clean-icon">✓</span>No vulnerabilities found — this image is clean</div>
+<h2 id="scan-results-docker-io-rancher-hardened-k8s-metrics-server-v0-9-0-build20260722" class="anchored-heading">Scan Results: <code>docker.io/rancher/hardened-k8s-metrics-server:v0.9.0-build20260722</code><a class="heading-anchor" href="#scan-results-docker-io-rancher-hardened-k8s-metrics-server-v0-9-0-build20260722" aria-label="Link to section">#</a></h2>
+<div class="all-clean-banner"><span class="all-clean-icon">✓</span>No vulnerabilities found — this image is clean</div>
+<h2 id="scan-results-docker-io-rancher-hardened-addon-resizer-1-8-23-build20260717" class="anchored-heading">Scan Results: <code>docker.io/rancher/hardened-addon-resizer:1.8.23-build20260717</code><a class="heading-anchor" href="#scan-results-docker-io-rancher-hardened-addon-resizer-1-8-23-build20260717" aria-label="Link to section">#</a></h2>
+<div class="all-clean-banner"><span class="all-clean-icon">✓</span>No vulnerabilities found — this image is clean</div>
+<h2 id="scan-results-docker-io-rancher-klipper-helm-v0-13-2-build20260716" class="anchored-heading">Scan Results: <code>docker.io/rancher/klipper-helm:v0.13.2-build20260716</code><a class="heading-anchor" href="#scan-results-docker-io-rancher-klipper-helm-v0-13-2-build20260716" aria-label="Link to section">#</a></h2>
+<div class="all-clean-banner"><span class="all-clean-icon">✓</span>No vulnerabilities found — this image is clean</div>
+<h2 id="scan-results-docker-io-rancher-klipper-lb-v0-4-17" class="anchored-heading">Scan Results: <code>docker.io/rancher/klipper-lb:v0.4.17</code><a class="heading-anchor" href="#scan-results-docker-io-rancher-klipper-lb-v0-4-17" aria-label="Link to section">#</a></h2>
+<div class="all-clean-banner"><span class="all-clean-icon">✓</span>No vulnerabilities found — this image is clean</div>
+<h2 id="scan-results-docker-io-rancher-mirrored-pause-3-10-2" class="anchored-heading">Scan Results: <code>docker.io/rancher/mirrored-pause:3.10.2</code><a class="heading-anchor" href="#scan-results-docker-io-rancher-mirrored-pause-3-10-2" aria-label="Link to section">#</a></h2>
+<div class="all-clean-banner"><span class="all-clean-icon">✓</span>No vulnerabilities found — this image is clean</div>
+<h2 id="scan-results-docker-io-rancher-rke2-cloud-provider-v1-36-2-0-20260610225606-10b320a3ba51-build20260709" class="anchored-heading">Scan Results: <code>docker.io/rancher/rke2-cloud-provider:v1.36.2-0.20260610225606-10b320a3ba51-build20260709</code><a class="heading-anchor" href="#scan-results-docker-io-rancher-rke2-cloud-provider-v1-36-2-0-20260610225606-10b320a3ba51-build20260709" aria-label="Link to section">#</a></h2>
+<div class="scan-card"><div class="table-wrap"><details class="table-collapsible scan-collapsible" open><summary class="scan-summary"><span class="toggle-label" aria-hidden="true"></span><pre class="raw-output">usr/local/bin/rke2-cloud-provider (gobinary)
+============================================
+Total: 1 (UNKNOWN: 0, LOW: 0, MEDIUM: 0, HIGH: 1, CRITICAL: 0)</pre></summary><table class="report-table">
+<thead><tr>
+<th>Library</th>
+<th>Vulnerability</th>
+<th>Severity</th>
+<th class="epss-th" title="EPSS: estimated probability this CVE is exploited in the next 30 days (FIRST.org). The bar shows the CVE's percentile rank among all scored CVEs.">EPSS</th>
+<th>Status</th>
+<th>Installed Version</th>
+<th>Fixed Version</th>
+<th>Title</th>
+</tr></thead><tbody>
+<tr>
+<td>google.golang.org/grpc</td>
+<td>GHSA-hrxh-6v49-42gf</td>
+<td><span class="sev sev-HIGH">HIGH</span></td>
+<td class="epss-cell"><span class="epss epss-none" title="No EPSS score published for this advisory">&mdash;</span></td>
+<td>fixed</td>
+<td>v1.79.3</td>
+<td>1.82.1</td>
+<td>gRPC-Go: xDS RBAC and HTTP/2 Vulnerabilities<br><a href="https://github.com/advisories/GHSA-hrxh-6v49-42gf" target="_blank" rel="noopener noreferrer">https://github.com/advisories/GHSA-hrxh-6v49-42gf</a></td>
+</tr>
+</tbody></table></details></div></div>
+<h2 id="scan-results-docker-io-rancher-hardened-snapshot-controller-v8-6-0-build20260722" class="anchored-heading">Scan Results: <code>docker.io/rancher/hardened-snapshot-controller:v8.6.0-build20260722</code><a class="heading-anchor" href="#scan-results-docker-io-rancher-hardened-snapshot-controller-v8-6-0-build20260722" aria-label="Link to section">#</a></h2>
+<div class="all-clean-banner"><span class="all-clean-icon">✓</span>No vulnerabilities found — this image is clean</div>
+<h2 id="scan-results-docker-io-rancher-hardened-traefik-v3-7-8-build20260717" class="anchored-heading">Scan Results: <code>docker.io/rancher/hardened-traefik:v3.7.8-build20260717</code><a class="heading-anchor" href="#scan-results-docker-io-rancher-hardened-traefik-v3-7-8-build20260717" aria-label="Link to section">#</a></h2>
+<div class="all-clean-banner"><span class="all-clean-icon">✓</span>No vulnerabilities found — this image is clean</div>
+<h2 id="scan-results-docker-io-rancher-hardened-calico-v3-32-1-build20260722" class="anchored-heading">Scan Results: <code>docker.io/rancher/hardened-calico:v3.32.1-build20260722</code><a class="heading-anchor" href="#scan-results-docker-io-rancher-hardened-calico-v3-32-1-build20260722" aria-label="Link to section">#</a></h2>
+<div class="all-clean-banner"><span class="all-clean-icon">✓</span>No vulnerabilities found — this image is clean</div>
+<h2 id="scan-results-docker-io-rancher-hardened-flannel-v0-28-8-build20260722" class="anchored-heading">Scan Results: <code>docker.io/rancher/hardened-flannel:v0.28.8-build20260722</code><a class="heading-anchor" href="#scan-results-docker-io-rancher-hardened-flannel-v0-28-8-build20260722" aria-label="Link to section">#</a></h2>
+<div class="all-clean-banner"><span class="all-clean-icon">✓</span>No vulnerabilities found — this image is clean</div>
+    <div class="page-footer">
+      Generated from <code>scan-v1.36.3-rc2.rke2r1-1.md</code> &nbsp;·&nbsp; 2026-07-24 18:56 UTC
+    </div>
+  </main>
+</body>
+</html>
