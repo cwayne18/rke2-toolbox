@@ -404,6 +404,7 @@ fi
 # Determine where to look for the runtime artifact: a PR head (SHA + branch) or, for a
 # plain branch scan, the branch tip on rancher/rke2.
 pr_runtime_tar=""
+pr_runtime_run_url=""
 keep_artifact_dir=""
 runtime_lookup_sha=""
 runtime_lookup_ref=""
@@ -515,6 +516,7 @@ if [[ -n "$runtime_lookup_sha" || -n "$runtime_lookup_ref" ]]; then
                         if [[ -n "$runtime_tar" ]]; then
                             # Save the tarball path for trivy to scan directly via --input
                             pr_runtime_tar="$runtime_tar"
+                            pr_runtime_run_url="https://github.com/rancher/rke2/actions/runs/${run_id}"
                             # Don't delete the artifact_dir until after scan
                             keep_artifact_dir="$artifact_dir"
                             artifact_dir=""
@@ -601,6 +603,9 @@ fi
         echo "## Runtime Image Tarball"
         echo ""
         printf -- '- `%s`\n' "$pr_runtime_tar"
+        if [[ -n "$pr_runtime_run_url" ]]; then
+            printf -- '  - Source CI Run: %s\n' "$pr_runtime_run_url"
+        fi
     fi
     echo ""
 } >> "$output_file"
@@ -988,6 +993,10 @@ if [[ -n "$pr_runtime_tar" ]]; then
     {
         echo "## Scan Results: ${tarball_label}"
         echo ""
+        if [[ -n "$pr_runtime_run_url" ]]; then
+            echo "Source CI Run: ${pr_runtime_run_url}"
+            echo ""
+        fi
         echo '```text'
         cat "$scan_tmp"
         echo '```'
