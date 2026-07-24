@@ -15,6 +15,11 @@ on:
         required: false
         type: string
         default: ''
+      scan_runtime_image:
+        description: 'Include the rke2-runtime artifact/tarball scan (branch/PR scans only).'
+        required: false
+        type: boolean
+        default: false
 
 permissions:
   contents: write
@@ -58,12 +63,24 @@ jobs:
         run: |
           ARGS="master --prime"
           MODE="scheduled"
+          RUNTIME_ARG="--runtime"
+
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            if [ "${{ inputs.scan_runtime_image }}" = "true" ]; then
+              RUNTIME_ARG="--runtime"
+            else
+              RUNTIME_ARG="--no-runtime"
+            fi
+          fi
+
           if [ -n "${{ inputs.release_version }}" ]; then
-            ARGS="--release ${{ inputs.release_version }}"
+            ARGS="--release ${{ inputs.release_version }} ${RUNTIME_ARG}"
             MODE="release"
           elif [ -n "${{ inputs.pr_number }}" ]; then
-            ARGS="--pr ${{ inputs.pr_number }}"
+            ARGS="--pr ${{ inputs.pr_number }} ${RUNTIME_ARG}"
             MODE="pr"
+          else
+            ARGS="${ARGS} ${RUNTIME_ARG}"
           fi
           echo "args=$ARGS" >> "$GITHUB_OUTPUT"
           echo "mode=$MODE" >> "$GITHUB_OUTPUT"
@@ -123,7 +140,7 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           TRIVY_DISABLE_VEX_NOTICE: "true"
         run: |
-          bash scan.sh master --no-prime
+          bash scan.sh master --no-prime --runtime
           rm -f trivy_scan_report.txt images.txt images-optional.txt
 
       - name: Convert Markdown report to HTML
