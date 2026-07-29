@@ -181,6 +181,7 @@ work_dir=$(mktemp -d)
 cleanup() {
     rm -rf "$work_dir"
     rm -f rancher.openvex.json
+    rm -f suse-cvss-scores.yaml suse_cvss_ratings.tsv
 }
 trap cleanup EXIT
 
@@ -665,12 +666,152 @@ else
     exit 1
 fi
 
+# Download SUSE's CVSS scores and prefer them over Trivy's severities.
+#
+# SUSE recalculates CVSS scores for many CVEs (e.g. golang.org/x/text CVEs that
+# NVD/Trivy rate HIGH but SUSE re-scores to MEDIUM). rancher/image-scanning
+# consumes this same file and overrides Trivy's severity when SUSE's rating
+# differs. We mirror that: build a CVE -> rating lookup once, then rewrite the
+# severity of Go binary findings before filtering to CRITICAL/HIGH.
+#
+# Unlike the VEX report, this is a best-effort enhancement: if the download or
+# preprocessing fails we fall back to Trivy's native severities rather than
+# aborting the scan.
+suse_cvss_url="https://ftp.suse.com/pub/projects/security/yaml/suse-cvss-scores.yaml"
+suse_cvss_default_version="3.1"
+suse_ratings_file="suse_cvss_ratings.tsv"
+suse_rescore_enabled=0
+# When re-scoring is active we scan all severities and filter down ourselves so
+# that CVEs SUSE promotes into (or demotes out of) CRITICAL/HIGH are handled
+# correctly. Otherwise we keep Trivy's own severity filter.
+sev_flag="--severity CRITICAL,HIGH"
+
+if (( source_attribution_python_enabled == 0 )); then
+    echo "Warning: python3 not found; skipping SUSE CVSS re-scoring" >&2
+else
+    suse_downloaded="false"
+    for attempt in 1 2 3 4 5; do
+        if curl -fSL --http1.1 \
+            --retry 5 --retry-all-errors --retry-delay 5 \
+            --connect-timeout 30 --max-time 600 \
+            "$suse_cvss_url" -o suse-cvss-scores.yaml \
+            && [[ -s suse-cvss-scores.yaml ]]; then
+            suse_downloaded="true"
+            break
+        fi
+        echo "Warning: attempt ${attempt}/5 to download SUSE CVSS scores failed; retrying..." >&2
+        rm -f suse-cvss-scores.yaml
+        sleep 10
+    done
+
+    if [[ "$suse_downloaded" == "true" ]] \
+        && python3 - "suse-cvss-scores.yaml" "$suse_ratings_file" "$suse_cvss_default_version" <<'PY'
+import sys
+
+in_path, out_path, default_version = sys.argv[1], sys.argv[2], float(sys.argv[3])
+
+
+def rating(score):
+    # Mirrors rancher/image-scanning cvssScoreToRating (CVSS qualitative scale).
+    if score >= 9.0:
+        return "CRITICAL"
+    if score >= 7.0:
+        return "HIGH"
+    if score >= 4.0:
+        return "MEDIUM"
+    if score >= 0.1:
+        return "LOW"
+    return "UNKNOWN"
+
+
+def choose(entries):
+    # Prefer the configured default CVSS version; otherwise the highest version
+    # available for the CVE (matches upstream checkCvssScore).
+    best_ver = -1.0
+    best_rating = None
+    for ver, score in entries:
+        if ver == default_version:
+            return rating(score)
+        if ver > best_ver:
+            best_ver = ver
+            best_rating = rating(score)
+    return best_rating
+
+
+count = 0
+with open(in_path, encoding="utf-8") as f, open(out_path, "w", encoding="utf-8") as out:
+    cve = None
+    entries = []
+    cur_ver = None
+    cur_score = None
+
+    def push_pair():
+        global cur_ver, cur_score
+        if cur_ver is not None and cur_score is not None:
+            entries.append((cur_ver, cur_score))
+        cur_ver = None
+        cur_score = None
+
+    def flush():
+        global count
+        push_pair()
+        if cve and entries:
+            r = choose(entries)
+            if r:
+                out.write(cve + "\t" + r + "\n")
+                count += 1
+
+    for line in f:
+        if line and not line[0].isspace():
+            flush()
+            cve = line.strip().rstrip(":")
+            entries = []
+            cur_ver = None
+            cur_score = None
+            continue
+        s = line.strip()
+        if s.startswith("- version:"):
+            push_pair()
+            try:
+                cur_ver = float(s.split(":", 1)[1].strip())
+            except ValueError:
+                cur_ver = None
+        elif s.startswith("version:"):
+            try:
+                cur_ver = float(s.split(":", 1)[1].strip())
+            except ValueError:
+                cur_ver = None
+        elif s.startswith("score:"):
+            try:
+                cur_score = float(s.split(":", 1)[1].strip())
+            except ValueError:
+                cur_score = None
+    flush()
+
+print(f"Loaded {count} SUSE CVSS ratings", file=sys.stderr)
+sys.exit(0 if count > 0 else 1)
+PY
+    then
+        suse_rescore_enabled=1
+        sev_flag=""
+        echo "SUSE CVSS re-scoring enabled (preferring SUSE severities over Trivy)."
+    else
+        echo "Warning: SUSE CVSS scores unavailable; using Trivy's native severities." >&2
+        rm -f suse-cvss-scores.yaml "$suse_ratings_file"
+    fi
+fi
+
 # Write markdown header and the list of images being scanned to the output file
 {
     echo "# Trivy Scan Report"
     echo ""
     echo "<!-- scan-source-ref: ${source_ref} -->"
     echo "<!-- scan-source-desc: ${source_desc} -->"
+    if (( suse_rescore_enabled == 1 )); then
+        echo "<!-- suse-cvss-rescore: enabled -->"
+        echo "> Go binary CVE severities reflect SUSE's CVSS re-scoring where it differs from Trivy."
+        echo ""
+    fi
     echo "## Images Scanned"
     echo ""
     while IFS= read -r image; do
@@ -1020,6 +1161,83 @@ for result in data.get("Results", []):
 PY
 }
 
+# finalize_scan_json <raw-json> <out-json>
+# Produces the CRITICAL/HIGH Trivy JSON that the rest of the pipeline consumes.
+# When SUSE CVSS re-scoring is enabled the raw JSON contains every severity;
+# this rewrites Go binary findings to SUSE's rating and keeps only CRITICAL/HIGH.
+# When re-scoring is disabled (or on any error) it falls back to copying the raw
+# JSON, which was already scanned with Trivy's --severity CRITICAL,HIGH filter.
+finalize_scan_json() {
+    local raw_json="$1"
+    local out_json="$2"
+
+    if (( suse_rescore_enabled == 1 )) \
+        && python3 - "$raw_json" "$suse_ratings_file" > "$out_json" 2>/dev/null; then
+        return 0
+    fi
+
+    cp "$raw_json" "$out_json"
+} <<'PY'
+import json
+import sys
+
+raw_path = sys.argv[1]
+map_path = sys.argv[2] if len(sys.argv) > 2 else ""
+KEEP = {"CRITICAL", "HIGH"}
+
+overrides = {}
+if map_path:
+    try:
+        with open(map_path, encoding="utf-8") as f:
+            for line in f:
+                cve, _, rating = line.rstrip("\n").partition("\t")
+                if cve and rating:
+                    overrides[cve] = rating
+    except OSError:
+        overrides = {}
+
+def filter_result(result, apply_override):
+    rtype = (result.get("Type") or "").lower()
+    kept = []
+    for vuln in result.get("Vulnerabilities") or []:
+        sev = vuln.get("Severity")
+        # SUSE re-scoring only applies to Go binary findings, matching
+        # rancher/image-scanning's updateCvesSeverity.
+        if apply_override and rtype == "gobinary":
+            new_sev = overrides.get(vuln.get("VulnerabilityID"))
+            if new_sev and new_sev != sev:
+                vuln["Severity"] = new_sev
+                sev = new_sev
+        if sev in KEEP:
+            kept.append(vuln)
+    result["Vulnerabilities"] = kept
+
+
+def load(path):
+    with open(path, encoding="utf-8") as f:
+        return json.load(f)
+
+
+# Always emit valid, CRITICAL/HIGH-only JSON so a widened (all-severity) scan
+# can never leak lower-severity findings into the report. If SUSE re-scoring
+# raises, retry with Trivy's native severities; if the JSON itself is
+# unreadable, emit an empty result set rather than exiting non-zero (which would
+# make the caller copy the unfiltered scan).
+try:
+    data = load(raw_path)
+    for result in data.get("Results", []) or []:
+        filter_result(result, True)
+except Exception:
+    try:
+        data = load(raw_path)
+        for result in data.get("Results", []) or []:
+            filter_result(result, False)
+    except Exception:
+        data = {"Results": []}
+
+json.dump(data, sys.stdout)
+PY
+
 # Loop through each image in the input file
 while IFS= read -r image; do
     image="${image#"${image%%[![:space:]]*}"}"
@@ -1032,7 +1250,10 @@ while IFS= read -r image; do
     bundle_images_scanned=$((bundle_images_scanned + 1))
     scan_tmp=$(mktemp)
     scan_json_tmp=$(mktemp)
-    trivy image "$image" $vex_flag --severity CRITICAL,HIGH --format json > "$scan_json_tmp" 2>/dev/null
+    raw_json_tmp=$(mktemp)
+    trivy image "$image" $vex_flag $sev_flag --format json > "$raw_json_tmp" 2>/dev/null
+    finalize_scan_json "$raw_json_tmp" "$scan_json_tmp"
+    rm -f "$raw_json_tmp"
     trivy convert --format table "$scan_json_tmp" > "$scan_tmp" 2>/dev/null
     {
         echo "## Scan Results: \`$image\`"
@@ -1069,7 +1290,10 @@ if [[ -n "$runtime_tar" ]]; then
     tarball_label="Runtime Image Tarball: $(basename "$runtime_tar")"
     scan_tmp=$(mktemp)
     scan_json_tmp=$(mktemp)
-    trivy image --input "$runtime_tar" $vex_flag  --severity CRITICAL,HIGH --format json > "$scan_json_tmp" 2>/dev/null
+    raw_json_tmp=$(mktemp)
+    trivy image --input "$runtime_tar" $vex_flag $sev_flag --format json > "$raw_json_tmp" 2>/dev/null
+    finalize_scan_json "$raw_json_tmp" "$scan_json_tmp"
+    rm -f "$raw_json_tmp"
     trivy convert --format table "$scan_json_tmp" > "$scan_tmp" 2>/dev/null
     {
         echo "## Scan Results: ${tarball_label}"
@@ -1117,7 +1341,10 @@ if [[ -s "$optional_input_file" ]]; then
         optional_count=$((optional_count + 1))
         scan_tmp=$(mktemp)
         scan_json_tmp=$(mktemp)
-        trivy image "$image" $vex_flag --severity CRITICAL,HIGH --format json > "$scan_json_tmp" 2>/dev/null
+        raw_json_tmp=$(mktemp)
+        trivy image "$image" $vex_flag $sev_flag --format json > "$raw_json_tmp" 2>/dev/null
+        finalize_scan_json "$raw_json_tmp" "$scan_json_tmp"
+        rm -f "$raw_json_tmp"
         trivy convert --format table "$scan_json_tmp" > "$scan_tmp" 2>/dev/null
         {
             echo "## Scan Results: \`$image\`"
