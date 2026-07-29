@@ -686,7 +686,7 @@ suse_rescore_enabled=0
 # correctly. Otherwise we keep Trivy's own severity filter.
 sev_flag="--severity CRITICAL,HIGH"
 
-if (( source_attribution_python_enabled == 0 )); then
+if ! command -v python3 >/dev/null 2>&1; then
     echo "Warning: python3 not found; skipping SUSE CVSS re-scoring" >&2
 else
     suse_downloaded="false"
