@@ -1,0 +1,1129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Image update check report</title>
+  <style>
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&family=Lato:ital,wght@0,400;0,700;1,400&family=Roboto+Mono:wght@400;500&display=swap');
+
+:root {
+  --body-bg:          #FFFFFF;
+  --body-text:        #141419;
+  --muted:            #6C6C76;
+  --border:           #DCDEE7;
+  --box-bg:           #F4F5FA;
+  --header-bg:        #FFFFFF;
+  --header-border:    #DCDEE7;
+  --link:             #1F67DB;
+  --code-bg:          #F4F5FA;
+  --table-header-bg:  #F4F5FA;
+  --table-hover-bg:   #F4F5FA;
+
+  /* Severity */
+  --sev-critical-bg:     #B13333;
+  --sev-critical-text:   #FFFFFF;
+  --sev-critical-border: #7C0015;
+  --sev-high-bg:         #E45C1E;
+  --sev-high-text:       #FFFFFF;
+  --sev-high-border:     #B03A0A;
+  --sev-medium-bg:       #FFE47A;
+  --sev-medium-text:     #473900;
+  --sev-medium-border:   #E5A200;
+  --sev-low-bg:          #DFE6F2;
+  --sev-low-text:        #1F67DB;
+  --sev-low-border:      #2673A6;
+  --sev-unknown-bg:      #EDEFF3;
+  --sev-unknown-text:    #6C6C76;
+  --sev-unknown-border:  #DCDEE7;
+
+  /* Check-images status */
+  --status-needs-bg:     #E45C1E;
+  --status-needs-text:   #FFFFFF;
+  --status-needs-border: #B03A0A;
+  --status-ok-bg:        #27AE60;
+  --status-ok-text:      #FFFFFF;
+  --status-ok-border:    #1A7A41;
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+
+html, body {
+  margin: 0; padding: 0;
+  background: var(--body-bg);
+  color: var(--body-text);
+  font-family: 'Lato', arial, helvetica, sans-serif;
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+/* ---- Header ---- */
+.page-header {
+  background: var(--header-bg);
+  border-bottom: 1px solid var(--header-border);
+  padding: 0 32px;
+  height: 55px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  box-shadow: 0 1px 4px rgba(0,0,0,.06);
+}
+.page-header .brand {
+  font-family: 'Poppins', sans-serif;
+  font-weight: 600;
+  font-size: 17px;
+  color: var(--body-text);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.page-header .brand svg { width: 28px; height: 28px; flex-shrink: 0; }
+.page-header .subtitle {
+  font-size: 13px;
+  color: var(--muted);
+  margin-left: 4px;
+}
+
+/* ---- Layout ---- */
+.page-content {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 32px 24px 64px;
+}
+
+/* ---- Headings ---- */
+h1, h2, h3, h4 {
+  font-family: 'Poppins', sans-serif;
+  color: var(--body-text);
+  margin-top: 0;
+}
+h1 {
+  font-size: 24px; font-weight: 600;
+  margin-bottom: 24px;
+  padding-bottom: 12px;
+  border-bottom: 2px solid var(--border);
+}
+h2 {
+  font-size: 17px; font-weight: 600;
+  margin-top: 36px; margin-bottom: 10px;
+}
+.anchored-heading {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.heading-anchor {
+  color: var(--muted);
+  text-decoration: none;
+  font-size: 12px;
+  opacity: 0;
+  transition: opacity .15s ease;
+}
+.anchored-heading:hover .heading-anchor,
+.anchored-heading:focus-within .heading-anchor {
+  opacity: 1;
+}
+.heading-anchor:hover {
+  color: var(--link);
+}
+h2 code {
+  font-family: 'Roboto Mono', monospace;
+  font-size: 13px;
+  background: var(--code-bg);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 2px 7px;
+  font-weight: 400;
+}
+h3 {
+  font-size: 15px; font-weight: 600;
+  margin-top: 24px; margin-bottom: 8px;
+}
+
+/* ---- Images list ---- */
+ul.images-list {
+  list-style: none;
+  padding: 0; margin: 0 0 24px;
+  display: flex; flex-wrap: wrap; gap: 6px;
+}
+ul.images-list li code {
+  font-family: 'Roboto Mono', monospace;
+  font-size: 12px;
+  background: var(--code-bg);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 3px 8px;
+  display: inline-block;
+}
+
+/* Generic list */
+ul.generic-list { margin: 8px 0 16px; padding-left: 20px; }
+ul.generic-list li { margin-bottom: 3px; }
+ul.generic-list li code {
+  font-family: 'Roboto Mono', monospace;
+  font-size: 12px;
+  background: var(--code-bg);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 1px 5px;
+}
+
+/* ---- Scan result card ---- */
+.scan-card {
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  overflow: hidden;
+  margin-bottom: 8px;
+}
+
+/* ---- Tables ---- */
+.report-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+  background: var(--body-bg);
+}
+.report-table thead tr { background: var(--table-header-bg); }
+.report-table th {
+  padding: 10px 14px;
+  text-align: left;
+  font-family: 'Poppins', sans-serif;
+  font-weight: 600;
+  font-size: 11px;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: .05em;
+  border-bottom: 1px solid var(--border);
+  white-space: nowrap;
+}
+.report-table td {
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--border);
+  vertical-align: top;
+  word-break: break-word;
+}
+.report-table tbody tr:last-child td { border-bottom: none; }
+.report-table tbody tr:hover { background: var(--table-hover-bg); }
+.report-table a {
+  color: var(--link);
+  text-decoration: none;
+}
+.report-table a:hover { text-decoration: underline; }
+.report-table a.image-scan-link { display: inline-block; }
+.report-table a.image-scan-link code {
+  color: var(--link);
+  cursor: pointer;
+  transition: border-color .15s, background .15s;
+}
+.report-table a.image-scan-link:hover code {
+  border-color: var(--link);
+  text-decoration: underline;
+}
+.report-table .num { text-align: center; font-variant-numeric: tabular-nums; }
+.table-wrap { margin: 8px 0 14px; }
+.table-collapsible {
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--body-bg);
+  overflow: hidden;
+}
+.table-collapsible summary {
+  cursor: pointer;
+  list-style: none;
+  font-family: 'Poppins', sans-serif;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--muted);
+  background: var(--table-header-bg);
+  border-bottom: 1px solid var(--border);
+  padding: 10px 14px;
+}
+.table-collapsible summary::-webkit-details-marker { display: none; }
+.table-collapsible .toggle-label::before {
+  content: "▾";
+  display: inline-block;
+  margin-right: 8px;
+  transition: transform .15s ease;
+}
+.table-collapsible:not([open]) .toggle-label::before {
+  transform: rotate(-90deg);
+}
+
+/* scan target box used as the collapsible header */
+.scan-collapsible summary.scan-summary {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  padding: 0;
+  background: var(--box-bg);
+  border-bottom: none;
+}
+.scan-collapsible[open] summary.scan-summary {
+  border-bottom: 1px solid var(--border);
+}
+.scan-collapsible summary.scan-summary .toggle-label {
+  padding: 14px 0 0 14px;
+  color: var(--muted);
+}
+.scan-collapsible summary.scan-summary .toggle-label::before {
+  margin-right: 0;
+}
+.scan-collapsible summary.scan-summary pre.raw-output {
+  flex: 1;
+  padding-left: 6px;
+}
+
+/* vuln count colouring */
+.vuln-count { font-weight: 700; }
+.vuln-count.has-vulns { color: #B13333; }
+
+/* ---- Severity badges ---- */
+.sev {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: .04em;
+  white-space: nowrap;
+  border-width: 1px;
+  border-style: solid;
+}
+.sev-CRITICAL { background: var(--sev-critical-bg); color: var(--sev-critical-text); border-color: var(--sev-critical-border); }
+.sev-HIGH     { background: var(--sev-high-bg);     color: var(--sev-high-text);     border-color: var(--sev-high-border);     }
+.sev-MEDIUM   { background: var(--sev-medium-bg);   color: var(--sev-medium-text);   border-color: var(--sev-medium-border);   }
+.sev-LOW      { background: var(--sev-low-bg);      color: var(--sev-low-text);      border-color: var(--sev-low-border);      }
+.sev-UNKNOWN  { background: var(--sev-unknown-bg);  color: var(--sev-unknown-text);  border-color: var(--sev-unknown-border);  }
+
+/* ---- EPSS badges (exploit-likelihood) ---- */
+/* Pill shape + percentile meter distinguishes EPSS (exploit probability) from
+   the square Severity badge (impact) sitting next to it. */
+.epss {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 700;
+  white-space: nowrap;
+  border-width: 1px;
+  border-style: solid;
+  font-variant-numeric: tabular-nums;
+}
+.epss-meter {
+  width: 34px;
+  height: 5px;
+  border-radius: 3px;
+  background: rgba(0, 0, 0, .18);
+  overflow: hidden;
+  flex: 0 0 auto;
+}
+.epss-meter-fill {
+  display: block;
+  height: 100%;
+  border-radius: 3px;
+  background: currentColor;
+  opacity: .85;
+}
+.epss-crit { background: var(--sev-critical-bg); color: var(--sev-critical-text); border-color: var(--sev-critical-border); }
+.epss-high { background: var(--sev-high-bg);     color: var(--sev-high-text);     border-color: var(--sev-high-border);     }
+.epss-med  { background: var(--sev-medium-bg);   color: var(--sev-medium-text);   border-color: var(--sev-medium-border);   }
+.epss-low  { background: var(--sev-low-bg);      color: var(--sev-low-text);      border-color: var(--sev-low-border);      }
+.epss-none { background: var(--sev-unknown-bg);  color: var(--sev-unknown-text);  border-color: var(--sev-unknown-border);  }
+.epss-none { padding: 2px 10px; }
+.epss-cell { white-space: nowrap; }
+.epss-th { white-space: nowrap; }
+
+/* ---- Status badges (check-images) ---- */
+.status {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: .04em;
+  white-space: nowrap;
+  border-width: 1px;
+  border-style: solid;
+}
+.status-NEEDS_UPDATE { background: var(--status-needs-bg); color: var(--status-needs-text); border-color: var(--status-needs-border); }
+.status-UP_TO_DATE   { background: var(--status-ok-bg);    color: var(--status-ok-text);    border-color: var(--status-ok-border);    }
+.status-UNKNOWN      { background: var(--sev-unknown-bg);  color: var(--sev-unknown-text);  border-color: var(--sev-unknown-border);  }
+
+/* ---- All-clean banner ---- */
+.all-clean-banner {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 18px;
+  background: #EAF7EF;
+  border: 1px solid var(--status-ok-border);
+  border-radius: 6px;
+  color: #1A7A41;
+  font-weight: 600;
+  font-size: 13px;
+  margin-bottom: 8px;
+}
+.all-clean-banner .all-clean-icon {
+  font-size: 18px;
+  line-height: 1;
+}
+
+/* ---- No-CVE celebration graphic ---- */
+.no-cve-celebration {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  text-align: center;
+  padding: 22px 18px 26px;
+  margin: 6px 0 16px;
+  background: linear-gradient(180deg, #EAF7EF 0%, #F4FBF7 100%);
+  border: 1px solid var(--status-ok-border);
+  border-radius: 12px;
+}
+.no-cve-celebration .no-cve-geeko {
+  width: 200px;
+  max-width: 70%;
+  height: auto;
+  filter: drop-shadow(0 6px 10px rgba(31,169,104,.16));
+}
+.no-cve-celebration .no-cve-caption {
+  margin: 6px 0 0;
+  font-weight: 700;
+  font-size: 15px;
+  color: #1A7A41;
+}
+.no-cve-celebration .no-cve-subcaption {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--muted);
+}
+
+/* ---- Optional (non-default) add-on images section ---- */
+.optional-section {
+  margin-top: 36px;
+  border: 1px solid var(--border);
+  border-left: 4px solid #B8860B;
+  border-radius: 8px;
+  background: #FBF8EF;
+  padding: 18px 20px 8px;
+}
+/* The toggle checkbox is visually hidden; the styled label/switch drives it. */
+.optional-toggle-input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  pointer-events: none;
+}
+.optional-banner {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+.optional-toggle-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 14px;
+  color: #7A5C00;
+  user-select: none;
+  width: fit-content;
+}
+.optional-switch {
+  position: relative;
+  flex: 0 0 auto;
+  width: 40px;
+  height: 22px;
+  border-radius: 999px;
+  background: #C9CBD6;
+  transition: background .15s ease;
+}
+.optional-switch::after {
+  content: "";
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: #FFFFFF;
+  box-shadow: 0 1px 2px rgba(0,0,0,.25);
+  transition: transform .15s ease;
+}
+.optional-toggle-input:checked ~ .optional-banner .optional-switch {
+  background: #1A7A41;
+}
+.optional-toggle-input:checked ~ .optional-banner .optional-switch::after {
+  transform: translateX(18px);
+}
+.optional-toggle-input:focus-visible ~ .optional-banner .optional-switch {
+  outline: 2px solid var(--link);
+  outline-offset: 2px;
+}
+.optional-note {
+  margin: 0;
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.5;
+}
+.optional-body {
+  border-top: 1px dashed var(--border);
+  padding-top: 4px;
+}
+.optional-toggle-input:not(:checked) ~ .optional-body {
+  display: none;
+}
+
+/* ---- Blockquote / callout ---- */
+blockquote.callout {
+  margin: 0 0 16px;
+  padding: 10px 14px;
+  border-left: 3px solid var(--link);
+  background: var(--box-bg);
+  border-radius: 0 6px 6px 0;
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+/* ---- Pre / fallback ---- */
+pre.raw-output {
+  background: var(--box-bg);
+  margin: 0;
+  padding: 14px 16px;
+  font-family: 'Roboto Mono', monospace;
+  font-size: 12px;
+  color: var(--muted);
+  white-space: pre-wrap;
+  word-break: break-all;
+  overflow-x: auto;
+}
+
+/* ---- Code inline ---- */
+code {
+  font-family: 'Roboto Mono', monospace;
+  font-size: 12px;
+  background: var(--code-bg);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 1px 5px;
+}
+
+/* ---- Footer ---- */
+.page-footer {
+  margin-top: 48px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
+  text-align: center;
+  color: var(--muted);
+  font-size: 12px;
+}
+.page-footer code {
+  font-family: 'Roboto Mono', monospace;
+  font-size: 11px;
+}
+
+/* ---- Legend ---- */
+.legend {
+  font-size: 12px;
+  color: var(--muted);
+  padding: 8px 14px;
+  background: var(--box-bg);
+  border-top: 1px solid var(--border);
+}
+
+/* ---- Suggested actions ---- */
+.suggested-actions {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: #F8FAFF;
+  padding: 18px 20px 8px;
+  margin-bottom: 22px;
+}
+.suggested-actions h2 {
+  margin: 0 0 10px;
+}
+.suggested-actions ul {
+  margin: 0;
+  padding-left: 20px;
+}
+.suggested-actions li {
+  margin-bottom: 8px;
+}
+
+/* ---- VEX candidates ---- */
+.vex-candidates {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: #F5FFF8;
+  padding: 18px 20px 12px;
+  margin-bottom: 22px;
+}
+.vex-candidates h2 {
+  margin: 0 0 4px;
+}
+.vex-candidates .vex-intro {
+  color: var(--muted);
+  font-size: 13px;
+  margin-bottom: 12px;
+}
+.vex-candidates .vex-intro a {
+  color: var(--link);
+}
+.vex-candidates table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+.vex-candidates th {
+  background: var(--table-header-bg);
+  text-align: left;
+  padding: 6px 10px;
+  border: 1px solid var(--border);
+  font-family: 'Poppins', sans-serif;
+  font-size: 12px;
+}
+.vex-candidates td {
+  padding: 6px 10px;
+  border: 1px solid var(--border);
+  vertical-align: top;
+}
+.vex-candidates tr:nth-child(even) td {
+  background: var(--box-bg);
+}
+.vex-status {
+  display: inline-block;
+  padding: 2px 7px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 600;
+  background: #D4EDDA;
+  color: #155724;
+  border: 1px solid #C3E6CB;
+}
+
+/* ---- New CVEs since previous scan ---- */
+.new-cves {
+  border: 1px solid var(--sev-high-border, #F0C36D);
+  border-radius: 8px;
+  background: #FFF9F0;
+  padding: 18px 20px 12px;
+  margin-bottom: 22px;
+}
+.new-cves h2 {
+  margin: 0 0 4px;
+}
+.new-cves .new-cves-intro {
+  color: var(--muted);
+  font-size: 13px;
+  margin-bottom: 12px;
+}
+.new-cves table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+.new-cves th {
+  background: var(--table-header-bg);
+  text-align: left;
+  padding: 6px 10px;
+  border: 1px solid var(--border);
+  font-family: 'Poppins', sans-serif;
+  font-size: 12px;
+}
+.new-cves td {
+  padding: 6px 10px;
+  border: 1px solid var(--border);
+  vertical-align: top;
+}
+.new-cves tr:nth-child(even) td {
+  background: var(--box-bg);
+}
+/* "NEW" badge shown next to a newly-introduced CVE in the findings tables */
+.new-cve-badge {
+  display: inline-block;
+  margin-left: 6px;
+  padding: 1px 6px;
+  border-radius: 4px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: .04em;
+  vertical-align: middle;
+  background: #FDE9C8;
+  color: #8A4B00;
+  border: 1px solid #F0C36D;
+}
+/* Highlight the whole row of a newly-introduced CVE */
+tr.new-cve-row > td {
+  background: #FFF6E8 !important;
+  box-shadow: inset 3px 0 0 #E8971E;
+}
+
+/* ---- CVE trend line chart ---- */
+.cve-trend {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--body-bg);
+  padding: 18px 20px 14px;
+  margin: 8px 0 22px;
+}
+.cve-trend h3 {
+  margin: 0 0 4px;
+}
+.cve-trend .chart-subtitle {
+  margin: 0 0 12px;
+  font-size: 12px;
+  color: var(--muted);
+}
+.cve-trend-figure {
+  position: relative;
+}
+.cve-trend-svg {
+  width: 100%;
+  height: auto;
+  display: block;
+  overflow: visible;
+  font-family: 'Lato', sans-serif;
+}
+.cve-trend-svg .grid-line {
+  stroke: var(--border);
+  stroke-width: 1;
+}
+.cve-trend-svg .axis-line {
+  stroke: var(--border);
+  stroke-width: 1;
+}
+.cve-trend-svg .axis-label {
+  fill: var(--muted);
+  font-size: 10px;
+}
+.cve-trend-svg .series-line {
+  fill: none;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.cve-trend-svg .series-point {
+  cursor: pointer;
+  transition: r .1s ease;
+}
+.cve-trend-svg .series-point:hover {
+  r: 6;
+}
+.cve-trend-svg .series-hidden {
+  display: none;
+}
+.cve-trend-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 16px;
+  margin-top: 12px;
+}
+.cve-trend-legend .legend-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--body-text);
+  cursor: pointer;
+  user-select: none;
+  padding: 2px 4px;
+  border-radius: 4px;
+}
+.cve-trend-legend .legend-item.legend-off {
+  color: var(--muted);
+  opacity: .55;
+}
+.cve-trend-legend .legend-swatch {
+  width: 14px;
+  height: 3px;
+  border-radius: 2px;
+  display: inline-block;
+}
+.cve-trend-tooltip {
+  position: absolute;
+  pointer-events: none;
+  background: var(--body-text);
+  color: #FFFFFF;
+  font-size: 11px;
+  line-height: 1.5;
+  padding: 6px 9px;
+  border-radius: 6px;
+  white-space: nowrap;
+  transform: translate(-50%, -115%);
+  opacity: 0;
+  transition: opacity .1s ease;
+  z-index: 5;
+  box-shadow: 0 2px 8px rgba(0,0,0,.18);
+}
+.cve-trend-tooltip.visible {
+  opacity: 1;
+}
+.cve-trend-tooltip .tt-date {
+  font-weight: 700;
+  margin-bottom: 2px;
+}
+.cve-trend-empty {
+  color: var(--muted);
+  font-size: 13px;
+  padding: 12px 0;
+}
+
+/* ---- Dark mode ---- */
+:root[data-theme="dark"] {
+  --body-bg:          #16171C;
+  --body-text:        #E6E6EC;
+  --muted:            #9B9BA6;
+  --border:           #2D2F39;
+  --box-bg:           #1E1F26;
+  --header-bg:        #1A1B21;
+  --header-border:    #2D2F39;
+  --link:             #5B9BFF;
+  --code-bg:          #22232B;
+  --table-header-bg:  #22232B;
+  --table-hover-bg:   #24262F;
+
+  /* Severity */
+  --sev-low-bg:          #1E2A40;
+  --sev-low-text:        #8FB6FF;
+  --sev-low-border:      #2673A6;
+  --sev-unknown-bg:      #2A2C35;
+  --sev-unknown-text:    #9B9BA6;
+  --sev-unknown-border:  #3A3C46;
+}
+
+:root[data-theme="dark"] .page-header {
+  box-shadow: 0 1px 4px rgba(0,0,0,.4);
+}
+:root[data-theme="dark"] .cve-trend-tooltip {
+  background: #000000;
+  color: #E6E6EC;
+  box-shadow: 0 2px 8px rgba(0,0,0,.5);
+}
+
+/* Themed banner boxes that use hard-coded light fills */
+:root[data-theme="dark"] .all-clean-banner {
+  background: #15291E;
+  color: #5FCF8C;
+}
+:root[data-theme="dark"] .no-cve-celebration {
+  background: linear-gradient(180deg, #15291E 0%, #11201A 100%);
+  border-color: #1F4D34;
+}
+:root[data-theme="dark"] .no-cve-celebration .no-cve-caption { color: #5FCF8C; }
+:root[data-theme="dark"] .no-cve-celebration .no-cve-subcaption { color: #8FB7A1; }
+:root[data-theme="dark"] .optional-section {
+  background: #241F14;
+}
+:root[data-theme="dark"] .optional-toggle-label {
+  color: #E0B84D;
+}
+:root[data-theme="dark"] .optional-switch {
+  background: #3A3C46;
+}
+:root[data-theme="dark"] .suggested-actions {
+  background: #161B26;
+}
+:root[data-theme="dark"] .vex-candidates {
+  background: #14241B;
+}
+:root[data-theme="dark"] .vex-status {
+  background: #1B3A28;
+  color: #7FD8A0;
+  border-color: #2E5C40;
+}
+:root[data-theme="dark"] .new-cves {
+  background: #241B12;
+}
+:root[data-theme="dark"] .new-cve-badge {
+  background: #3A2A12;
+  color: #F0C36D;
+  border-color: #6B4E1E;
+}
+:root[data-theme="dark"] tr.new-cve-row > td {
+  background: #2A2114 !important;
+  box-shadow: inset 3px 0 0 #E8971E;
+}
+
+/* ---- Theme toggle ---- */
+.theme-toggle {
+  margin-left: auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  padding: 0;
+  font-size: 16px;
+  line-height: 1;
+  cursor: pointer;
+  background: var(--box-bg);
+  color: var(--body-text);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  transition: background .15s ease, border-color .15s ease;
+}
+.theme-toggle:hover {
+  border-color: var(--link);
+}
+.theme-toggle .theme-icon-dark { display: none; }
+:root[data-theme="dark"] .theme-toggle .theme-icon-light { display: none; }
+:root[data-theme="dark"] .theme-toggle .theme-icon-dark { display: inline; }
+</style>
+  <script>
+(function () {
+  try {
+    var stored = localStorage.getItem('theme');
+    var prefersDark = window.matchMedia &&
+      window.matchMedia('(prefers-color-scheme: dark)').matches;
+    if (stored === 'dark' || (!stored && prefersDark)) {
+      document.documentElement.setAttribute('data-theme', 'dark');
+    }
+  } catch (e) {}
+})();
+</script>
+</head>
+<body>
+  <header class="page-header">
+    <div class="brand">
+      <svg viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="16" cy="16" r="14" fill="#2F68DF"/><path d="M9 16.5l4.5 4.5 9.5-9.5" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      RKE2 Toolbox
+    </div>
+    <span class="subtitle">— Check Images Report</span>
+    <button type="button" class="theme-toggle" aria-label="Toggle dark mode" title="Toggle dark mode" onclick="(function(){var d=document.documentElement;var dark=d.getAttribute('data-theme')==='dark';if(dark){d.removeAttribute('data-theme');}else{d.setAttribute('data-theme','dark');}try{localStorage.setItem('theme',dark?'light':'dark');}catch(e){}})()"><span class="theme-icon-light" aria-hidden="true">&#127769;</span><span class="theme-icon-dark" aria-hidden="true">&#9728;</span></button>
+  </header>
+  <main class="page-content">
+    <h1 id="image-update-check-report" class="anchored-heading">Image update check report<a class="heading-anchor" href="#image-update-check-report" aria-label="Link to section">#</a></h1>
+<ul class="generic-list">
+<li>Source: branch &#x27;master&#x27;</li>
+<li>Generated: 2026-08-01T06:46:32Z</li>
+</ul>
+<div class="scan-card">
+<div class="table-wrap"><details class="table-collapsible" open><summary><span class="toggle-label">Table (19 rows)</span></summary><table class="report-table">
+<thead><tr>
+<th>Image</th>
+<th>Current Tag</th>
+<th>Build Repo</th>
+<th>Latest Tag</th>
+<th>Upstream Repo</th>
+<th>Upstream Latest Tag</th>
+<th>Go (hardened-build-base)</th>
+<th>Status</th>
+</tr></thead><tbody>
+<tr>
+<td><code style="font-size:11px;word-break:break-all">docker.io/rancher/hardened-addon-resizer:1.8.23-build20260717</code></td>
+<td>1.8.23-build20260717</td>
+<td><a href="https://github.com/rancher/image-build-addon-resizer" target="_blank" rel="noopener noreferrer">image-build-addon-resizer</a></td>
+<td>1.8.23-build20260717</td>
+<td><a href="https://github.com/kubernetes/autoscaler" target="_blank" rel="noopener noreferrer">kubernetes/autoscaler</a></td>
+<td>addon-resizer-1.8.23</td>
+<td>v1.25.12b1</td>
+<td><span class="status status-UP_TO_DATE">UP_TO_DATE</span></td>
+</tr>
+<tr>
+<td><code style="font-size:11px;word-break:break-all">docker.io/rancher/hardened-calico:v3.32.1-build20260722</code></td>
+<td>v3.32.1-build20260722</td>
+<td><a href="https://github.com/rancher/image-build-calico" target="_blank" rel="noopener noreferrer">image-build-calico</a></td>
+<td>v3.32.1-build20260722</td>
+<td><a href="https://github.com/projectcalico/calico" target="_blank" rel="noopener noreferrer">projectcalico/calico</a></td>
+<td>v3.32.1</td>
+<td>v1.25.12b1</td>
+<td><span class="status status-UP_TO_DATE">UP_TO_DATE</span></td>
+</tr>
+<tr>
+<td><code style="font-size:11px;word-break:break-all">docker.io/rancher/hardened-cluster-autoscaler:v1.10.3-build20260717</code></td>
+<td>v1.10.3-build20260717</td>
+<td><a href="https://github.com/rancher/image-build-cluster-proportional-autoscaler" target="_blank" rel="noopener noreferrer">image-build-cluster-proportional-autoscaler</a></td>
+<td>v1.10.3-build20260717</td>
+<td><a href="https://github.com/kubernetes-sigs/cluster-proportional-autoscaler" target="_blank" rel="noopener noreferrer">kubernetes-sigs/cluster-proportional-autoscaler</a></td>
+<td>v1.10.3</td>
+<td>v1.25.12b1</td>
+<td><span class="status status-UP_TO_DATE">UP_TO_DATE</span></td>
+</tr>
+<tr>
+<td><code style="font-size:11px;word-break:break-all">docker.io/rancher/hardened-cni-plugins:v1.9.1-build20260717</code></td>
+<td>v1.9.1-build20260717</td>
+<td><a href="https://github.com/rancher/image-build-cni-plugins" target="_blank" rel="noopener noreferrer">image-build-cni-plugins</a></td>
+<td>v1.9.1-build20260717</td>
+<td><a href="https://github.com/containernetworking/plugins" target="_blank" rel="noopener noreferrer">containernetworking/plugins</a></td>
+<td>v1.9.1</td>
+<td>v1.25.12b1</td>
+<td><span class="status status-UP_TO_DATE">UP_TO_DATE</span></td>
+</tr>
+<tr>
+<td><code style="font-size:11px;word-break:break-all">docker.io/rancher/hardened-coredns:v1.14.6-build20260722</code></td>
+<td>v1.14.6-build20260722</td>
+<td><a href="https://github.com/rancher/image-build-coredns" target="_blank" rel="noopener noreferrer">image-build-coredns</a></td>
+<td>v1.14.6-build20260722</td>
+<td><a href="https://github.com/coredns/coredns" target="_blank" rel="noopener noreferrer">coredns/coredns</a></td>
+<td>v1.14.6</td>
+<td>v1.25.12b1</td>
+<td><span class="status status-UP_TO_DATE">UP_TO_DATE</span></td>
+</tr>
+<tr>
+<td><code style="font-size:11px;word-break:break-all">docker.io/rancher/hardened-csi-snapshotter:v8.6.0-build20260708</code></td>
+<td>v8.6.0-build20260708</td>
+<td>N/A</td>
+<td>N/A</td>
+<td>N/A</td>
+<td>N/A</td>
+<td>N/A</td>
+<td><span class="status status-UNKNOWN">UNKNOWN</span></td>
+</tr>
+<tr>
+<td><code style="font-size:11px;word-break:break-all">docker.io/rancher/hardened-dns-node-cache:1.26.8-build20260722</code></td>
+<td>1.26.8-build20260722</td>
+<td><a href="https://github.com/rancher/image-build-dns-nodecache" target="_blank" rel="noopener noreferrer">image-build-dns-nodecache</a></td>
+<td>1.26.8-build20260722</td>
+<td><a href="https://github.com/kubernetes-sigs/node-local-dns" target="_blank" rel="noopener noreferrer">kubernetes-sigs/node-local-dns</a></td>
+<td>1.26.8</td>
+<td>v1.25.12b1</td>
+<td><span class="status status-UP_TO_DATE">UP_TO_DATE</span></td>
+</tr>
+<tr>
+<td><code style="font-size:11px;word-break:break-all">docker.io/rancher/hardened-etcd:v3.6.14-k3s1-build20260723</code></td>
+<td>v3.6.14-k3s1-build20260723</td>
+<td><a href="https://github.com/rancher/image-build-etcd" target="_blank" rel="noopener noreferrer">image-build-etcd</a></td>
+<td>v3.6.14-k3s1-build20260725</td>
+<td><a href="https://github.com/k3s-io/etcd" target="_blank" rel="noopener noreferrer">k3s-io/etcd</a></td>
+<td>v3.6.14-k3s1</td>
+<td>v1.25.12b1</td>
+<td><span class="status status-NEEDS_UPDATE">NEEDS_UPDATE</span></td>
+</tr>
+<tr>
+<td><code style="font-size:11px;word-break:break-all">docker.io/rancher/hardened-flannel:v0.28.8-build20260722</code></td>
+<td>v0.28.8-build20260722</td>
+<td><a href="https://github.com/rancher/image-build-flannel" target="_blank" rel="noopener noreferrer">image-build-flannel</a></td>
+<td>v0.28.8-build20260723</td>
+<td><a href="https://github.com/flannel-io/flannel" target="_blank" rel="noopener noreferrer">flannel-io/flannel</a></td>
+<td>v0.28.8</td>
+<td>v1.25.12b1</td>
+<td><span class="status status-NEEDS_UPDATE">NEEDS_UPDATE</span></td>
+</tr>
+<tr>
+<td><code style="font-size:11px;word-break:break-all">docker.io/rancher/hardened-k8s-metrics-server:v0.9.0-build20260722</code></td>
+<td>v0.9.0-build20260722</td>
+<td><a href="https://github.com/rancher/image-build-k8s-metrics-server" target="_blank" rel="noopener noreferrer">image-build-k8s-metrics-server</a></td>
+<td>v0.9.0-build20260722</td>
+<td><a href="https://github.com/kubernetes-sigs/metrics-server" target="_blank" rel="noopener noreferrer">kubernetes-sigs/metrics-server</a></td>
+<td>v0.9.0</td>
+<td>v1.26.5b1</td>
+<td><span class="status status-UP_TO_DATE">UP_TO_DATE</span></td>
+</tr>
+<tr>
+<td><code style="font-size:11px;word-break:break-all">docker.io/rancher/hardened-snapshot-controller:v8.6.0-build20260722</code></td>
+<td>v8.6.0-build20260722</td>
+<td><a href="https://github.com/rancher/image-build-external-snapshotter" target="_blank" rel="noopener noreferrer">image-build-external-snapshotter</a></td>
+<td>v8.6.0-build20260722</td>
+<td><a href="https://github.com/kubernetes-csi/external-snapshotter" target="_blank" rel="noopener noreferrer">kubernetes-csi/external-snapshotter</a></td>
+<td>v8.6.0</td>
+<td>v1.26.5b1</td>
+<td><span class="status status-UP_TO_DATE">UP_TO_DATE</span></td>
+</tr>
+<tr>
+<td><code style="font-size:11px;word-break:break-all">docker.io/rancher/hardened-traefik:v3.7.8-build20260717</code></td>
+<td>v3.7.8-build20260717</td>
+<td><a href="https://github.com/rancher/image-build-traefik" target="_blank" rel="noopener noreferrer">image-build-traefik</a></td>
+<td>v3.7.8-build20260717-build20260717</td>
+<td><a href="https://github.com/traefik/traefik" target="_blank" rel="noopener noreferrer">traefik/traefik</a></td>
+<td>v3.7.10</td>
+<td>v1.26.5b1</td>
+<td><span class="status status-NEEDS_UPDATE">NEEDS_UPDATE</span></td>
+</tr>
+<tr>
+<td><code style="font-size:11px;word-break:break-all">docker.io/rancher/hardened-whereabouts:v0.9.4-build20260721</code></td>
+<td>v0.9.4-build20260721</td>
+<td><a href="https://github.com/rancher/image-build-whereabouts" target="_blank" rel="noopener noreferrer">image-build-whereabouts</a></td>
+<td>v0.9.4-build20260721</td>
+<td><a href="https://github.com/k8snetworkplumbingwg/whereabouts" target="_blank" rel="noopener noreferrer">k8snetworkplumbingwg/whereabouts</a></td>
+<td>v0.9.4</td>
+<td>v1.25.12b1</td>
+<td><span class="status status-UP_TO_DATE">UP_TO_DATE</span></td>
+</tr>
+<tr>
+<td><code style="font-size:11px;word-break:break-all">docker.io/rancher/klipper-helm:v0.13.3-build20260727</code></td>
+<td>v0.13.3-build20260727</td>
+<td><a href="https://github.com/k3s-io/klipper-helm" target="_blank" rel="noopener noreferrer">k3s-io/klipper-helm</a></td>
+<td>v0.13.3-build20260727</td>
+<td>N/A</td>
+<td>N/A</td>
+<td>N/A</td>
+<td><span class="status status-UP_TO_DATE">UP_TO_DATE</span></td>
+</tr>
+<tr>
+<td><code style="font-size:11px;word-break:break-all">docker.io/rancher/klipper-lb:v0.4.17</code></td>
+<td>v0.4.17</td>
+<td><a href="https://github.com/k3s-io/klipper-lb" target="_blank" rel="noopener noreferrer">k3s-io/klipper-lb</a></td>
+<td>v0.4.17</td>
+<td>N/A</td>
+<td>N/A</td>
+<td>N/A</td>
+<td><span class="status status-UP_TO_DATE">UP_TO_DATE</span></td>
+</tr>
+<tr>
+<td><code style="font-size:11px;word-break:break-all">docker.io/rancher/kube-webhook-certgen:v1.15.1-prime9</code></td>
+<td>v1.15.1-prime9</td>
+<td><a href="https://github.com/rancher/ingress-nginx" target="_blank" rel="noopener noreferrer">rancher/ingress-nginx</a></td>
+<td>v1.14.5-prime7</td>
+<td><a href="https://github.com/kubernetes/ingress-nginx" target="_blank" rel="noopener noreferrer">kubernetes/ingress-nginx</a></td>
+<td>controller-v1.15.1</td>
+<td>1.26.3</td>
+<td><span class="status status-NEEDS_UPDATE">NEEDS_UPDATE</span></td>
+</tr>
+<tr>
+<td><code style="font-size:11px;word-break:break-all">docker.io/rancher/nginx-ingress-controller:v1.15.1-prime9</code></td>
+<td>v1.15.1-prime9</td>
+<td><a href="https://github.com/rancher/ingress-nginx" target="_blank" rel="noopener noreferrer">rancher/ingress-nginx</a></td>
+<td>v1.14.5-prime7</td>
+<td><a href="https://github.com/kubernetes/ingress-nginx" target="_blank" rel="noopener noreferrer">kubernetes/ingress-nginx</a></td>
+<td>controller-v1.15.1</td>
+<td>1.26.3</td>
+<td><span class="status status-NEEDS_UPDATE">NEEDS_UPDATE</span></td>
+</tr>
+<tr>
+<td><code style="font-size:11px;word-break:break-all">docker.io/rancher/rke2-cloud-provider:v1.36.2-0.20260610225606-10b320a3ba51-build20260722</code></td>
+<td>v1.36.2-0.20260610225606-10b320a3ba51-build20260722</td>
+<td><a href="https://github.com/rancher/image-build-rke2-cloud-provider" target="_blank" rel="noopener noreferrer">image-build-rke2-cloud-provider</a></td>
+<td>v1.36.2-0.20260610225606-10b320a3ba51-build20260722</td>
+<td><a href="https://github.com/rancher/image-build-rke2-cloud-provider" target="_blank" rel="noopener noreferrer">rancher/image-build-rke2-cloud-provider</a></td>
+<td>v1.36.2-0.20260610225606-10b320a3ba51-build20260722</td>
+<td>v1.26.5b1</td>
+<td><span class="status status-UP_TO_DATE">UP_TO_DATE</span></td>
+</tr>
+<tr>
+<td><code style="font-size:11px;word-break:break-all">docker.io/rancher/rke2-security-responder:v0.1.4</code></td>
+<td>v0.1.4</td>
+<td>N/A</td>
+<td>N/A</td>
+<td>N/A</td>
+<td>N/A</td>
+<td>N/A</td>
+<td><span class="status status-UNKNOWN">UNKNOWN</span></td>
+</tr>
+</tbody></table></details></div>
+</div>
+<h2 id="summary" class="anchored-heading">Summary<a class="heading-anchor" href="#summary" aria-label="Link to section">#</a></h2>
+<ul class="generic-list">
+<li>Total images: 19</li>
+<li>Needs update: 5</li>
+<li>Up to date: 12</li>
+<li>Unknown mapping/latest tag: 2</li>
+</ul>
+    <div class="page-footer">
+      Generated from <code>check-20260801-1.md</code> &nbsp;·&nbsp; 2026-08-01 06:47 UTC
+    </div>
+  </main>
+</body>
+</html>
