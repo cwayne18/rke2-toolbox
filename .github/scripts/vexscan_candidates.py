@@ -122,6 +122,7 @@ def analyze(images: list[str], findings: list[dict], modules: list[str],
         row_by_key: dict[tuple[str, str], dict] = {}
         for f in rows:
             row_by_key.setdefault((f["cve"], f["module"]), f)
+        report_keys = set(row_by_key)
 
         # Catch-all "no_component_matched" rows carry an empty module; keep their
         # reason keyed by CVE so an unresolved report row can report it verbatim.
@@ -131,6 +132,15 @@ def analyze(images: list[str], findings: list[dict], modules: list[str],
         # Iterate vexscan findings as the source of truth: one record per
         # (finding = binary x advisory), which is exactly how the legacy
         # renderer emits per-binary rows. No fan-out against report rows.
+        #
+        # We pass vexscan the union of in-scope modules and CVEs, so it also
+        # checks each CVE against modules the Trivy report never paired it with
+        # (e.g. an x/net CVE against x/crypto), yielding spurious
+        # "no_osv_package_mapping" undetermined rows. Trivy is the authority on
+        # what is flagged, so results are scoped back to the (cve, module) pairs
+        # the report actually contains -- which drops that cross-product noise
+        # while keeping genuine findings vexscan resolved better than the legacy
+        # binary hunt did.
         for vf in doc.get("findings", []):
             cve = vf.get("cve") or vf.get("id", "")
             module = vf.get("module") or vf.get("package", "")
@@ -139,6 +149,8 @@ def analyze(images: list[str], findings: list[dict], modules: list[str],
                 if status == "undetermined" and cve:
                     catchall_reason[cve] = vf.get("reason", "no_component_matched")
                 continue
+            if (cve, module) not in report_keys:
+                continue  # vexscan explored a module the report did not flag
             resolved_keys.add((cve, module))
             fallback = row_by_key.get((cve, module), {})
             rec = _to_record(image, fallback, vf)
