@@ -639,7 +639,7 @@ fi
 # previously-vexed CVEs reappear and massively inflate the report. If we can't
 # get a valid file, abort rather than silently scanning unsuppressed and
 # publishing misleading counts.
-vex_url="https://github.com/rancher/vexhub/raw/refs/heads/main/reports/rancher.openvex.json"
+vex_url="https://github.com/cwayne18/vexhub/raw/refs/heads/main/reports/rancher.openvex.json"
 vex_flag=""
 vex_downloaded="false"
 for attempt in 1 2 3 4 5; do
