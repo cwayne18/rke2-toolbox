@@ -5,13 +5,18 @@ on:
     - cron: '0 6 * * *'
   workflow_dispatch:
     inputs:
+      branch:
+        description: 'RKE2 branch to scan instead of master (e.g. release-1.36). Mutually exclusive with release_version and pr_number.'
+        required: false
+        type: string
+        default: ''
       release_version:
-        description: 'RKE2 release version to scan (e.g. v1.36.1+rke2r1). Mutually exclusive with pr_number.'
+        description: 'RKE2 release version to scan (e.g. v1.36.1+rke2r1). Mutually exclusive with branch and pr_number.'
         required: false
         type: string
         default: ''
       pr_number:
-        description: 'PR number or URL to scan (e.g. 9994 or https://github.com/rancher/rke2/pull/9994). Mutually exclusive with release_version.'
+        description: 'PR number or URL to scan (e.g. 9994 or https://github.com/rancher/rke2/pull/9994). Mutually exclusive with branch and release_version.'
         required: false
         type: string
         default: ''
@@ -73,12 +78,25 @@ jobs:
             fi
           fi
 
+          # Guard against mutually exclusive inputs being set together.
+          SELECTED=0
+          [ -n "${{ inputs.release_version }}" ] && SELECTED=$((SELECTED + 1))
+          [ -n "${{ inputs.pr_number }}" ] && SELECTED=$((SELECTED + 1))
+          [ -n "${{ inputs.branch }}" ] && SELECTED=$((SELECTED + 1))
+          if [ "$SELECTED" -gt 1 ]; then
+            echo "Error: branch, release_version, and pr_number are mutually exclusive; set at most one." >&2
+            exit 1
+          fi
+
           if [ -n "${{ inputs.release_version }}" ]; then
             ARGS="--release ${{ inputs.release_version }} ${RUNTIME_ARG}"
             MODE="release"
           elif [ -n "${{ inputs.pr_number }}" ]; then
             ARGS="--pr ${{ inputs.pr_number }} ${RUNTIME_ARG}"
             MODE="pr"
+          elif [ -n "${{ inputs.branch }}" ]; then
+            ARGS="${{ inputs.branch }} --prime ${RUNTIME_ARG}"
+            MODE="branch"
           else
             ARGS="${ARGS} ${RUNTIME_ARG}"
           fi
@@ -112,6 +130,18 @@ jobs:
             # Extract just the number if a full URL was provided
             PR_NUM=$(echo "$PR" | grep -oE '[0-9]+$')
             echo "filename=reports/pr-${PR_NUM}.md" >> "$GITHUB_OUTPUT"
+          elif [ "$MODE" = "branch" ]; then
+            BRANCH_INPUT="${{ inputs.branch }}"
+            SAFE_BRANCH=$(echo "$BRANCH_INPUT" | sed -E 's/[^A-Za-z0-9._-]+/-/g; s/^-+|-+$//g')
+            if [ -z "$SAFE_BRANCH" ]; then
+              SAFE_BRANCH="branch"
+            fi
+            BASE="scan-${SAFE_BRANCH}"
+            N=1
+            while [ -f "reports/${BASE}-${N}.md" ]; do
+              N=$((N + 1))
+            done
+            echo "filename=reports/${BASE}-${N}.md" >> "$GITHUB_OUTPUT"
           else
             DATE=$(date +%Y%m%d)
             N=1
