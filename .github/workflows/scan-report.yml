@@ -246,7 +246,17 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
+          # The markdown report is the scan's non-regenerable output and only
+          # exists in the retry commit; back it up outside the work tree so the
+          # reset --hard below can't delete it and strand the retry loop.
+          REPORT_BACKUP="$(mktemp)"
+          cp "$MARKDOWN" "$REPORT_BACKUP"
+
           for attempt in 1 2 3; do
+            # Restore the report in case a previous iteration's reset --hard removed it.
+            mkdir -p "$(dirname "$MARKDOWN")"
+            cp "$REPORT_BACKUP" "$MARKDOWN"
+
             # Regenerate HTML/index from the current tree (post-rebase on retries)
             python3 .github/scripts/scan_to_html.py "$MARKDOWN" "$HTML"
             python3 .github/scripts/scan_to_html.py --index reports/html
