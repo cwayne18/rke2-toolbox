@@ -59,13 +59,22 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       # Serial so the per-branch commit/push steps never race on the reports
-      # branch; the commit step's rebase-retry loop handles the stale checkout.
+      # branch. Combined with the branch-tip checkout below, each job starts from
+      # the commit the previous job just pushed, so every push fast-forwards.
       max-parallel: 1
       fail-fast: false
       matrix: ${{ fromJSON(needs.prepare.outputs.matrix) }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          # Check out the current branch tip rather than the workflow's frozen
+          # trigger SHA. Each serial matrix job commits a report to this branch,
+          # so a job that started from the stale trigger SHA would always push
+          # against an advanced remote, forcing the commit step's rebase-retry
+          # path (which previously stranded release-branch reports). Starting
+          # from the live tip lets every push fast-forward cleanly.
+          ref: ${{ github.ref_name }}
 
       - name: Set up Go
         uses: actions/setup-go@v5
