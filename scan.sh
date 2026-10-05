@@ -14,9 +14,10 @@ scan_runtime_image="true"
 # when REGISTRY != docker.io, and the final scan targets registry.rancher.com.
 prime_registry="registry.rancher.com"
 release_version=""
+vexhub_repo="${VEXHUB_REPO:-rancher/vexhub}"
 
 usage() {
-    echo "Usage: $0 [branch] [--pr <pr-number|pr-url>] [--release <version>] [--gist <title>] [--prime] [--no-prime] [--runtime] [--no-runtime]"
+    echo "Usage: $0 [branch] [--pr <pr-number|pr-url>] [--release <version>] [--gist <title>] [--prime] [--no-prime] [--runtime] [--no-runtime] [--vexhub-repo <owner/repo>]"
     echo ""
     echo "Examples:"
     echo "  $0"
@@ -28,8 +29,10 @@ usage() {
     echo "  $0 --prime"
     echo "  $0 --no-runtime"
     echo "  $0 --gist 'My Scan Results'"
+    echo "  $0 --vexhub-repo cwayne18/vexhub"
     echo ""
     echo "Note: --pr scans default to --prime; pass --no-prime to disable."
+    echo "Note: --vexhub-repo defaults to rancher/vexhub, or \$VEXHUB_REPO if set."
 }
 
 while [[ $# -gt 0 ]]; do
@@ -78,6 +81,15 @@ while [[ $# -gt 0 ]]; do
         --no-runtime)
             scan_runtime_image="false"
             shift
+            ;;
+        --vexhub-repo)
+            if [[ -z "$2" ]]; then
+                echo "Error: --vexhub-repo requires a value (e.g. owner/repo)"
+                usage
+                exit 1
+            fi
+            vexhub_repo="$2"
+            shift 2
             ;;
         -h|--help)
             usage
@@ -648,7 +660,7 @@ fi
 # previously-vexed CVEs reappear and massively inflate the report. If we can't
 # get a valid file, abort rather than silently scanning unsuppressed and
 # publishing misleading counts.
-vex_url="https://github.com/cwayne18/vexhub/raw/refs/heads/main/reports/rancher.openvex.json"
+vex_url="https://github.com/${vexhub_repo}/raw/refs/heads/main/reports/rancher.openvex.json"
 vex_flag=""
 vex_downloaded="false"
 for attempt in 1 2 3 4 5; do

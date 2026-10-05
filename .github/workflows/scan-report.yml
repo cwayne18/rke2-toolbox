@@ -25,6 +25,11 @@ on:
         required: false
         type: boolean
         default: false
+      vexhub_repo:
+        description: 'GitHub repo (owner/repo) to pull the OpenVEX report from.'
+        required: false
+        type: string
+        default: 'rancher/vexhub'
 
 permissions:
   contents: write
@@ -159,6 +164,7 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           TRIVY_DISABLE_VEX_NOTICE: "true"
+          VEXHUB_REPO: ${{ inputs.vexhub_repo || 'rancher/vexhub' }}
         run: bash scan.sh ${{ steps.scan_args.outputs.args }}
 
       - name: Determine output filename
@@ -221,6 +227,7 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           TRIVY_DISABLE_VEX_NOTICE: "true"
+          VEXHUB_REPO: ${{ inputs.vexhub_repo || 'rancher/vexhub' }}
         run: |
           bash scan.sh master --no-prime --runtime
           rm -f trivy_scan_report.txt images.txt images-optional.txt
