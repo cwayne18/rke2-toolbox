@@ -192,7 +192,7 @@ echo "Scanning using ${source_desc} (${ref_path:-release tag $release_tag})"
 work_dir=$(mktemp -d)
 cleanup() {
     rm -rf "$work_dir"
-    rm -f rancher.openvex.json
+    rm -f rancher.openvex.json rancher.openvex.json.gz
     rm -f suse-cvss-scores.yaml suse_cvss_ratings.tsv
 }
 trap cleanup EXIT
@@ -654,27 +654,29 @@ fi
 
 # Download the Rancher OpenVEX Trivy report.
 #
-# This file is large (~85MB) and the GitHub raw endpoint frequently flakes with
-# HTTP/2 stream errors (curl exit 92, PROTOCOL_ERROR) mid-transfer. Force
-# HTTP/1.1 and retry aggressively. VEX suppression is essential: without it,
-# previously-vexed CVEs reappear and massively inflate the report. If we can't
-# get a valid file, abort rather than silently scanning unsuppressed and
-# publishing misleading counts.
-vex_url="https://github.com/${vexhub_repo}/raw/refs/heads/main/reports/rancher.openvex.json"
+# vexhub publishes this gzip-compressed (it's ~85MB uncompressed) and the
+# GitHub raw endpoint frequently flakes with HTTP/2 stream errors (curl exit
+# 92, PROTOCOL_ERROR) mid-transfer. Force HTTP/1.1 and retry aggressively. VEX
+# suppression is essential: without it, previously-vexed CVEs reappear and
+# massively inflate the report. If we can't get a valid file, abort rather
+# than silently scanning unsuppressed and publishing misleading counts.
+vex_url="https://github.com/${vexhub_repo}/raw/refs/heads/main/reports/rancher.openvex.json.gz"
 vex_flag=""
 vex_downloaded="false"
 for attempt in 1 2 3 4 5; do
     if curl -fSL --http1.1 \
         --retry 5 --retry-all-errors --retry-delay 5 \
         --connect-timeout 30 --max-time 600 \
-        "$vex_url" -o rancher.openvex.json \
+        "$vex_url" -o rancher.openvex.json.gz \
+        && [[ -s rancher.openvex.json.gz ]] \
+        && gunzip -f rancher.openvex.json.gz \
         && [[ -s rancher.openvex.json ]] \
         && head -c 1 rancher.openvex.json | grep -q '{'; then
         vex_downloaded="true"
         break
     fi
     echo "Warning: attempt ${attempt}/5 to download Rancher OpenVEX report failed; retrying..." >&2
-    rm -f rancher.openvex.json
+    rm -f rancher.openvex.json.gz rancher.openvex.json
     sleep 10
 done
 
@@ -683,7 +685,7 @@ if [[ "$vex_downloaded" == "true" ]]; then
 else
     echo "Error: Failed to download a valid Rancher OpenVEX report after 5 attempts." >&2
     echo "Aborting: scanning without VEX suppression would produce misleading CVE counts." >&2
-    rm -f rancher.openvex.json
+    rm -f rancher.openvex.json.gz rancher.openvex.json
     exit 1
 fi
 
