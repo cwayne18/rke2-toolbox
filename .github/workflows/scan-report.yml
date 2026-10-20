@@ -160,6 +160,9 @@ jobs:
           echo "mode=$MODE" >> "$GITHUB_OUTPUT"
           echo "branch_name=$BRANCH_NAME" >> "$GITHUB_OUTPUT"
 
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
       - name: Run scan.sh
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
