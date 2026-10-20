@@ -85,6 +85,9 @@ jobs:
           echo "args=$ARGS" >> "$GITHUB_OUTPUT"
           echo "mode=$MODE" >> "$GITHUB_OUTPUT"
 
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
       - name: Run scan.sh
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

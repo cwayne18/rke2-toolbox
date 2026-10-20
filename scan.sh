@@ -159,10 +159,6 @@ fi
 # DB row and for the metadata comment embedded in the report so HTML rendering
 # can group the CVE trend chart by scan type (branch / release / PR).
 source_ref="${ref_path:-release:${release_tag}}"
-master_runtime_build="false"
-if [[ "$scan_runtime_image" == "true" && -z "$pr_input" && -z "$release_version" && "$branch" == "master" ]]; then
-    master_runtime_build="true"
-fi
 
 runtime_tar=""
 runtime_scan_source_desc=""
@@ -202,23 +198,35 @@ if [[ -n "$release_version" ]]; then
     
     echo "Downloaded $(wc -l < images.txt | tr -d ' ') images from release ${release_tag}"
 else
-    # Build-from-source mode: execute the upstream build-images script in a temp sandbox
-    # and use the generated image lists.
-    mkdir -p "$work_dir/scripts" "$work_dir/bin" "$work_dir/build"
+    # Build-from-source mode: clone the real rancher/rke2 checkout and run the
+    # upstream build-images script against it to generate the image lists. A
+    # real checkout (not just two curled script files) is required so
+    # scripts/version.sh can resolve a real commit via its `[ -d .git ]` check,
+    # and so scripts/build-image-runtime -- which build-images invokes
+    # internally, and which build_runtime_image below also runs directly -- is
+    # actually present on disk.
+    mkdir -p "$work_dir/build"
+    clone_dir="$work_dir/rke2"
 
     raw_repo="rancher/rke2"
-    raw_ref="$ref_path"
+    # GitHub exposes refs/pull/<n>/head on the base repo for every PR
+    # regardless of which fork it came from, so the base repo can be cloned
+    # directly in the common case.
+    clone_ref="$ref_path"
 
-    download_build_scripts() {
-        curl -fsSL "https://raw.githubusercontent.com/${raw_repo}/${raw_ref}/scripts/version.sh" \
-            -o "$work_dir/scripts/version.sh" 2>/dev/null \
-        && curl -fsSL "https://raw.githubusercontent.com/${raw_repo}/${raw_ref}/scripts/build-images" \
-            -o "$work_dir/scripts/build-images" 2>/dev/null
+    clone_runtime_source() {
+        local repo="$1"
+        local ref="$2"
+        rm -rf "$clone_dir"
+        git init --quiet "$clone_dir" \
+            && git -C "$clone_dir" remote add origin "https://github.com/${repo}.git" \
+            && git -C "$clone_dir" fetch --quiet --depth 1 origin "$ref" \
+            && git -C "$clone_dir" checkout --quiet FETCH_HEAD
     }
 
-    if ! download_build_scripts; then
+    if ! clone_runtime_source "$raw_repo" "$clone_ref" 2>"$work_dir/clone.log"; then
         if [[ -n "$pr_input" ]]; then
-            echo "Unable to fetch scripts via ${raw_repo}/${raw_ref}; resolving PR head via GitHub API..."
+            echo "Unable to clone ${raw_repo}@${clone_ref}; resolving PR head via GitHub API..."
             if ! pr_json=$(curl -fsSL "https://api.github.com/repos/rancher/rke2/pulls/${pr_number}" 2>/dev/null); then
                 echo "Error: PR #${pr_number} not found or inaccessible in rancher/rke2"
                 exit 1
@@ -233,25 +241,27 @@ else
             fi
 
             raw_repo="$pr_head_repo"
-            raw_ref="$pr_head_sha"
-            source_desc="PR #${pr_number} (${raw_repo}@${raw_ref})"
+            clone_ref="$pr_head_sha"
+            source_desc="PR #${pr_number} (${raw_repo}@${clone_ref})"
             echo "Retrying with ${source_desc}"
 
-            if ! download_build_scripts; then
-                echo "Error: failed to fetch scripts for PR #${pr_number} from ${raw_repo}@${raw_ref}"
+            if ! clone_runtime_source "$raw_repo" "$clone_ref" 2>>"$work_dir/clone.log"; then
+                echo "Error: failed to clone PR #${pr_number} from ${raw_repo}@${clone_ref}"
+                cat "$work_dir/clone.log"
                 exit 1
             fi
         else
-            echo "Error: failed to fetch scripts for ${source_desc} (${ref_path})"
+            echo "Error: failed to clone ${raw_repo}@${clone_ref} for ${source_desc}"
+            cat "$work_dir/clone.log"
             exit 1
         fi
     fi
 
-    chmod +x "$work_dir/scripts/build-images"
+    chmod +x "$clone_dir/scripts/build-images"
 
     if [[ "$use_prime_ingress" == "true" ]]; then
-        ingress_nginx_hardened_tag=$(sed -n 's/^INGRESS_NGINX_HARDENED_TAG=//p' "$work_dir/scripts/build-images" | head -n 1)
-        ingress_nginx_prime_tag=$(sed -n 's/^INGRESS_NGINX_PRIME_TAG=//p' "$work_dir/scripts/build-images" | head -n 1)
+        ingress_nginx_hardened_tag=$(sed -n 's/^INGRESS_NGINX_HARDENED_TAG=//p' "$clone_dir/scripts/build-images" | head -n 1)
+        ingress_nginx_prime_tag=$(sed -n 's/^INGRESS_NGINX_PRIME_TAG=//p' "$clone_dir/scripts/build-images" | head -n 1)
 
         if [[ -z "$ingress_nginx_hardened_tag" || -z "$ingress_nginx_prime_tag" ]]; then
             echo "Error: failed to determine ingress-nginx hardened/prime tags from build-images"
@@ -259,53 +269,23 @@ else
         fi
     fi
 
-    cat <<'EOF' > "$work_dir/bin/git"
-#!/bin/sh
-case "$1" in
-    rev-parse)
-        echo deadbeefdeadbeefdeadbeefdeadbeefdeadbeef
-        ;;
-    diff|status|tag)
-        exit 0
-        ;;
-    log)
-        echo deadbeefdeadbeefdeadbeefdeadbeefdeadbeef someone@example.com
-        ;;
-    *)
-        exit 0
-        ;;
-esac
-EOF
-    chmod +x "$work_dir/bin/git"
-
-    # Run scripts/build-images with scan-specific controls.
-    # $2, when non-empty, sets REGISTRY so PRIME/hardened image variants are emitted.
-    # $3="true" builds the runtime image; otherwise runtime build is skipped.
-    # $4="true" allows real pulls; otherwise pull commands are stubbed via echo.
+    # Run scripts/build-images with scan-specific controls. $2, when non-empty,
+    # sets REGISTRY so PRIME/hardened image variants are emitted. The runtime
+    # image is built separately (see build_runtime_image), so its build is
+    # always skipped here, and pulls stay stubbed since only the generated
+    # image lists (not an actual local image) are needed from this run.
     run_build_images() {
         local out_dir="$1"
         local registry_override="$2"
-        local build_runtime="${3:-false}"
-        local allow_pull="${4:-false}"
         (
-            export PATH="$work_dir/bin:$PATH"
             export GOARCH="${GOARCH:-$(go env GOARCH)}"
             export GOOS="${GOOS:-$(go env GOOS)}"
             export BUILD_DIR="$out_dir"
-            if [[ "$build_runtime" == "true" ]]; then
-                unset SKIP_BUILD_IMAGE_RUNTIME
-            else
-                export SKIP_BUILD_IMAGE_RUNTIME=1
-            fi
-            if [[ "$allow_pull" == "true" ]]; then
-                unset PULL_CMD
-                unset PULL_CMD_CORE
-            else
-                export PULL_CMD=echo
-                export PULL_CMD_CORE=echo
-            fi
+            export SKIP_BUILD_IMAGE_RUNTIME=1
+            export PULL_CMD=echo
+            export PULL_CMD_CORE=echo
             [[ -n "$registry_override" ]] && export REGISTRY="$registry_override"
-            bash "$work_dir/scripts/build-images"
+            bash "$clone_dir/scripts/build-images"
         )
     }
 
@@ -345,42 +325,62 @@ EOF
         fi
     fi
 
-    if [[ "$master_runtime_build" == "true" ]]; then
-        runtime_build_dir="$work_dir/build-runtime"
-        runtime_registry_override=""
-        mkdir -p "$runtime_build_dir"
-        if [[ "$use_prime_ingress" == "true" ]]; then
-            runtime_registry_override="$prime_registry"
+    # build_runtime_image builds the real rke2-runtime image for this checkout
+    # by running the upstream scripts/build-image-runtime directly via docker
+    # buildx (build-images itself only generates image *lists*; this is the
+    # script that actually builds the runtime image). On success it points
+    # runtime_tar/runtime_scan_source_* at the resulting tarball for the
+    # trivy --input scan below. On any problem (missing docker/buildx, a
+    # build failure, no tarball produced, ...) it warns and leaves runtime_tar
+    # empty so the caller falls back to the CI-artifact lookup instead.
+    build_runtime_image() {
+        if ! command -v docker >/dev/null 2>&1; then
+            echo "Warning: docker not found; cannot build rke2-runtime image from source"
+            return 1
+        fi
+        if ! docker buildx version >/dev/null 2>&1; then
+            echo "Warning: docker buildx not available; cannot build rke2-runtime image from source"
+            return 1
         fi
 
-        echo "Building runtime image from source for branch '${branch}'..."
-        if ! run_build_images "$runtime_build_dir" "$runtime_registry_override" "true" "true" \
-            > /dev/null 2> "$work_dir/build-images-runtime.log"; then
-            echo "Warning: failed to build runtime image from source; runtime tarball scan will be skipped"
-            cat "$work_dir/build-images-runtime.log"
-        else
-            runtime_archive=$(find "$runtime_build_dir" -type f \( -name "rke2-runtime*.tar.zst" -o -name "rke2-runtime*.tar" \) | head -1)
-            if [[ -n "$runtime_archive" ]]; then
-                echo "Found locally built runtime archive: $runtime_archive"
-                if [[ "$runtime_archive" == *.zst ]]; then
-                    runtime_tar="${runtime_archive%.zst}"
-                    echo "Decompressing runtime archive..."
-                    if ! zstd -d "$runtime_archive" -o "$runtime_tar" 2>/dev/null; then
-                        echo "Warning: failed to decompress locally built runtime archive"
-                        runtime_tar=""
-                    fi
-                else
-                    runtime_tar="$runtime_archive"
-                fi
-            else
-                echo "Warning: runtime build completed, but no rke2-runtime tar archive was found"
-            fi
-
-            if [[ -n "$runtime_tar" ]]; then
-                runtime_scan_source_desc="Local build from branch '${branch}'"
-                runtime_scan_keep_dir="$runtime_build_dir"
-            fi
+        echo "Building rke2-runtime image from source for ${source_desc}..."
+        local build_log="$work_dir/build-image-runtime.log"
+        # SKIP_WINDOWS skips the extra windows-runtime build; we only scan linux.
+        if ! (
+            cd "$clone_dir" \
+            && export GOARCH="${GOARCH:-$(go env GOARCH)}" \
+            && export GOOS="${GOOS:-$(go env GOOS)}" \
+            && export SKIP_WINDOWS=1 \
+            && bash scripts/build-image-runtime
+        ) >"$build_log" 2>&1; then
+            echo "Warning: building rke2-runtime image failed; will fall back to a CI artifact"
+            tail -n 40 "$build_log" >&2
+            return 1
         fi
+
+        # The upstream script's `--output type=docker,dest=...` writes an
+        # uncompressed docker-save tarball named rke2-images.<platform>.tar
+        # (it also leaves a zstd-compressed copy alongside, but trivy can read
+        # the uncompressed tar directly via --input).
+        local tar_path
+        tar_path=$(find "$clone_dir/build/images" -maxdepth 1 -type f -name 'rke2-images.*.tar' 2>/dev/null | head -1)
+        if [[ -z "$tar_path" ]]; then
+            echo "Warning: rke2-runtime build produced no image tarball; will fall back to a CI artifact"
+            return 1
+        fi
+
+        local commit_sha
+        commit_sha=$(git -C "$clone_dir" rev-parse HEAD 2>/dev/null)
+
+        runtime_tar="$tar_path"
+        runtime_scan_source_url="https://github.com/rancher/rke2/commit/${commit_sha}"
+        runtime_scan_source_desc="built from source for ${source_desc} (commit ${commit_sha:0:8})"
+        echo "Runtime image tarball ready to scan: $tar_path"
+        return 0
+    }
+
+    if [[ "$scan_runtime_image" == "true" ]]; then
+        build_runtime_image
     fi
 
 
@@ -466,11 +466,12 @@ fi
 
 if [[ "$scan_runtime_image" == "true" ]]; then
     # Runtime scan strategy:
-    # - master branch scans: build runtime from source (above) and scan that tarball
-    # - PR scans: download runtime tarball from matching CI artifacts and scan it
+    # - branch/PR scans: build runtime from source (above) and scan that tarball;
+    #   if that build failed (missing docker/buildx, a build error, ...), fall
+    #   back to downloading a matching runtime tarball from a CI artifact
     # - release scans: runtime image is published and scanned via the normal image list
     #
-    # Determine where to look for the runtime artifact: a PR head (SHA + branch) or, for a
+    # Determine where to look for a fallback CI artifact: a PR head (SHA + branch) or, for a
     # plain branch scan, the branch tip on rancher/rke2.
     runtime_lookup_sha=""
     runtime_lookup_ref=""
@@ -484,16 +485,14 @@ if [[ "$scan_runtime_image" == "true" ]]; then
         runtime_lookup_desc="branch '${branch}'"
     fi
 
-    if [[ "$master_runtime_build" == "true" ]]; then
-        if [[ -n "$runtime_tar" ]]; then
-            # The generated runtime image reference is not expected to be pullable
-            # from a registry for branch-tip scans; the tarball scan covers it.
-            for img_list in images.txt images-optional.txt; do
-                [[ -f "$img_list" ]] || continue
-                sed -i.bak '/\/rke2-runtime:/d; /^rke2-runtime:/d' "$img_list"
-                rm -f "${img_list}.bak"
-            done
-        fi
+    if [[ -n "$runtime_tar" ]]; then
+        # The generated runtime image reference is not expected to be pullable
+        # from a registry for branch-tip scans; the tarball scan covers it.
+        for img_list in images.txt images-optional.txt; do
+            [[ -f "$img_list" ]] || continue
+            sed -i.bak '/\/rke2-runtime:/d; /^rke2-runtime:/d' "$img_list"
+            rm -f "${img_list}.bak"
+        done
     elif [[ -n "$runtime_lookup_sha" || -n "$runtime_lookup_ref" ]]; then
         echo "Fetching workflow runs for ${runtime_lookup_desc}..."
 
@@ -826,7 +825,7 @@ fi
             printf -- '- Source: %s\n' "$runtime_scan_source_desc"
         fi
         if [[ -n "$runtime_scan_source_url" ]]; then
-            printf -- '- Source CI Run: %s\n' "$runtime_scan_source_url"
+            printf -- '- Source Link: %s\n' "$runtime_scan_source_url"
         fi
     fi
     echo ""
@@ -1303,7 +1302,7 @@ if [[ -n "$runtime_tar" ]]; then
             echo ""
         fi
         if [[ -n "$runtime_scan_source_url" ]]; then
-            echo "Source CI Run: ${runtime_scan_source_url}"
+            echo "Source Link: ${runtime_scan_source_url}"
             echo ""
         fi
         echo '```text'
