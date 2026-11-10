@@ -294,6 +294,7 @@ ul.generic-list li code {
 /* vuln count colouring */
 .vuln-count { font-weight: 700; }
 .vuln-count.has-vulns { color: #B13333; }
+.vuln-count.cves-fixed { color: #1A7A41; }
 
 /* ---- Severity badges ---- */
 .sev {
@@ -1186,6 +1187,17 @@ def _vuln_count_cell(val):
     return f'<span class="{cls}">{esc(stripped)}</span>'
 
 
+def _cves_fixed_cell(val):
+    """Render the check-images "CVEs Fixed" cell: highlight in green when >0."""
+    stripped = val.strip()
+    try:
+        n = int(stripped)
+        cls = "vuln-count cves-fixed" if n > 0 else "vuln-count"
+    except ValueError:
+        cls = "vuln-count"
+    return f'<span class="{cls}">{esc(stripped)}</span>'
+
+
 def _render_title_cell(text):
     """Render the Title column: turn https:// lines into links."""
     parts = text.split("\n")
@@ -1565,6 +1577,10 @@ def render_md_table(headers, rows, scan_anchors=None):
                     f'<a href="{esc(url)}" target="_blank" rel="noopener noreferrer">'
                     f"{esc(val)}</a>"
                 )
+        if h_norm in ("currentcves", "latestcves"):
+            return _vuln_count_cell(val) if val.strip() not in ("", "N/A") else render_inline(val)
+        if h_norm == "cvesfixed":
+            return _cves_fixed_cell(val) if val.strip() not in ("", "N/A") else render_inline(val)
         return render_inline(val)
 
     out = ['<table class="report-table">']
@@ -3568,6 +3584,13 @@ _INDEX_CSS_EXTRA = """
   font-size: 12px;
   color: var(--muted);
 }
+.report-card .rc-stats {
+  font-size: 12px;
+  color: var(--muted);
+  margin-top: 2px;
+}
+.report-card .rc-stats .rc-stats-fixed { color: #1A7A41; font-weight: 600; }
+.report-card .rc-stats .rc-stats-needs { color: #B13333; font-weight: 600; }
 .report-card .rc-arrow {
   margin-left: auto;
   color: var(--muted);
@@ -4710,6 +4733,31 @@ _INDEX_LIST_SCRIPT = """<script>
 </script>"""
 
 
+def _check_report_summary(md_path):
+    """Parse a check-images report's ``## Summary`` section.
+
+    Returns a dict with ``needs_update`` (int) and ``cves_fixed`` (int or
+    ``None`` when the report predates/omits ``--cve-delta``), or ``None`` if
+    the file can't be read or has no recognizable Summary section.
+    """
+    try:
+        with open(md_path, encoding="utf-8") as fh:
+            text = fh.read()
+    except OSError:
+        return None
+
+    needs_match = re.search(r"^- Needs update:\s*(\d+)", text, re.MULTILINE)
+    if not needs_match:
+        return None
+    fixed_match = re.search(
+        r"^- CVEs fixed by updating.*:\s*(\d+)", text, re.MULTILINE
+    )
+    return {
+        "needs_update": int(needs_match.group(1)),
+        "cves_fixed": int(fixed_match.group(1)) if fixed_match else None,
+    }
+
+
 def generate_index(html_dir):
     """
     Scan *html_dir* for *.html files (excluding index.html itself) and write a
@@ -4763,6 +4811,27 @@ def generate_index(html_dir):
         stem = os.path.splitext(fname)[0]
         badge_cls, badge_label = _BADGES.get(kind, ("badge-check", kind.title()))
         search_key = f"{stem} {date_str} {badge_label}".lower()
+
+        stats_html = ""
+        if kind == "check":
+            md_path = os.path.join(os.path.dirname(html_dir), f"{stem}.md")
+            summary = _check_report_summary(md_path)
+            if summary:
+                parts = []
+                if summary["needs_update"] > 0:
+                    parts.append(
+                        f'<span class="rc-stats-needs">{summary["needs_update"]} '
+                        f'need{"s" if summary["needs_update"] == 1 else ""} update</span>'
+                    )
+                else:
+                    parts.append("all up to date")
+                if summary["cves_fixed"] is not None and summary["cves_fixed"] > 0:
+                    parts.append(
+                        f'<span class="rc-stats-fixed">{summary["cves_fixed"]} '
+                        "CVE(s) fixed by updating</span>"
+                    )
+                stats_html = f'<div class="rc-stats">{" \u00b7 ".join(parts)}</div>'
+
         return (
             f'<a class="report-card" href="{esc(fname)}" '
             f'data-name="{esc(search_key)}">'
@@ -4770,6 +4839,7 @@ def generate_index(html_dir):
             f"<div>"
             f'<div class="rc-name">{esc(stem)}</div>'
             + (f'<div class="rc-date">{esc(date_str)}</div>' if date_str else "")
+            + stats_html
             + f'<span class="rc-badge {badge_cls}">{esc(badge_label)}</span>'
             f"</div>"
             f'<span class="rc-arrow">&#8594;</span>'
