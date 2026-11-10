@@ -28,15 +28,32 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@v5
         with:
-          go-version: 'stable'
+          go-version: '1.25.8'
+
+      - name: Patch Trivy and build from source
+        run: |
+          TMP_TRIVY_DIR="tmp-trivy"
+          mkdir "${TMP_TRIVY_DIR}"
+          cd "${TMP_TRIVY_DIR}"
+          # Clone Trivy at commit of immutable release v0.70.0 - https://github.com/aquasecurity/trivy/releases/tag/v0.70.0
+          git clone --revision 8a3177aedf7ee0864920eb1852eef031cd3742b8 --depth 1 https://github.com/aquasecurity/trivy.git
+          cd trivy
+          # Patch fixes incorrect SBOM relationships for OS packages, which is required
+          # to correctly apply VEX statements to SLES RPMs (matches rancher/image-scanning).
+          git apply ../../patch/sbom.patch
+          GOEXPERIMENT=jsonv2 go build ./cmd/trivy/
+          sudo install trivy /usr/local/bin
+          cd ../..
+          rm -rf "${TMP_TRIVY_DIR}"
+          trivy --version
 
       - name: Build check_images.sh arguments
         id: check_args
         run: |
-          ARGS="master --prime"
+          ARGS="master --prime --cve-delta"
           MODE="scheduled"
           if [ -n "${{ inputs.release_branch }}" ]; then
-            ARGS="--release ${{ inputs.release_branch }} --prime"
+            ARGS="--release ${{ inputs.release_branch }} --prime --cve-delta"
             MODE="release"
           fi
           echo "args=$ARGS" >> "$GITHUB_OUTPUT"
@@ -45,6 +62,7 @@ jobs:
       - name: Run check_images.sh
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TRIVY_DISABLE_VEX_NOTICE: "true"
         run: bash check_images.sh ${{ steps.check_args.outputs.args }}
 
       - name: Determine output filename

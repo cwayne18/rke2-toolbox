@@ -10,6 +10,8 @@ raw_repo="rancher/rke2"
 gist_title=""
 use_prime_ingress="false"
 release_version=""
+cve_delta="false"
+vexhub_repo="${VEXHUB_REPO:-rancher/vexhub}"
 
 # Optional overrides for image names that do not follow the standard mapping rules.
 # Add mappings in the case statement below as needed.
@@ -70,6 +72,7 @@ upstream_tag_regex_override() {
 usage() {
     cat <<EOF
 Usage: $0 [branch] [--pr <pr-number|pr-url>] [--release <branch>] [--output <file>] [--gist <title>] [--prime]
+          [--cve-delta] [--no-cve-delta] [--vexhub-repo <owner/repo>]
 
 Examples:
   $0
@@ -80,6 +83,13 @@ Examples:
   $0 --output my_report.txt
   $0 --prime
   $0 --gist 'My Update Report'
+  $0 --cve-delta
+
+Note: --cve-delta rescans each NEEDS_UPDATE image at both its current and
+latest tag with Trivy, and adds the resulting CVE counts to the report. This
+requires a 'trivy' binary on PATH and roughly doubles the images scanned, so
+it is off by default.
+Note: --vexhub-repo defaults to rancher/vexhub, or \$VEXHUB_REPO if set.
 EOF
 }
 
@@ -108,6 +118,19 @@ while [[ $# -gt 0 ]]; do
         --prime)
             use_prime_ingress="true"
             shift
+            ;;
+        --cve-delta)
+            cve_delta="true"
+            shift
+            ;;
+        --no-cve-delta)
+            cve_delta="false"
+            shift
+            ;;
+        --vexhub-repo)
+            [[ -n "${2:-}" ]] || { echo "Error: --vexhub-repo requires a value (e.g. owner/repo)"; usage; exit 1; }
+            vexhub_repo="$2"
+            shift 2
             ;;
         -h|--help)
             usage
@@ -639,20 +662,131 @@ extract_image_name_and_tag() {
     printf '%s|%s\n' "$image_name" "$current_tag"
 }
 
+# replace_ref_tag <image-ref> <new-tag>
+# Swaps the trailing tag of an image reference, preserving the registry/repo
+# path. Used to build the "latest" image ref for a NEEDS_UPDATE image from its
+# current ref and the latest tag resolved above.
+replace_ref_tag() {
+    local image_ref="$1"
+    local new_tag="$2"
+    local ref_no_digest="${image_ref%@*}"
+    local image_path last_seg prefix
+
+    local first_seg="${ref_no_digest%%/*}"
+    if [[ "$ref_no_digest" == */* ]] && [[ "$first_seg" == *.* || "$first_seg" == *:* || "$first_seg" == "localhost" ]]; then
+        prefix="${first_seg}/"
+        image_path="${ref_no_digest#*/}"
+    else
+        prefix=""
+        image_path="$ref_no_digest"
+    fi
+
+    last_seg="${image_path##*/}"
+    if [[ "$last_seg" == *:* ]]; then
+        image_path="${image_path%:*}"
+    fi
+
+    printf '%s%s:%s\n' "$prefix" "$image_path" "$new_tag"
+}
+
+# count_image_cves <image-ref>
+# Scans <image-ref> with Trivy (CRITICAL/HIGH only, with VEX suppression when
+# available) and prints the total finding count. Prints nothing and returns
+# non-zero on scan failure, so callers can distinguish "0 CVEs" from "unknown".
+# This intentionally skips scan.sh's SUSE CVSS re-scoring: it is meant as a
+# lightweight delta check, not a replacement for the full Trivy scan report.
+count_image_cves() {
+    local image_ref="$1"
+    local raw_json_tmp
+    raw_json_tmp=$(mktemp)
+
+    if ! trivy image "$image_ref" --severity CRITICAL,HIGH $vex_flag --format json \
+        > "$raw_json_tmp" 2>/dev/null; then
+        rm -f "$raw_json_tmp"
+        return 1
+    fi
+
+    python3 - "$raw_json_tmp" <<'PY'
+import json
+import sys
+
+try:
+    with open(sys.argv[1], encoding="utf-8") as fh:
+        data = json.load(fh)
+except (OSError, json.JSONDecodeError):
+    sys.exit(1)
+
+count = 0
+for result in data.get("Results") or []:
+    count += len(result.get("Vulnerabilities") or [])
+print(count)
+PY
+    local status=$?
+    rm -f "$raw_json_tmp"
+    return $status
+}
+
+vex_flag=""
+if [[ "$cve_delta" == "true" ]]; then
+    if ! command -v trivy >/dev/null 2>&1; then
+        echo "Error: --cve-delta requires a 'trivy' binary on PATH" >&2
+        exit 1
+    fi
+
+    # Download the VEX document once and reuse it for every rescan below.
+    # Mirrors scan.sh's download: without VEX suppression, previously-vexed
+    # CVEs reappear and inflate the counts, so a failure here aborts rather
+    # than silently comparing unsuppressed counts.
+    echo "Downloading OpenVEX report from ${vexhub_repo} for --cve-delta..." >&2
+    vex_url="https://github.com/${vexhub_repo}/raw/refs/heads/main/reports/rancher.openvex.json.gz"
+    vex_downloaded="false"
+    for attempt in 1 2 3 4 5; do
+        if curl -fSL --http1.1 \
+            --retry 5 --retry-all-errors --retry-delay 5 \
+            --connect-timeout 30 --max-time 600 \
+            "$vex_url" -o rancher.openvex.json.gz \
+            && [[ -s rancher.openvex.json.gz ]] \
+            && gunzip -f rancher.openvex.json.gz \
+            && [[ -s rancher.openvex.json ]] \
+            && head -c 1 rancher.openvex.json | grep -q '{'; then
+            vex_downloaded="true"
+            break
+        fi
+        echo "Warning: attempt ${attempt}/5 to download Rancher OpenVEX report failed; retrying..." >&2
+        rm -f rancher.openvex.json.gz rancher.openvex.json
+        sleep 10
+    done
+
+    if [[ "$vex_downloaded" == "true" ]]; then
+        vex_flag="--vex rancher.openvex.json"
+    else
+        echo "Error: Failed to download a valid Rancher OpenVEX report after 5 attempts." >&2
+        echo "Aborting: comparing CVE counts without VEX suppression would be misleading." >&2
+        rm -f rancher.openvex.json.gz rancher.openvex.json
+        exit 1
+    fi
+fi
+
 {
     echo "# Image update check report"
     echo ""
     echo "- Source: ${source_desc}"
     echo "- Generated: $(date -u '+%Y-%m-%dT%H:%M:%SZ')"
     echo ""
-    echo "| Image | Current Tag | Build Repo | Latest Tag | Upstream Repo | Upstream Latest Tag | Go (hardened-build-base) | Status |"
-    echo "|---|---|---|---|---|---|---|---|"
+    if [[ "$cve_delta" == "true" ]]; then
+        echo "| Image | Current Tag | Build Repo | Latest Tag | Upstream Repo | Upstream Latest Tag | Go (hardened-build-base) | Status | Current CVEs | Latest CVEs | CVEs Fixed |"
+        echo "|---|---|---|---|---|---|---|---|---|---|---|"
+    else
+        echo "| Image | Current Tag | Build Repo | Latest Tag | Upstream Repo | Upstream Latest Tag | Go (hardened-build-base) | Status |"
+        echo "|---|---|---|---|---|---|---|---|"
+    fi
 } >> "$output_file"
 
 total=0
 needs_update=0
 up_to_date=0
 unknown=0
+total_cves_fixed=0
 needs_update_stdout=""
 
 while IFS= read -r image; do
@@ -688,11 +822,42 @@ while IFS= read -r image; do
         needs_update_stdout+="$image"$'\n'
     fi
 
-    printf '| %s | %s | %s | %s | %s | %s | %s | %s |\n' \
-        "$image" "$current_tag" "${build_repo:-N/A}" "${latest_tag:-N/A}" \
-        "${upstream_repo:-N/A}" "${upstream_latest_tag:-N/A}" \
-        "${go_build_base_version:-N/A}" "$status" \
-        >> "$output_file"
+    if [[ "$cve_delta" == "true" ]]; then
+        current_cves="N/A"
+        latest_cves="N/A"
+        cves_fixed="N/A"
+        if [[ "$status" == "NEEDS_UPDATE" ]]; then
+            latest_image=$(replace_ref_tag "$image" "$latest_tag")
+            echo "  Rescanning at current ($current_tag) and latest ($latest_tag) tags for CVE delta..." >&2
+            cur_count=$(count_image_cves "$image" || true)
+            new_count=$(count_image_cves "$latest_image" || true)
+            if [[ -n "$cur_count" ]]; then
+                current_cves="$cur_count"
+            fi
+            if [[ -n "$new_count" ]]; then
+                latest_cves="$new_count"
+            fi
+            if [[ -n "$cur_count" && -n "$new_count" ]]; then
+                delta=$((cur_count - new_count))
+                cves_fixed=$(( delta > 0 ? delta : 0 ))
+                total_cves_fixed=$((total_cves_fixed + cves_fixed))
+            else
+                echo "  Warning: CVE rescan failed for $image; omitting CVE delta" >&2
+            fi
+        fi
+        printf '| %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s |\n' \
+            "$image" "$current_tag" "${build_repo:-N/A}" "${latest_tag:-N/A}" \
+            "${upstream_repo:-N/A}" "${upstream_latest_tag:-N/A}" \
+            "${go_build_base_version:-N/A}" "$status" \
+            "$current_cves" "$latest_cves" "$cves_fixed" \
+            >> "$output_file"
+    else
+        printf '| %s | %s | %s | %s | %s | %s | %s | %s |\n' \
+            "$image" "$current_tag" "${build_repo:-N/A}" "${latest_tag:-N/A}" \
+            "${upstream_repo:-N/A}" "${upstream_latest_tag:-N/A}" \
+            "${go_build_base_version:-N/A}" "$status" \
+            >> "$output_file"
+    fi
 done < "$images_file"
 
 {
@@ -703,6 +868,9 @@ done < "$images_file"
     echo "- Needs update: $needs_update"
     echo "- Up to date: $up_to_date"
     echo "- Unknown mapping/latest tag: $unknown"
+    if [[ "$cve_delta" == "true" ]]; then
+        echo "- CVEs fixed by updating (CRITICAL/HIGH, across $needs_update needs-update image(s)): $total_cves_fixed"
+    fi
 } >> "$output_file"
 
 echo "Report written to $output_file" >&2
