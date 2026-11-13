@@ -12,6 +12,8 @@ use_prime_ingress="false"
 release_version=""
 cve_delta="false"
 vexhub_repo="${VEXHUB_REPO:-rancher/vexhub}"
+# Shared with scan.sh so --cve-delta runs land in the same metrics database.
+db_file="${SCAN_STATS_DB_PATH:-reports/scan_metrics.db}"
 
 # Optional overrides for image names that do not follow the standard mapping rules.
 # Add mappings in the case statement below as needed.
@@ -691,7 +693,7 @@ replace_ref_tag() {
 
 # count_image_cves <image-ref>
 # Scans <image-ref> with Trivy (CRITICAL/HIGH only, with VEX suppression when
-# available) and prints the total finding count. Prints nothing and returns
+# available) and prints "<critical> <high>" counts. Prints nothing and returns
 # non-zero on scan failure, so callers can distinguish "0 CVEs" from "unknown".
 # This intentionally skips scan.sh's SUSE CVSS re-scoring: it is meant as a
 # lightweight delta check, not a replacement for the full Trivy scan report.
@@ -716,14 +718,24 @@ try:
 except (OSError, json.JSONDecodeError):
     sys.exit(1)
 
-count = 0
+critical = 0
+high = 0
 for result in data.get("Results") or []:
-    count += len(result.get("Vulnerabilities") or [])
-print(count)
+    for vuln in result.get("Vulnerabilities") or []:
+        sev = (vuln.get("Severity") or "").upper()
+        if sev == "CRITICAL":
+            critical += 1
+        elif sev == "HIGH":
+            high += 1
+print(f"{critical} {high}")
 PY
     local status=$?
     rm -f "$raw_json_tmp"
     return $status
+}
+
+sqlite_escape() {
+    printf '%s' "$1" | sed "s/'/''/g"
 }
 
 vex_flag=""
@@ -787,6 +799,14 @@ needs_update=0
 up_to_date=0
 unknown=0
 total_cves_fixed=0
+# Aggregate CRITICAL/HIGH totals across every successfully-scanned image at
+# its *current* (master-pinned) tag, used to report "CVEs in the most
+# up-to-date images" alongside the per-image NEEDS_UPDATE delta above.
+current_critical_total=0
+current_high_total=0
+fixed_critical_total=0
+fixed_high_total=0
+cve_scan_failures=0
 needs_update_stdout=""
 
 while IFS= read -r image; do
@@ -826,25 +846,54 @@ while IFS= read -r image; do
         current_cves="N/A"
         latest_cves="N/A"
         cves_fixed="N/A"
-        if [[ "$status" == "NEEDS_UPDATE" ]]; then
-            latest_image=$(replace_ref_tag "$image" "$latest_tag")
-            echo "  Rescanning at current ($current_tag) and latest ($latest_tag) tags for CVE delta..." >&2
-            cur_count=$(count_image_cves "$image" || true)
-            new_count=$(count_image_cves "$latest_image" || true)
-            if [[ -n "$cur_count" ]]; then
-                current_cves="$cur_count"
+
+        # Scan the current (master-pinned) tag for every image, not just
+        # NEEDS_UPDATE ones, so the aggregate "current CVEs" total in the
+        # Summary section reflects every image, matching the population used
+        # for the "most up-to-date" projection below.
+        echo "  Scanning current ($current_tag) tag for CVE counts..." >&2
+        cur_split=$(count_image_cves "$image" || true)
+        if [[ -n "$cur_split" ]]; then
+            cur_crit="${cur_split%% *}"
+            cur_high="${cur_split##* }"
+            current_cves=$((cur_crit + cur_high))
+            current_critical_total=$((current_critical_total + cur_crit))
+            current_high_total=$((current_high_total + cur_high))
+
+            if [[ "$status" == "NEEDS_UPDATE" ]]; then
+                latest_image=$(replace_ref_tag "$image" "$latest_tag")
+                echo "  Rescanning at latest ($latest_tag) tag for CVE delta..." >&2
+                new_split=$(count_image_cves "$latest_image" || true)
+                if [[ -n "$new_split" ]]; then
+                    new_crit="${new_split%% *}"
+                    new_high="${new_split##* }"
+                    latest_cves=$((new_crit + new_high))
+                    delta_crit=$((cur_crit - new_crit))
+                    (( delta_crit < 0 )) && delta_crit=0
+                    delta_high=$((cur_high - new_high))
+                    (( delta_high < 0 )) && delta_high=0
+                    cves_fixed=$((delta_crit + delta_high))
+                    fixed_critical_total=$((fixed_critical_total + delta_crit))
+                    fixed_high_total=$((fixed_high_total + delta_high))
+                    total_cves_fixed=$((total_cves_fixed + cves_fixed))
+                else
+                    echo "  Warning: CVE rescan failed for $image at latest tag; omitting CVE delta" >&2
+                    cve_scan_failures=$((cve_scan_failures + 1))
+                fi
+            elif [[ "$status" == "UP_TO_DATE" ]]; then
+                # Already at the latest known tag: nothing to project forward.
+                latest_cves="$current_cves"
+                cves_fixed=0
             fi
-            if [[ -n "$new_count" ]]; then
-                latest_cves="$new_count"
-            fi
-            if [[ -n "$cur_count" && -n "$new_count" ]]; then
-                delta=$((cur_count - new_count))
-                cves_fixed=$(( delta > 0 ? delta : 0 ))
-                total_cves_fixed=$((total_cves_fixed + cves_fixed))
-            else
-                echo "  Warning: CVE rescan failed for $image; omitting CVE delta" >&2
-            fi
+            # UNKNOWN: current CVEs still feed the aggregate "current" total
+            # above (there is nothing newer to compare against), but the
+            # per-row Latest/Fixed columns stay "N/A" since no latest tag is
+            # known for this image.
+        else
+            echo "  Warning: CVE scan failed for $image; excluding from CVE totals" >&2
+            cve_scan_failures=$((cve_scan_failures + 1))
         fi
+
         printf '| %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s |\n' \
             "$image" "$current_tag" "${build_repo:-N/A}" "${latest_tag:-N/A}" \
             "${upstream_repo:-N/A}" "${upstream_latest_tag:-N/A}" \
@@ -869,12 +918,76 @@ done < "$images_file"
     echo "- Up to date: $up_to_date"
     echo "- Unknown mapping/latest tag: $unknown"
     if [[ "$cve_delta" == "true" ]]; then
+        current_cve_total=$((current_critical_total + current_high_total))
+        latest_critical_total=$((current_critical_total - fixed_critical_total))
+        latest_high_total=$((current_high_total - fixed_high_total))
+        latest_cve_total=$((current_cve_total - total_cves_fixed))
         echo "- CVEs fixed by updating (CRITICAL/HIGH, across $needs_update needs-update image(s)): $total_cves_fixed"
+        echo "- Current CVEs across all scanned images (CRITICAL/HIGH): $current_cve_total (Critical $current_critical_total, High $current_high_total)"
+        echo "- Projected CVEs in the most up-to-date images (CRITICAL/HIGH, if every image were updated to its latest tag): $latest_cve_total (Critical $latest_critical_total, High $latest_high_total)"
+        if (( cve_scan_failures > 0 )); then
+            echo "- Note: $cve_scan_failures image(s) could not be scanned for CVEs and are excluded from the totals above."
+        fi
     fi
 } >> "$output_file"
 
 echo "Report written to $output_file" >&2
 echo "Image list written to $images_file" >&2
+
+if [[ "$cve_delta" == "true" ]] && command -v sqlite3 >/dev/null 2>&1; then
+    mkdir -p "$(dirname "$db_file")"
+    sqlite3 "$db_file" <<'SQL'
+-- Historical "most up-to-date images" CVE totals from check_images.sh
+-- --cve-delta runs. Separate from scan_metrics (which tracks scan.sh's full
+-- Trivy scans) since this table's counts come from a lighter-weight,
+-- CRITICAL/HIGH-only rescan rather than the full scan pipeline.
+CREATE TABLE IF NOT EXISTS image_update_metrics (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    scanned_at TEXT NOT NULL,
+    source_desc TEXT NOT NULL,
+    source_ref TEXT NOT NULL,
+    total_images INTEGER NOT NULL,
+    needs_update INTEGER NOT NULL,
+    up_to_date INTEGER NOT NULL,
+    unknown_images INTEGER NOT NULL,
+    current_critical_cves INTEGER NOT NULL,
+    current_high_cves INTEGER NOT NULL,
+    latest_critical_cves INTEGER NOT NULL,
+    latest_high_cves INTEGER NOT NULL,
+    created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))
+);
+CREATE INDEX IF NOT EXISTS idx_image_update_metrics_source_ref_scanned_at
+    ON image_update_metrics(source_ref, scanned_at);
+CREATE UNIQUE INDEX IF NOT EXISTS uq_image_update_metrics_run_signature
+    ON image_update_metrics(
+        scanned_at, source_ref, total_images, needs_update, up_to_date,
+        unknown_images, current_critical_cves, current_high_cves,
+        latest_critical_cves, latest_high_cves
+    );
+SQL
+
+    scanned_at_db="$(date -u '+%Y-%m-%dT%H:%M:%SZ')"
+    source_desc_db="$(sqlite_escape "$source_desc")"
+    source_ref_db="$(sqlite_escape "$ref_path")"
+    sqlite3 "$db_file" <<SQL
+INSERT OR IGNORE INTO image_update_metrics (
+    scanned_at, source_desc, source_ref, total_images, needs_update,
+    up_to_date, unknown_images, current_critical_cves, current_high_cves,
+    latest_critical_cves, latest_high_cves
+) VALUES (
+    '${scanned_at_db}', '${source_desc_db}', '${source_ref_db}', ${total},
+    ${needs_update}, ${up_to_date}, ${unknown}, ${current_critical_total},
+    ${current_high_total}, ${latest_critical_total}, ${latest_high_total}
+);
+SQL
+    if [[ "$(sqlite3 "$db_file" 'SELECT changes();')" -gt 0 ]]; then
+        echo "Image update metrics written to $db_file" >&2
+    else
+        echo "Image update metrics unchanged (duplicate run signature); skipped insert" >&2
+    fi
+elif [[ "$cve_delta" == "true" ]]; then
+    echo "Warning: sqlite3 not found; skipping image-update metrics database updates" >&2
+fi
 
 if [[ -n "$gist_title" ]]; then
     echo "Uploading results to GitHub Gist..." >&2
