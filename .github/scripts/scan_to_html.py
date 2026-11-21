@@ -796,6 +796,63 @@ tr.new-cve-row > td {
   font-size: 13px;
   padding: 12px 0;
 }
+/* ---- Headline gap callout (Prime vs Community, Current vs Up-to-date) ----
+   Shared between the index page and individual report pages (e.g. the
+   check-images Current-vs-Most-Up-to-Date callout), so it lives in the base
+   CSS rather than the index-only extras. */
+.channel-callout {
+  border: 1px solid var(--border);
+  border-left: 4px solid #8250DF;
+  border-radius: 8px;
+  background: var(--body-bg);
+  padding: 16px 20px;
+  margin: 4px 0 20px;
+}
+.channel-callout .cc-main {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.channel-callout .cc-figure {
+  font-size: 30px;
+  font-weight: 700;
+  line-height: 1;
+  color: #8250DF;
+  font-variant-numeric: tabular-nums;
+}
+.channel-callout.cc-negative .cc-figure { color: #B13333; }
+.channel-callout.cc-positive .cc-figure { color: #1A7F37; }
+.channel-callout .cc-text {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text);
+}
+.channel-callout .cc-detail {
+  margin-top: 8px;
+  font-size: 13px;
+  color: var(--muted);
+}
+.channel-callout .cc-breakdown {
+  margin-top: 10px;
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.channel-callout .cc-chip {
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+  padding: 2px 10px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  color: var(--muted);
+}
+.channel-callout .cc-source {
+  margin-top: 10px;
+  font-size: 11px;
+  color: var(--muted);
+  opacity: 0.85;
+}
 """
 
 # Dark-mode overrides + theme-toggle button styling. Kept as a separate
@@ -3461,6 +3518,19 @@ def convert(input_path, output_path=None):
                 + _render_vex_candidates(vex_candidates)
                 + body_html
             )
+        elif basename.startswith("check-"):
+            # Surface the "current vs most up-to-date" CVE gap right at the
+            # top of the report, mirroring the scan-report trend charts, so
+            # the headline number doesn't require scrolling to the Summary.
+            summary = _check_report_summary(input_path)
+            callout = _render_update_gap_callout(summary)
+            if callout:
+                h1_end = body_html.find("</h1>")
+                if h1_end != -1:
+                    h1_end += len("</h1>")
+                    body_html = body_html[:h1_end] + callout + body_html[h1_end:]
+                else:
+                    body_html = callout + body_html
     else:
         _set_new_cve_context(set())
         _set_epss_context({})
@@ -3485,60 +3555,6 @@ def convert(input_path, output_path=None):
 # ---------------------------------------------------------------------------
 
 _INDEX_CSS_EXTRA = """
-/* ---- Prime vs Community callout ---- */
-.channel-callout {
-  border: 1px solid var(--border);
-  border-left: 4px solid #8250DF;
-  border-radius: 8px;
-  background: var(--body-bg);
-  padding: 16px 20px;
-  margin: 4px 0 20px;
-}
-.channel-callout .cc-main {
-  display: flex;
-  align-items: baseline;
-  gap: 12px;
-  flex-wrap: wrap;
-}
-.channel-callout .cc-figure {
-  font-size: 30px;
-  font-weight: 700;
-  line-height: 1;
-  color: #8250DF;
-  font-variant-numeric: tabular-nums;
-}
-.channel-callout.cc-negative .cc-figure { color: #B13333; }
-.channel-callout.cc-positive .cc-figure { color: #1A7F37; }
-.channel-callout .cc-text {
-  font-size: 15px;
-  font-weight: 600;
-  color: var(--text);
-}
-.channel-callout .cc-detail {
-  margin-top: 8px;
-  font-size: 13px;
-  color: var(--muted);
-}
-.channel-callout .cc-breakdown {
-  margin-top: 10px;
-  display: flex;
-  gap: 8px;
-  flex-wrap: wrap;
-}
-.channel-callout .cc-chip {
-  font-size: 12px;
-  font-variant-numeric: tabular-nums;
-  padding: 2px 10px;
-  border-radius: 999px;
-  border: 1px solid var(--border);
-  color: var(--muted);
-}
-.channel-callout .cc-source {
-  margin-top: 10px;
-  font-size: 11px;
-  color: var(--muted);
-  opacity: 0.85;
-}
 .cve-trend-legend .legend-swatch-dashed {
   background: transparent !important;
   border-top: 3px dashed #8250DF;
@@ -3591,6 +3607,7 @@ _INDEX_CSS_EXTRA = """
 }
 .report-card .rc-stats .rc-stats-fixed { color: #1A7A41; font-weight: 600; }
 .report-card .rc-stats .rc-stats-needs { color: #B13333; font-weight: 600; }
+.report-card .rc-stats .rc-stats-latest { color: #8250DF; font-weight: 600; }
 .report-card .rc-arrow {
   margin-left: auto;
   color: var(--muted);
@@ -4263,6 +4280,50 @@ def _render_community_trend_section(dataset):
     )
 
 
+def _render_index_update_gap_section(html_dir, check_entries):
+    """Render the headline "Most Up-to-Date Images" CVE gap card on the index
+    page, from the most recent scheduled (master branch) check-images report.
+
+    Release-line check reports are skipped in favor of the scheduled/master
+    report so the headline reflects the branch tracked day-to-day. Returns an
+    empty string when no scheduled check-images report with ``--cve-delta``
+    data is available yet.
+    """
+    scheduled_checks = [f for f in check_entries if re.match(r"check-\d{8}-\d+", f)]
+    if not scheduled_checks:
+        return ""
+
+    latest = scheduled_checks[0]
+    stem = os.path.splitext(latest)[0]
+    md_path = os.path.join(os.path.dirname(os.path.abspath(html_dir)), f"{stem}.md")
+    summary = _check_report_summary(md_path)
+    if not summary or summary.get("current_total") is None:
+        return ""
+
+    date_label = ""
+    m = re.search(r"(\d{8})", stem)
+    if m:
+        try:
+            date_label = datetime.strptime(m.group(1), "%Y%m%d").strftime("%B %d, %Y")
+        except ValueError:
+            pass
+    source = f"From {esc(stem)}" + (f" &middot; {esc(date_label)}" if date_label else "")
+    callout = _render_update_gap_callout(summary, source_label=source)
+    if not callout:
+        return ""
+
+    return (
+        '<section class="cve-trend index-trend" id="update-gap-section">'
+        '<h2 id="most-up-to-date-images" class="anchored-heading">'
+        "Most Up-to-Date Images"
+        '<a class="heading-anchor" href="#most-up-to-date-images" '
+        'aria-label="Link to section">#</a>'
+        "</h2>"
+        + callout
+        + "</section>"
+    )
+
+
 # Client-side renderer for the interactive index trend chart. Mirrors the
 # geometry of render_cve_trend_chart() but redraws on source/range changes.
 _INDEX_TREND_SCRIPT = """<script>
@@ -4736,9 +4797,12 @@ _INDEX_LIST_SCRIPT = """<script>
 def _check_report_summary(md_path):
     """Parse a check-images report's ``## Summary`` section.
 
-    Returns a dict with ``needs_update`` (int) and ``cves_fixed`` (int or
-    ``None`` when the report predates/omits ``--cve-delta``), or ``None`` if
-    the file can't be read or has no recognizable Summary section.
+    Returns a dict with ``needs_update`` (int), ``cves_fixed`` (int or
+    ``None`` when the report predates/omits ``--cve-delta``), and the
+    current-vs-most-up-to-date CVE totals (``current_total``,
+    ``current_critical``, ``current_high``, ``latest_total``,
+    ``latest_critical``, ``latest_high``; all ``None`` when absent). Returns
+    ``None`` if the file can't be read or has no recognizable Summary section.
     """
     try:
         with open(md_path, encoding="utf-8") as fh:
@@ -4752,10 +4816,90 @@ def _check_report_summary(md_path):
     fixed_match = re.search(
         r"^- CVEs fixed by updating.*:\s*(\d+)", text, re.MULTILINE
     )
-    return {
+    current_match = re.search(
+        r"^- Current CVEs across all scanned images.*?:\s*(\d+)\s*"
+        r"\(Critical (\d+), High (\d+)\)",
+        text,
+        re.MULTILINE,
+    )
+    latest_match = re.search(
+        r"^- Projected CVEs in the most up-to-date images.*?:\s*(\d+)\s*"
+        r"\(Critical (\d+), High (\d+)\)",
+        text,
+        re.MULTILINE,
+    )
+    result = {
         "needs_update": int(needs_match.group(1)),
         "cves_fixed": int(fixed_match.group(1)) if fixed_match else None,
+        "current_total": None,
+        "current_critical": None,
+        "current_high": None,
+        "latest_total": None,
+        "latest_critical": None,
+        "latest_high": None,
     }
+    if current_match:
+        result["current_total"] = int(current_match.group(1))
+        result["current_critical"] = int(current_match.group(2))
+        result["current_high"] = int(current_match.group(3))
+    if latest_match:
+        result["latest_total"] = int(latest_match.group(1))
+        result["latest_critical"] = int(latest_match.group(2))
+        result["latest_high"] = int(latest_match.group(3))
+    return result
+
+
+def _render_update_gap_callout(summary, source_label=None):
+    """Render the headline "Current vs Most-Up-to-Date" CVE gap card for a
+    check-images report, from the dict returned by
+    :func:`_check_report_summary`. Mirrors :func:`_render_channel_callout`'s
+    structure/CSS classes but compares a check-images run's current (pinned)
+    tag totals against its projected most-up-to-date totals instead of
+    prime-vs-community channels. Returns an empty string when the report
+    predates ``--cve-delta`` (no totals to compare)."""
+    if not summary or summary.get("current_total") is None or summary.get("latest_total") is None:
+        return ""
+
+    current_total = summary["current_total"]
+    latest_total = summary["latest_total"]
+    gap = current_total - latest_total
+
+    if gap > 0:
+        figure = f"-{gap}"
+        headline = "fewer Critical + High CVEs if every image were updated to its latest tag"
+        tone = "cc-positive"
+    elif gap < 0:
+        figure = f"+{-gap}"
+        headline = "more Critical + High CVEs projected at the latest tags than today (new findings outweigh fixes)"
+        tone = "cc-negative"
+    else:
+        figure = "0"
+        headline = "difference between current and most up-to-date CVE counts"
+        tone = "cc-neutral"
+
+    detail = (
+        f'Current <strong>{current_total}</strong> vs '
+        f'Most up-to-date <strong>{latest_total}</strong>'
+    )
+    breakdown = (
+        f'<span class="cc-chip">Critical {summary["current_critical"]} '
+        f'&rarr; {summary["latest_critical"]}</span>'
+        f'<span class="cc-chip">High {summary["current_high"]} '
+        f'&rarr; {summary["latest_high"]}</span>'
+    )
+    source = source_label or ""
+
+    return (
+        f'<div class="channel-callout {tone}">'
+        '<div class="cc-main">'
+        f'<span class="cc-figure">{esc(figure)}</span>'
+        f'<span class="cc-text">{esc(headline)}</span>'
+        "</div>"
+        f'<div class="cc-detail">{detail}</div>'
+        f'<div class="cc-breakdown">{breakdown}</div>'
+        + (f'<div class="cc-source">{source}</div>' if source else "")
+        + "</div>"
+    )
 
 
 def generate_index(html_dir):
@@ -4829,6 +4973,11 @@ def generate_index(html_dir):
                     parts.append(
                         f'<span class="rc-stats-fixed">{summary["cves_fixed"]} '
                         "CVE(s) fixed by updating</span>"
+                    )
+                if summary["latest_total"] is not None:
+                    parts.append(
+                        f'<span class="rc-stats-latest">{summary["latest_total"]} '
+                        "CVE(s) if fully updated</span>"
                     )
                 stats_html = f'<div class="rc-stats">{" \u00b7 ".join(parts)}</div>'
 
@@ -4913,6 +5062,7 @@ def generate_index(html_dir):
     community_section = _render_community_trend_section(
         _community_trend_dataset(html_dir)
     )
+    update_gap_section = _render_index_update_gap_section(html_dir, check_entries)
     # The client renderer boots every ".cve-trend.js-trend" section, so include
     # it once after both trend sections have been emitted.
     trend_script = _INDEX_TREND_SCRIPT if (trend_section or community_section) else ""
@@ -4922,6 +5072,8 @@ def generate_index(html_dir):
         + trend_section
         + "\n"
         + community_section
+        + "\n"
+        + update_gap_section
         + "\n"
         + trend_script
         + "\n"

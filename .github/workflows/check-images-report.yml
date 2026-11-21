@@ -127,6 +127,9 @@ jobs:
             python3 .github/scripts/scan_to_html.py --index reports/html
 
             git add "$MARKDOWN" "$HTML" reports/html/index.html
+            if [ -f reports/scan_metrics.db ]; then
+              git add reports/scan_metrics.db
+            fi
             if git diff --cached --quiet; then
               echo "No changes to commit"
               exit 0
