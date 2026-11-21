@@ -3,6 +3,15 @@
 # Output file to store the Trivy scan reports
 output_file="trivy_scan_report.txt"
 db_file="${SCAN_STATS_DB_PATH:-reports/scan_metrics.db}"
+# Per-CVE identity rows (scan_cves) are only ever read back for the two most
+# recent scans of a given source/channel (the "new CVEs vs previous scan"
+# diff) and for EPSS lookups keyed on cve_id text, so unbounded history has no
+# functional purpose. Without pruning, this table grew past GitHub's 100MB
+# per-file push limit, which silently stranded every scan_metrics.db commit
+# (the CVE trend chart stopped updating even though scan reports kept being
+# generated, because git rejects the whole push and the retry loop resets the
+# working tree, discarding the local DB changes).
+scan_cves_retention_days="${SCAN_CVES_RETENTION_DAYS:-60}"
 branch=""
 pr_input=""
 gist_title=""
@@ -1046,6 +1055,36 @@ CREATE UNIQUE INDEX IF NOT EXISTS uq_scan_metrics_run_signature
 SQL
 }
 
+prune_metrics_db() {
+    # Delete scan_cves rows older than $scan_cves_retention_days, unless they
+    # belong to one of the two most recent scans for their (source_ref,
+    # channel) group -- that guarantees a diff baseline always survives even
+    # for branches/PRs that go quiet for longer than the retention window.
+    # VACUUM afterwards: SQLite does not shrink the file on DELETE alone, and
+    # shrinking the file back down is the entire point (see the comment above
+    # scan_cves_retention_days for why this table must stay bounded).
+    sqlite3 "$db_file" <<SQL
+DELETE FROM scan_cves
+WHERE scan_id IN (
+    SELECT sm.id
+    FROM scan_metrics sm
+    WHERE sm.scanned_at < datetime('now', '-${scan_cves_retention_days} days')
+      AND sm.id NOT IN (
+          SELECT id FROM (
+              SELECT id,
+                     ROW_NUMBER() OVER (
+                         PARTITION BY source_ref, channel
+                         ORDER BY scanned_at DESC, id DESC
+                     ) AS rn
+              FROM scan_metrics
+          )
+          WHERE rn <= 2
+      )
+);
+VACUUM;
+SQL
+}
+
 classify_cve_sources() {
     local scan_json="$1"
     local result
@@ -1495,7 +1534,7 @@ if init_metrics_db; then
         channel_db="community"
     fi
 
-    sqlite3 "$db_file" <<SQL
+    insert_result="$(sqlite3 "$db_file" <<SQL
 INSERT OR IGNORE INTO scan_metrics (
     scanned_at,
     source_desc,
@@ -1529,8 +1568,14 @@ INSERT OR IGNORE INTO scan_metrics (
     ${optional_total_critical},
     ${optional_total_high}
 );
+SELECT changes();
 SQL
-    if [[ "$(sqlite3 "$db_file" 'SELECT changes();')" -gt 0 ]]; then
+)"
+    # changes() must run in the same sqlite3 connection as the INSERT above --
+    # a separate invocation always reports 0 regardless of outcome, which
+    # previously made this check print "skipped duplicate insert" on every
+    # run (including successful ones), masking the real failure below.
+    if [[ "$(tail -n1 <<<"$insert_result")" -gt 0 ]]; then
         echo "Scan metrics written to $db_file"
     else
         echo "Scan metrics already recorded for this run signature; skipped duplicate insert"
@@ -1603,6 +1648,9 @@ PY
             fi
         fi
     fi
+
+    echo "Pruning scan_cves rows older than ${scan_cves_retention_days} days..."
+    prune_metrics_db
 fi
 
 rm -f "$cve_rows_file"
