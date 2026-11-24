@@ -71,6 +71,59 @@ upstream_tag_regex_override() {
     esac
 }
 
+# Pick the "latest" tag out of a newline-delimited list on stdin. Most
+# image-build tags embed the build date as a "-buildYYYYMMDD" suffix (e.g.
+# v2.17.0-build20260722). A plain version sort can pick a higher-numbered
+# tag that actually sat on a stale/abandoned branch and was cut long before
+# the current tag, so when every candidate carries a build-date suffix we
+# pick by that date instead. Tags without one (e.g. the -prime/-hardened
+# ingress tags) keep the prior version-sort behavior.
+#
+# The script lives in its own temp file (rather than a heredoc on python3's
+# own stdin) so that this function's stdin -- the tag list -- stays free
+# for the script to read.
+pick_latest_tag_script="$(mktemp)"
+cat > "$pick_latest_tag_script" <<'PY'
+import re
+import sys
+
+tags = [line.strip() for line in sys.stdin if line.strip()]
+if not tags:
+    print("")
+    raise SystemExit(0)
+
+build_re = re.compile(r"-build(\d{8})\b")
+
+
+def build_date(tag):
+    match = build_re.search(tag)
+    return int(match.group(1)) if match else None
+
+
+def version_key(tag):
+    # Natural/version sort: split into digit and non-digit runs, tagging
+    # each with its type so differing types never get compared directly.
+    key = []
+    for part in re.findall(r"\d+|\D+", tag):
+        if part.isdigit():
+            key.append((0, int(part), ""))
+        else:
+            key.append((1, 0, part))
+    return key
+
+
+dates = [build_date(tag) for tag in tags]
+if all(date is not None for date in dates):
+    best = max(tags, key=lambda tag: (build_date(tag), tag))
+else:
+    best = max(tags, key=version_key)
+print(best)
+PY
+
+pick_latest_tag() {
+    python3 "$pick_latest_tag_script"
+}
+
 usage() {
     cat <<EOF
 Usage: $0 [branch] [--pr <pr-number|pr-url>] [--release <branch>] [--output <file>] [--gist <title>] [--prime]
@@ -194,6 +247,7 @@ echo "Building image list from ${source_desc} (${ref_path})" >&2
 work_dir=$(mktemp -d)
 cleanup() {
     rm -rf "$work_dir"
+    rm -f "$pick_latest_tag_script"
 }
 trap cleanup EXIT
 
@@ -624,7 +678,7 @@ find_build_repo_and_latest_tag() {
                 filtered_tags=$(printf '%s\n' "$filtered_tags" | grep -E "$tag_regex" || true)
             fi
 
-            latest=$(printf '%s\n' "$filtered_tags" | sed '/^\s*$/d' | sort -uV | tail -1)
+            latest=$(printf '%s\n' "$filtered_tags" | sed '/^\s*$/d' | sort -u | pick_latest_tag)
             if [[ -n "$latest" ]]; then
                 printf '%s|%s\n' "$repo_candidate" "$latest"
                 return 0
