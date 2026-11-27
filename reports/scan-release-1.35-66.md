@@ -1,0 +1,1351 @@
+# Trivy Scan Report
+
+<!-- scan-source-ref: refs/heads/release-1.35 -->
+<!-- scan-source-desc: branch 'release-1.35' -->
+<!-- suse-cvss-rescore: enabled -->
+> Go binary CVE severities reflect SUSE's CVSS re-scoring where it differs from Trivy.
+
+## Images Scanned
+
+- `registry.rancher.com/rancher/hardened-kubernetes:v1.35.11-rke2r1-build20261125`
+- `registry.rancher.com/rancher/hardened-coredns:v1.14.7-build20261110`
+- `registry.rancher.com/rancher/hardened-cluster-autoscaler:v1.11.0-build20261110`
+- `registry.rancher.com/rancher/hardened-dns-node-cache:1.27.2-r1-build20261110`
+- `registry.rancher.com/rancher/hardened-etcd:v3.6.14-k3s3-build20261127`
+- `registry.rancher.com/rancher/hardened-k8s-metrics-server:v0.9.1-build20261119`
+- `registry.rancher.com/rancher/hardened-addon-resizer:1.8.24-build20261110`
+- `registry.rancher.com/rancher/klipper-helm:v0.14.0-build20261117`
+- `registry.rancher.com/rancher/klipper-lb:v0.4.18`
+- `registry.rancher.com/rancher/kube-webhook-certgen:v1.15.2-prime7`
+- `registry.rancher.com/rancher/nginx-ingress-controller:v1.15.2-prime7`
+- `registry.rancher.com/rancher/rke2-cloud-provider:v1.35-r2-build20261116`
+- `registry.rancher.com/rancher/hardened-snapshot-controller:v8.7.0-build20261126`
+- `registry.rancher.com/rancher/hardened-traefik:v3.7.20-build20261125`
+- `registry.rancher.com/rancher/hardened-flannel:v0.28.11-build20261120`
+- `registry.rancher.com/rancher/hardened-cni-plugins:v1.10.0-build20261120`
+- `registry.rancher.com/rancher/hardened-cni-plugins:v1.10.0-build20261110`
+- `registry.rancher.com/rancher/hardened-calico:v3.33.1-build20261120`
+
+## Runtime Image Tarball
+
+- `/tmp/tmp.a2p8GULWa8/rke2/build/images/rke2-images.linux-amd64.tar`
+- Source: built from source for branch 'release-1.35' (commit 83374e8a)
+- Source Link: https://github.com/rancher/rke2/commit/83374e8a5037a0e6ddb73fa5d869628e58ed77d3
+
+## Scan Results: `registry.rancher.com/rancher/hardened-kubernetes:v1.35.11-rke2r1-build20261125`
+
+```text
+```
+
+## Scan Results: `registry.rancher.com/rancher/hardened-coredns:v1.14.7-build20261110`
+
+```text
+```
+
+## Scan Results: `registry.rancher.com/rancher/hardened-cluster-autoscaler:v1.11.0-build20261110`
+
+```text
+```
+
+## Scan Results: `registry.rancher.com/rancher/hardened-dns-node-cache:1.27.2-r1-build20261110`
+
+```text
+```
+
+## Scan Results: `registry.rancher.com/rancher/hardened-etcd:v3.6.14-k3s3-build20261127`
+
+```text
+```
+
+## Scan Results: `registry.rancher.com/rancher/hardened-k8s-metrics-server:v0.9.1-build20261119`
+
+```text
+```
+
+## Scan Results: `registry.rancher.com/rancher/hardened-addon-resizer:1.8.24-build20261110`
+
+```text
+```
+
+## Scan Results: `registry.rancher.com/rancher/klipper-helm:v0.14.0-build20261117`
+
+```text
+```
+
+## Scan Results: `registry.rancher.com/rancher/klipper-lb:v0.4.18`
+
+```text
+```
+
+## Scan Results: `registry.rancher.com/rancher/kube-webhook-certgen:v1.15.2-prime7`
+
+```text
+```
+
+## Scan Results: `registry.rancher.com/rancher/nginx-ingress-controller:v1.15.2-prime7`
+
+```text
+```
+
+## Scan Results: `registry.rancher.com/rancher/rke2-cloud-provider:v1.35-r2-build20261116`
+
+```text
+
+usr/local/bin/rke2-cloud-provider (gobinary)
+============================================
+Total: 14 (UNKNOWN: 0, LOW: 0, MEDIUM: 0, HIGH: 14, CRITICAL: 0)
+
+┌─────────────────────┬────────────────┬──────────┬────────┬───────────────────┬───────────────┬──────────────────────────────────────────────────────────────┐
+│       Library       │ Vulnerability  │ Severity │ Status │ Installed Version │ Fixed Version │                            Title                             │
+├─────────────────────┼────────────────┼──────────┼────────┼───────────────────┼───────────────┼──────────────────────────────────────────────────────────────┤
+│ golang.org/x/crypto │ CVE-2026-39828 │ HIGH     │ fixed  │ v0.47.0           │ 0.52.0        │ golang.org/x/crypto/ssh: golang.org/x/crypto/ssh:            │
+│                     │                │          │        │                   │               │ Unauthorized command execution via discarded SSH permissions │
+│                     │                │          │        │                   │               │ https://avd.aquasec.com/nvd/cve-2026-39828                   │
+│                     ├────────────────┤          │        │                   │               ├──────────────────────────────────────────────────────────────┤
+│                     │ CVE-2026-39829 │          │        │                   │               │ golang.org/x/crypto/ssh: golang.org/x/crypto/ssh: Denial of  │
+│                     │                │          │        │                   │               │ Service via crafted public key with excessive parameters...  │
+│                     │                │          │        │                   │               │ https://avd.aquasec.com/nvd/cve-2026-39829                   │
+│                     ├────────────────┤          │        │                   │               ├──────────────────────────────────────────────────────────────┤
+│                     │ CVE-2026-39831 │          │        │                   │               │ golang.org/x/crypto/ssh: golang.org/x/crypto/ssh: Security   │
+│                     │                │          │        │                   │               │ key bypass due to missing user presence check                │
+│                     │                │          │        │                   │               │ https://avd.aquasec.com/nvd/cve-2026-39831                   │
+│                     ├────────────────┤          │        │                   │               ├──────────────────────────────────────────────────────────────┤
+│                     │ CVE-2026-39832 │          │        │                   │               │ golang.org/x/crypto/ssh/agent:                               │
+│                     │                │          │        │                   │               │ golang.org/x/crypto/ssh/agent: Security bypass due to        │
+│                     │                │          │        │                   │               │ improper handling of key restrictions                        │
+│                     │                │          │        │                   │               │ https://avd.aquasec.com/nvd/cve-2026-39832                   │
+│                     ├────────────────┤          │        │                   │               ├──────────────────────────────────────────────────────────────┤
+│                     │ CVE-2026-39833 │          │        │                   │               │ golang.org/x/crypto/ssh/agent:                               │
+│                     │                │          │        │                   │               │ golang.org/x/crypto/ssh/agent: Security bypass due to        │
+│                     │                │          │        │                   │               │ unenforced key confirmation                                  │
+│                     │                │          │        │                   │               │ https://avd.aquasec.com/nvd/cve-2026-39833                   │
+│                     ├────────────────┤          │        │                   │               ├──────────────────────────────────────────────────────────────┤
+│                     │ CVE-2026-39834 │          │        │                   │               │ golang.org/x/crypto/ssh: golang: golang.org/x/crypto/ssh:    │
+│                     │                │          │        │                   │               │ Denial of Service due to integer overflow in SSH...          │
+│                     │                │          │        │                   │               │ https://avd.aquasec.com/nvd/cve-2026-39834                   │
+│                     ├────────────────┤          │        │                   │               ├──────────────────────────────────────────────────────────────┤
+│                     │ CVE-2026-39835 │          │        │                   │               │ golang.org/x/crypto/ssh: golang: golang.org/x/crypto/ssh:    │
+│                     │                │          │        │                   │               │ Denial of Service via crafted SSH certificate                │
+│                     │                │          │        │                   │               │ https://avd.aquasec.com/nvd/cve-2026-39835                   │
+│                     ├────────────────┤          │        │                   │               ├──────────────────────────────────────────────────────────────┤
+│                     │ CVE-2026-42508 │          │        │                   │               │ golang.org/x/crypto/ssh/knownhosts: golang:                  │
+│                     │                │          │        │                   │               │ golang.org/x/crypto/ssh/knownhosts: Revocation bypass via    │
+│                     │                │          │        │                   │               │ unchecked SignatureKey                                       │
+│                     │                │          │        │                   │               │ https://avd.aquasec.com/nvd/cve-2026-42508                   │
+│                     ├────────────────┤          │        │                   │               ├──────────────────────────────────────────────────────────────┤
+│                     │ CVE-2026-46595 │          │        │                   │               │ golang.org/x/crypto/ssh: golang.org/x/crypto/ssh:            │
+│                     │                │          │        │                   │               │ Authorization bypass due to skipped source-address           │
+│                     │                │          │        │                   │               │ validation                                                   │
+│                     │                │          │        │                   │               │ https://avd.aquasec.com/nvd/cve-2026-46595                   │
+│                     ├────────────────┤          │        │                   │               ├──────────────────────────────────────────────────────────────┤
+│                     │ CVE-2026-46597 │          │        │                   │               │ golang.org/x/crypto/ssh: golang.org/x/crypto/ssh: Denial of  │
+│                     │                │          │        │                   │               │ Service via crafted AES-GCM packet decoder inputs            │
+│                     │                │          │        │                   │               │ https://avd.aquasec.com/nvd/cve-2026-46597                   │
+│                     ├────────────────┤          │        │                   │               ├──────────────────────────────────────────────────────────────┤
+│                     │ CVE-2026-46598 │          │        │                   │               │ golang.org/x/crypto/ssh/agent: golang:                       │
+│                     │                │          │        │                   │               │ golang.org/x/crypto/ssh/agent: Denial of Service via         │
+│                     │                │          │        │                   │               │ malformed input                                              │
+│                     │                │          │        │                   │               │ https://avd.aquasec.com/nvd/cve-2026-46598                   │
+│                     ├────────────────┤          │        │                   ├───────────────┼──────────────────────────────────────────────────────────────┤
+│                     │ CVE-2026-56854 │          │        │                   │ 0.55.0        │ golang.org/x/crypto/ssh: golang.org/x/crypto/ssh:            │
+│                     │                │          │        │                   │               │ Authentication bypass due to unenforced source-address       │
+│                     │                │          │        │                   │               │ restrictions                                                 │
+│                     │                │          │        │                   │               │ https://avd.aquasec.com/nvd/cve-2026-56854                   │
+│                     ├────────────────┤          │        │                   ├───────────────┼──────────────────────────────────────────────────────────────┤
+│                     │ CVE-2026-56855 │          │        │                   │ 0.56.0        │ golang.org/x/crypto/ssh: golang.org/x/crypto/ssh: Denial of  │
+│                     │                │          │        │                   │               │ Service via crafted messages                                 │
+│                     │                │          │        │                   │               │ https://avd.aquasec.com/nvd/cve-2026-56855                   │
+│                     ├────────────────┤          │        │                   │               ├──────────────────────────────────────────────────────────────┤
+│                     │ CVE-2026-78662 │          │        │                   │               │ golang.org/x/crypto/ssh: golang.org/x/crypto/ssh: Denial of  │
+│                     │                │          │        │                   │               │ Service via channel request flooding                         │
+│                     │                │          │        │                   │               │ https://avd.aquasec.com/nvd/cve-2026-78662                   │
+└─────────────────────┴────────────────┴──────────┴────────┴───────────────────┴───────────────┴──────────────────────────────────────────────────────────────┘
+```
+
+## Scan Results: `registry.rancher.com/rancher/hardened-snapshot-controller:v8.7.0-build20261126`
+
+```text
+```
+
+## Scan Results: `registry.rancher.com/rancher/hardened-traefik:v3.7.20-build20261125`
+
+```text
+```
+
+## Scan Results: `registry.rancher.com/rancher/hardened-flannel:v0.28.11-build20261120`
+
+```text
+```
+
+## Scan Results: `registry.rancher.com/rancher/hardened-cni-plugins:v1.10.0-build20261120`
+
+```text
+```
+
+## Scan Results: `registry.rancher.com/rancher/hardened-cni-plugins:v1.10.0-build20261110`
+
+```text
+```
+
+## Scan Results: `registry.rancher.com/rancher/hardened-calico:v3.33.1-build20261120`
+
+```text
+
+registry.rancher.com/rancher/hardened-calico:v3.33.1-build20261120 (sles 16.1)
+==============================================================================
+Total: 5 (UNKNOWN: 0, LOW: 0, MEDIUM: 0, HIGH: 5, CRITICAL: 0)
+
+┌───────────────┬──────────────────────┬──────────┬────────┬───────────────────┬───────────────────┬────────────────────────────────┐
+│    Library    │    Vulnerability     │ Severity │ Status │ Installed Version │   Fixed Version   │             Title              │
+├───────────────┼──────────────────────┼──────────┼────────┼───────────────────┼───────────────────┼────────────────────────────────┤
+│ libblkid1     │ SUSE-SU-2026:24881-1 │ HIGH     │ fixed  │ 2.42.1-160100.3.1 │ 2.42.4-160100.1.1 │ Security update for util-linux │
+├───────────────┤                      │          │        │                   │                   │                                │
+│ libfdisk1     │                      │          │        │                   │                   │                                │
+├───────────────┤                      │          │        │                   │                   │                                │
+│ libmount1     │                      │          │        │                   │                   │                                │
+├───────────────┤                      │          │        │                   │                   │                                │
+│ libsmartcols1 │                      │          │        │                   │                   │                                │
+├───────────────┤                      │          │        │                   │                   │                                │
+│ util-linux    │                      │          │        │                   │                   │                                │
+└───────────────┴──────────────────────┴──────────┴────────┴───────────────────┴───────────────────┴────────────────────────────────┘
+
+usr/bin/csi-node-driver-registrar (gobinary)
+============================================
+Total: 3 (UNKNOWN: 0, LOW: 0, MEDIUM: 0, HIGH: 3, CRITICAL: 0)
+
+┌──────────────────┬────────────────┬──────────┬────────┬───────────────────┬───────────────┬────────────────────────────────────────────────────────────┐
+│     Library      │ Vulnerability  │ Severity │ Status │ Installed Version │ Fixed Version │                           Title                            │
+├──────────────────┼────────────────┼──────────┼────────┼───────────────────┼───────────────┼────────────────────────────────────────────────────────────┤
+│ golang.org/x/net │ CVE-2026-78659 │ HIGH     │ fixed  │ v0.58.0           │ 0.60.0        │ net/http: golang.org/x/net/http2: golang: net/http: Denial │
+│                  │                │          │        │                   │               │ of Service via HTTP/2 trailer header memory...             │
+│                  │                │          │        │                   │               │ https://avd.aquasec.com/nvd/cve-2026-78659                 │
+│                  ├────────────────┤          │        │                   │               ├────────────────────────────────────────────────────────────┤
+│                  │ CVE-2026-78660 │          │        │                   │               │ net/http: golang: golang.org/x/net/http2: net/http: HTTP   │
+│                  │                │          │        │                   │               │ response smuggling via malformed HTTP/2 framing headers... │
+│                  │                │          │        │                   │               │ https://avd.aquasec.com/nvd/cve-2026-78660                 │
+│                  ├────────────────┤          │        │                   │               ├────────────────────────────────────────────────────────────┤
+│                  │ CVE-2026-78669 │          │        │                   │               │ net/http: net/http/internal/http2: golang.org/x/net/http2: │
+│                  │                │          │        │                   │               │ net/http: Denial of Service via excessive HTTP/2 SETTINGS  │
+│                  │                │          │        │                   │               │ frames...                                                  │
+│                  │                │          │        │                   │               │ https://avd.aquasec.com/nvd/cve-2026-78669                 │
+└──────────────────┴────────────────┴──────────┴────────┴───────────────────┴───────────────┴────────────────────────────────────────────────────────────┘
+```
+
+## Scan Results: Runtime Image Tarball: rke2-images.linux-amd64.tar
+
+Source: built from source for branch 'release-1.35' (commit 83374e8a)
+
+Source Link: https://github.com/rancher/rke2/commit/83374e8a5037a0e6ddb73fa5d869628e58ed77d3
+
+```text
+
+bin/containerd (gobinary)
+=========================
+Total: 1 (UNKNOWN: 0, LOW: 0, MEDIUM: 0, HIGH: 1, CRITICAL: 0)
+
+┌──────────────────┬────────────────┬──────────┬────────┬───────────────────┬───────────────┬───────────────────────────────────────────────────────────┐
+│     Library      │ Vulnerability  │ Severity │ Status │ Installed Version │ Fixed Version │                           Title                           │
+├──────────────────┼────────────────┼──────────┼────────┼───────────────────┼───────────────┼───────────────────────────────────────────────────────────┤
+│ golang.org/x/mod │ CVE-2026-56865 │ HIGH     │ fixed  │ v0.38.0           │ 0.40.0        │ golang.org/x/mod/sumdb/tlog: golang.org/x/mod/sumdb/tlog: │
+│                  │                │          │        │                   │               │ Supply chain compromise via transparency log tile         │
+│                  │                │          │        │                   │               │ verification bypass                                       │
+│                  │                │          │        │                   │               │ https://avd.aquasec.com/nvd/cve-2026-56865                │
+└──────────────────┴────────────────┴──────────┴────────┴───────────────────┴───────────────┴───────────────────────────────────────────────────────────┘
+
+bin/ctr (gobinary)
+==================
+Total: 1 (UNKNOWN: 0, LOW: 0, MEDIUM: 0, HIGH: 1, CRITICAL: 0)
+
+┌──────────────────┬────────────────┬──────────┬────────┬───────────────────┬───────────────┬───────────────────────────────────────────────────────────┐
+│     Library      │ Vulnerability  │ Severity │ Status │ Installed Version │ Fixed Version │                           Title                           │
+├──────────────────┼────────────────┼──────────┼────────┼───────────────────┼───────────────┼───────────────────────────────────────────────────────────┤
+│ golang.org/x/mod │ CVE-2026-56865 │ HIGH     │ fixed  │ v0.38.0           │ 0.40.0        │ golang.org/x/mod/sumdb/tlog: golang.org/x/mod/sumdb/tlog: │
+│                  │                │          │        │                   │               │ Supply chain compromise via transparency log tile         │
+│                  │                │          │        │                   │               │ verification bypass                                       │
+│                  │                │          │        │                   │               │ https://avd.aquasec.com/nvd/cve-2026-56865                │
+└──────────────────┴────────────────┴──────────┴────────┴───────────────────┴───────────────┴───────────────────────────────────────────────────────────┘
+```
+
+<!--OPTIONAL-START-->
+
+## Optional Add-on Images (Not in Default Tarball)
+
+> ⚠️ The images in this section are **not** part of the default RKE2 airgap tarball (`images-core` + `images-canal`). They ship with optional add-ons — Cilium, Calico, vSphere, Multus, and Harvester. Use the toggle above to show or hide them.
+
+### Optional CVEs by Severity
+
+| Severity | Count |
+| --- | ---: |
+| CRITICAL | 1 |
+| HIGH | 158 |
+| **Total** | **159** |
+
+### Optional Images with CVEs (16)
+
+| Image | CRITICAL | HIGH |
+| --- | ---: | ---: |
+| `registry.rancher.com/rancher/mirrored-cilium-clustermesh-apiserver:v1.20.5` | 0 | 1 |
+| `registry.rancher.com/rancher/mirrored-cilium-hubble-ui:v0.13.6` | 0 | 4 |
+| `registry.rancher.com/rancher/mirrored-cilium-hubble-ui-backend:v0.13.6` | 0 | 12 |
+| `registry.rancher.com/rancher/hardened-calico-calico:v3.33.1-build20261125` | 0 | 2 |
+| `registry.rancher.com/rancher/hardened-calico-node:v3.33.1-build20261125` | 0 | 8 |
+| `registry.rancher.com/rancher/hardened-calico-envoy-proxy:v3.33.1-build20261125` | 0 | 2 |
+| `registry.rancher.com/rancher/hardened-calico-whisker:v3.33.1-build20261125` | 1 | 3 |
+| `registry.rancher.com/rancher/hardened-cloud-provider-vsphere:v1.35.1-build20261020` | 0 | 2 |
+| `registry.rancher.com/rancher/hardened-csi-snapshotter:v8.6.0-build20261026` | 0 | 1 |
+| `registry.rancher.com/rancher/harvester-cloud-provider:v0.2.10` | 0 | 2 |
+| `registry.rancher.com/rancher/mirrored-kube-vip-kube-vip-iptables:v1.2.4` | 0 | 13 |
+| `registry.rancher.com/rancher/mirrored-longhornio-csi-node-driver-registrar:v2.16.0-20260428` | 0 | 20 |
+| `registry.rancher.com/rancher/mirrored-longhornio-csi-resizer:v2.1.0-20260428` | 0 | 22 |
+| `registry.rancher.com/rancher/mirrored-longhornio-csi-provisioner:v5.3.0-20260428` | 0 | 22 |
+| `registry.rancher.com/rancher/mirrored-longhornio-csi-attacher:v4.11.0-20260428` | 0 | 22 |
+| `registry.rancher.com/rancher/mirrored-longhornio-csi-snapshotter:v8.5.0-20260428` | 0 | 22 |
+
+### Images Scanned (Optional)
+
+- `registry.rancher.com/rancher/mirrored-cilium-certgen:v0.4.14`
+- `registry.rancher.com/rancher/mirrored-cilium-cilium:v1.20.5`
+- `registry.rancher.com/rancher/mirrored-cilium-cilium-envoy:v1.39.6-1794557904-dee711ff0e84b106edd0abcdd71961af1b870359`
+- `registry.rancher.com/rancher/mirrored-cilium-clustermesh-apiserver:v1.20.5`
+- `registry.rancher.com/rancher/mirrored-cilium-hubble-relay:v1.20.5`
+- `registry.rancher.com/rancher/mirrored-cilium-hubble-ui:v0.13.6`
+- `registry.rancher.com/rancher/mirrored-cilium-hubble-ui-backend:v0.13.6`
+- `registry.rancher.com/rancher/mirrored-cilium-operator-aws:v1.20.5`
+- `registry.rancher.com/rancher/mirrored-cilium-operator-azure:v1.20.5`
+- `registry.rancher.com/rancher/mirrored-cilium-operator-generic:v1.20.5`
+- `registry.rancher.com/rancher/hardened-calico-operator:v1.44.1-build20261118`
+- `registry.rancher.com/rancher/hardened-calico-calico:v3.33.1-build20261125`
+- `registry.rancher.com/rancher/hardened-calico-node:v3.33.1-build20261125`
+- `registry.rancher.com/rancher/hardened-calico-envoy-gateway:v3.33.1-build20261125`
+- `registry.rancher.com/rancher/hardened-calico-envoy-proxy:v3.33.1-build20261125`
+- `registry.rancher.com/rancher/hardened-calico-envoy-ratelimit:v3.33.1-build20261125`
+- `registry.rancher.com/rancher/hardened-calico-third-party-cni-plugins:v3.33.1-build20261125`
+- `registry.rancher.com/rancher/hardened-calico-whisker:v3.33.1-build20261125`
+- `registry.rancher.com/rancher/hardened-cloud-provider-vsphere:v1.35.1-build20261020`
+- `registry.rancher.com/rancher/hardened-vsphere-csi-driver:v3.8.0-build20261111`
+- `registry.rancher.com/rancher/hardened-vsphere-csi-syncer:v3.8.0-build20261111`
+- `registry.rancher.com/rancher/hardened-csi-node-driver-registrar:v2.14.0-build20261110`
+- `registry.rancher.com/rancher/hardened-csi-resizer:v2.0.0-build20261110`
+- `registry.rancher.com/rancher/hardened-livenessprobe:v2.17.0-build20261110`
+- `registry.rancher.com/rancher/hardened-csi-attacher:v4.10.0-build20261110`
+- `registry.rancher.com/rancher/hardened-csi-provisioner:v4.0.1-build20261110`
+- `registry.rancher.com/rancher/hardened-csi-snapshotter:v8.6.0-build20261026`
+- `registry.rancher.com/rancher/hardened-multus-cni:v4.3.2-build20261110`
+- `registry.rancher.com/rancher/hardened-multus-thick:v4.3.2-build20261110`
+- `registry.rancher.com/rancher/hardened-multus-dynamic-networks-controller:v0.3.9-build20261120`
+- `registry.rancher.com/rancher/hardened-whereabouts:v0.9.4-build20261119`
+- `registry.rancher.com/rancher/mirrored-library-busybox:1.38.0`
+- `registry.rancher.com/rancher/harvester-cloud-provider:v0.2.10`
+- `registry.rancher.com/rancher/mirrored-kube-vip-kube-vip-iptables:v1.2.4`
+- `registry.rancher.com/rancher/harvester-csi-driver:v0.2.12`
+- `registry.rancher.com/rancher/mirrored-longhornio-csi-node-driver-registrar:v2.16.0-20260428`
+- `registry.rancher.com/rancher/mirrored-longhornio-csi-resizer:v2.1.0-20260428`
+- `registry.rancher.com/rancher/mirrored-longhornio-csi-provisioner:v5.3.0-20260428`
+- `registry.rancher.com/rancher/mirrored-longhornio-csi-attacher:v4.11.0-20260428`
+- `registry.rancher.com/rancher/mirrored-longhornio-csi-snapshotter:v8.5.0-20260428`
+
+## Scan Results: `registry.rancher.com/rancher/mirrored-cilium-certgen:v0.4.14`
+
+```text
+```
+
+## Scan Results: `registry.rancher.com/rancher/mirrored-cilium-cilium:v1.20.5`
+
+```text
+```
+
+## Scan Results: `registry.rancher.com/rancher/mirrored-cilium-cilium-envoy:v1.39.6-1794557904-dee711ff0e84b106edd0abcdd71961af1b870359`
+
+```text
+```
+
+## Scan Results: `registry.rancher.com/rancher/mirrored-cilium-clustermesh-apiserver:v1.20.5`
+
+```text
+
+usr/bin/etcd (gobinary)
+=======================
+Total: 1 (UNKNOWN: 0, LOW: 0, MEDIUM: 0, HIGH: 1, CRITICAL: 0)
+
+┌─────────┬────────────────┬──────────┬────────┬───────────────────┬─────────────────┬────────────────────────────────────────────────────────┐
+│ Library │ Vulnerability  │ Severity │ Status │ Installed Version │  Fixed Version  │                         Title                          │
+├─────────┼────────────────┼──────────┼────────┼───────────────────┼─────────────────┼────────────────────────────────────────────────────────┤
+│ stdlib  │ CVE-2026-97054 │ HIGH     │ fixed  │ v1.26.10          │ 1.26.11, 1.27.4 │ net/http: golang: net/http: Denial of Service via race │
+│         │                │          │        │                   │                 │ condition when handling oversized...                   │
+│         │                │          │        │                   │                 │ https://avd.aquasec.com/nvd/cve-2026-97054             │
+└─────────┴────────────────┴──────────┴────────┴───────────────────┴─────────────────┴────────────────────────────────────────────────────────┘
+```
+
+## Scan Results: `registry.rancher.com/rancher/mirrored-cilium-hubble-relay:v1.20.5`
+
+```text
+```
+
+## Scan Results: `registry.rancher.com/rancher/mirrored-cilium-hubble-ui:v0.13.6`
+
+```text
+
+registry.rancher.com/rancher/mirrored-cilium-hubble-ui:v0.13.6 (alpine 3.24.1)
+==============================================================================
+Total: 4 (UNKNOWN: 0, LOW: 0, MEDIUM: 0, HIGH: 4, CRITICAL: 0)
+
+┌────────────┬─────────────────┬──────────┬────────┬───────────────────┬───────────────┬──────────────────────────────────────────────────────────────┐
+│  Library   │  Vulnerability  │ Severity │ Status │ Installed Version │ Fixed Version │                            Title                             │
+├────────────┼─────────────────┼──────────┼────────┼───────────────────┼───────────────┼──────────────────────────────────────────────────────────────┤
+│ musl       │ CVE-2026-107891 │ HIGH     │ fixed  │ 1.2.6-r2          │ 1.2.6-r3      │ musl: musl: Arbitrary code execution via integer overflow in │
+│            │                 │          │        │                   │               │ regcomp                                                      │
+│            │                 │          │        │                   │               │ https://avd.aquasec.com/nvd/cve-2026-107891                  │
+├────────────┤                 │          │        │                   │               │                                                              │
+│ musl-utils │                 │          │        │                   │               │                                                              │
+│            │                 │          │        │                   │               │                                                              │
+│            │                 │          │        │                   │               │                                                              │
+├────────────┼─────────────────┤          │        ├───────────────────┼───────────────┼──────────────────────────────────────────────────────────────┤
+│ pcre2      │ CVE-2026-103111 │          │        │ 10.48-r0          │ 10.49-r0      │ pcre2: pcre2: Out-of-bounds write via crafted regular        │
+│            │                 │          │        │                   │               │ expression                                                   │
+│            │                 │          │        │                   │               │ https://avd.aquasec.com/nvd/cve-2026-103111                  │
+├────────────┼─────────────────┤          │        ├───────────────────┼───────────────┼──────────────────────────────────────────────────────────────┤
+│ zlib       │ CVE-2026-85091  │          │        │ 1.3.2-r0          │ 1.3.2-r1      │ zlib: zlib: Heap buffer overflow in gz_vacate() allows       │
+│            │                 │          │        │                   │               │ arbitrary code execution                                     │
+│            │                 │          │        │                   │               │ https://avd.aquasec.com/nvd/cve-2026-85091                   │
+└────────────┴─────────────────┴──────────┴────────┴───────────────────┴───────────────┴──────────────────────────────────────────────────────────────┘
+```
+
+## Scan Results: `registry.rancher.com/rancher/mirrored-cilium-hubble-ui-backend:v0.13.6`
+
+```text
+
+usr/bin/backend (gobinary)
+==========================
+Total: 12 (UNKNOWN: 0, LOW: 0, MEDIUM: 0, HIGH: 12, CRITICAL: 0)
+
+┌──────────────────┬─────────────────┬──────────┬────────┬───────────────────┬─────────────────┬──────────────────────────────────────────────────────────────┐
+│     Library      │  Vulnerability  │ Severity │ Status │ Installed Version │  Fixed Version  │                            Title                             │
+├──────────────────┼─────────────────┼──────────┼────────┼───────────────────┼─────────────────┼──────────────────────────────────────────────────────────────┤
+│ golang.org/x/net │ CVE-2026-78659  │ HIGH     │ fixed  │ v0.58.0           │ 0.60.0          │ net/http: golang.org/x/net/http2: golang: net/http: Denial   │
+│                  │                 │          │        │                   │                 │ of Service via HTTP/2 trailer header memory...               │
+│                  │                 │          │        │                   │                 │ https://avd.aquasec.com/nvd/cve-2026-78659                   │
+│                  ├─────────────────┤          │        │                   │                 ├──────────────────────────────────────────────────────────────┤
+│                  │ CVE-2026-78660  │          │        │                   │                 │ net/http: golang: golang.org/x/net/http2: net/http: HTTP     │
+│                  │                 │          │        │                   │                 │ response smuggling via malformed HTTP/2 framing headers...   │
+│                  │                 │          │        │                   │                 │ https://avd.aquasec.com/nvd/cve-2026-78660                   │
+│                  ├─────────────────┤          │        │                   │                 ├──────────────────────────────────────────────────────────────┤
+│                  │ CVE-2026-78669  │          │        │                   │                 │ net/http: net/http/internal/http2: golang.org/x/net/http2:   │
+│                  │                 │          │        │                   │                 │ net/http: Denial of Service via excessive HTTP/2 SETTINGS    │
+│                  │                 │          │        │                   │                 │ frames...                                                    │
+│                  │                 │          │        │                   │                 │ https://avd.aquasec.com/nvd/cve-2026-78669                   │
+├──────────────────┼─────────────────┤          │        ├───────────────────┼─────────────────┼──────────────────────────────────────────────────────────────┤
+│ stdlib           │ CVE-2026-111943 │          │        │ v1.27.1           │ 1.26.10, 1.27.3 │ crypto/x509: golang: crypto/x509: Man-in-the-middle attacks  │
+│                  │                 │          │        │                   │                 │ via untrusted intermediate certificates                      │
+│                  │                 │          │        │                   │                 │ https://avd.aquasec.com/nvd/cve-2026-111943                  │
+│                  ├─────────────────┤          │        │                   ├─────────────────┼──────────────────────────────────────────────────────────────┤
+│                  │ CVE-2026-56866  │          │        │                   │ 1.26.9, 1.27.2  │ net/http: golang: golang: Cross-user response poisoning via  │
+│                  │                 │          │        │                   │                 │ desynchronized HTTP CONNECT connections                      │
+│                  │                 │          │        │                   │                 │ https://avd.aquasec.com/nvd/cve-2026-56866                   │
+│                  ├─────────────────┤          │        │                   │                 ├──────────────────────────────────────────────────────────────┤
+│                  │ CVE-2026-78659  │          │        │                   │                 │ net/http: golang.org/x/net/http2: golang: net/http: Denial   │
+│                  │                 │          │        │                   │                 │ of Service via HTTP/2 trailer header memory...               │
+│                  │                 │          │        │                   │                 │ https://avd.aquasec.com/nvd/cve-2026-78659                   │
+│                  ├─────────────────┤          │        │                   │                 ├──────────────────────────────────────────────────────────────┤
+│                  │ CVE-2026-78660  │          │        │                   │                 │ net/http: golang: golang.org/x/net/http2: net/http: HTTP     │
+│                  │                 │          │        │                   │                 │ response smuggling via malformed HTTP/2 framing headers...   │
+│                  │                 │          │        │                   │                 │ https://avd.aquasec.com/nvd/cve-2026-78660                   │
+│                  ├─────────────────┤          │        │                   │                 ├──────────────────────────────────────────────────────────────┤
+│                  │ CVE-2026-78667  │          │        │                   │                 │ net/http: golang: golang: Denial of Service via crafted HTTP │
+│                  │                 │          │        │                   │                 │ Range headers                                                │
+│                  │                 │          │        │                   │                 │ https://avd.aquasec.com/nvd/cve-2026-78667                   │
+│                  ├─────────────────┤          │        │                   │                 ├──────────────────────────────────────────────────────────────┤
+│                  │ CVE-2026-78669  │          │        │                   │                 │ net/http: net/http/internal/http2: golang.org/x/net/http2:   │
+│                  │                 │          │        │                   │                 │ net/http: Denial of Service via excessive HTTP/2 SETTINGS    │
+│                  │                 │          │        │                   │                 │ frames...                                                    │
+│                  │                 │          │        │                   │                 │ https://avd.aquasec.com/nvd/cve-2026-78669                   │
+│                  ├─────────────────┤          │        │                   │                 ├──────────────────────────────────────────────────────────────┤
+│                  │ CVE-2026-94440  │          │        │                   │                 │ net/textproto: mime/multipart: golang: golang: Denial of     │
+│                  │                 │          │        │                   │                 │ Service via memory limit bypass in...                        │
+│                  │                 │          │        │                   │                 │ https://avd.aquasec.com/nvd/cve-2026-94440                   │
+│                  ├─────────────────┤          │        │                   │                 ├──────────────────────────────────────────────────────────────┤
+│                  │ CVE-2026-97031  │          │        │                   │                 │ crypto/tls: golang: crypto/tls: Denial of Service via        │
+│                  │                 │          │        │                   │                 │ multiple ECH outer extension references...                   │
+│                  │                 │          │        │                   │                 │ https://avd.aquasec.com/nvd/cve-2026-97031                   │
+│                  ├─────────────────┤          │        │                   ├─────────────────┼──────────────────────────────────────────────────────────────┤
+│                  │ CVE-2026-97054  │          │        │                   │ 1.26.11, 1.27.4 │ net/http: golang: net/http: Denial of Service via race       │
+│                  │                 │          │        │                   │                 │ condition when handling oversized...                         │
+│                  │                 │          │        │                   │                 │ https://avd.aquasec.com/nvd/cve-2026-97054                   │
+└──────────────────┴─────────────────┴──────────┴────────┴───────────────────┴─────────────────┴──────────────────────────────────────────────────────────────┘
+```
+
+## Scan Results: `registry.rancher.com/rancher/mirrored-cilium-operator-aws:v1.20.5`
+
+```text
+```
+
+## Scan Results: `registry.rancher.com/rancher/mirrored-cilium-operator-azure:v1.20.5`
+
+```text
+```
+
+## Scan Results: `registry.rancher.com/rancher/mirrored-cilium-operator-generic:v1.20.5`
+
+```text
+```
+
+## Scan Results: `registry.rancher.com/rancher/hardened-calico-operator:v1.44.1-build20261118`
+
+```text
+```
+
+## Scan Results: `registry.rancher.com/rancher/hardened-calico-calico:v3.33.1-build20261125`
+
+```text
+
+registry.rancher.com/rancher/hardened-calico-calico:v3.33.1-build20261125 (sles 16.1)
+=====================================================================================
+Total: 2 (UNKNOWN: 0, LOW: 0, MEDIUM: 0, HIGH: 2, CRITICAL: 0)
+
+┌──────────────┬──────────────────────┬──────────┬────────┬───────────────────┬──────────────────┬───────────────────────────┐
+│   Library    │    Vulnerability     │ Severity │ Status │ Installed Version │  Fixed Version   │           Title           │
+├──────────────┼──────────────────────┼──────────┼────────┼───────────────────┼──────────────────┼───────────────────────────┤
+│ libpcre2-8-0 │ SUSE-SU-2026:24891-1 │ HIGH     │ fixed  │ 10.45-160100.3.1  │ 10.45-160100.4.1 │ Security update for pcre2 │
+│              ├──────────────────────┤          │        │                   │                  │                           │
+│              │ SUSE-SU-2026:24946-1 │          │        │                   │                  │                           │
+└──────────────┴──────────────────────┴──────────┴────────┴───────────────────┴──────────────────┴───────────────────────────┘
+```
+
+## Scan Results: `registry.rancher.com/rancher/hardened-calico-node:v3.33.1-build20261125`
+
+```text
+
+registry.rancher.com/rancher/hardened-calico-node:v3.33.1-build20261125 (sles 16.1)
+===================================================================================
+Total: 8 (UNKNOWN: 0, LOW: 0, MEDIUM: 0, HIGH: 8, CRITICAL: 0)
+
+┌───────────────┬──────────────────────┬──────────┬────────┬───────────────────┬───────────────────┬────────────────────────────────┐
+│    Library    │    Vulnerability     │ Severity │ Status │ Installed Version │   Fixed Version   │             Title              │
+├───────────────┼──────────────────────┼──────────┼────────┼───────────────────┼───────────────────┼────────────────────────────────┤
+│ libblkid1     │ SUSE-SU-2026:24881-1 │ HIGH     │ fixed  │ 2.42.1-160100.3.1 │ 2.42.4-160100.1.1 │ Security update for util-linux │
+├───────────────┤                      │          │        │                   │                   │                                │
+│ libfdisk1     │                      │          │        │                   │                   │                                │
+├───────────────┤                      │          │        │                   │                   │                                │
+│ libmount1     │                      │          │        │                   │                   │                                │
+├───────────────┼──────────────────────┤          │        ├───────────────────┼───────────────────┼────────────────────────────────┤
+│ libpcre2-8-0  │ SUSE-SU-2026:24891-1 │          │        │ 10.45-160100.3.1  │ 10.45-160100.4.1  │ Security update for pcre2      │
+│               ├──────────────────────┤          │        │                   │                   │                                │
+│               │ SUSE-SU-2026:24946-1 │          │        │                   │                   │                                │
+├───────────────┼──────────────────────┤          │        ├───────────────────┼───────────────────┼────────────────────────────────┤
+│ libsmartcols1 │ SUSE-SU-2026:24881-1 │          │        │ 2.42.1-160100.3.1 │ 2.42.4-160100.1.1 │ Security update for util-linux │
+├───────────────┤                      │          │        │                   │                   │                                │
+│ libuuid1      │                      │          │        │                   │                   │                                │
+├───────────────┤                      │          │        │                   │                   │                                │
+│ util-linux    │                      │          │        │                   │                   │                                │
+└───────────────┴──────────────────────┴──────────┴────────┴───────────────────┴───────────────────┴────────────────────────────────┘
+```
+
+## Scan Results: `registry.rancher.com/rancher/hardened-calico-envoy-gateway:v3.33.1-build20261125`
+
+```text
+```
+
+## Scan Results: `registry.rancher.com/rancher/hardened-calico-envoy-proxy:v3.33.1-build20261125`
+
+```text
+
+registry.rancher.com/rancher/hardened-calico-envoy-proxy:v3.33.1-build20261125 (sles 16.1)
+==========================================================================================
+Total: 2 (UNKNOWN: 0, LOW: 0, MEDIUM: 0, HIGH: 2, CRITICAL: 0)
+
+┌──────────────┬──────────────────────┬──────────┬────────┬───────────────────┬──────────────────┬───────────────────────────┐
+│   Library    │    Vulnerability     │ Severity │ Status │ Installed Version │  Fixed Version   │           Title           │
+├──────────────┼──────────────────────┼──────────┼────────┼───────────────────┼──────────────────┼───────────────────────────┤
+│ libpcre2-8-0 │ SUSE-SU-2026:24891-1 │ HIGH     │ fixed  │ 10.45-160100.3.1  │ 10.45-160100.4.1 │ Security update for pcre2 │
+│              ├──────────────────────┤          │        │                   │                  │                           │
+│              │ SUSE-SU-2026:24946-1 │          │        │                   │                  │                           │
+└──────────────┴──────────────────────┴──────────┴────────┴───────────────────┴──────────────────┴───────────────────────────┘
+```
+
+## Scan Results: `registry.rancher.com/rancher/hardened-calico-envoy-ratelimit:v3.33.1-build20261125`
+
+```text
+```
+
+## Scan Results: `registry.rancher.com/rancher/hardened-calico-third-party-cni-plugins:v3.33.1-build20261125`
+
+```text
+```
+
+## Scan Results: `registry.rancher.com/rancher/hardened-calico-whisker:v3.33.1-build20261125`
+
+```text
+
+registry.rancher.com/rancher/hardened-calico-whisker:v3.33.1-build20261125 (sles 16.1)
+======================================================================================
+Total: 4 (UNKNOWN: 0, LOW: 0, MEDIUM: 0, HIGH: 3, CRITICAL: 1)
+
+┌──────────────┬──────────────────────┬──────────┬────────┬───────────────────┬───────────────────┬───────────────────────────┐
+│   Library    │    Vulnerability     │ Severity │ Status │ Installed Version │   Fixed Version   │           Title           │
+├──────────────┼──────────────────────┼──────────┼────────┼───────────────────┼───────────────────┼───────────────────────────┤
+│ libpcre2-8-0 │ SUSE-SU-2026:24891-1 │ HIGH     │ fixed  │ 10.45-160100.3.1  │ 10.45-160100.4.1  │ Security update for pcre2 │
+│              ├──────────────────────┤          │        │                   │                   │                           │
+│              │ SUSE-SU-2026:24946-1 │          │        │                   │                   │                           │
+├──────────────┼──────────────────────┼──────────┤        ├───────────────────┼───────────────────┼───────────────────────────┤
+│ nginx        │ SUSE-SU-2026:24902-1 │ CRITICAL │        │ 1.27.2-160100.2.1 │ 1.27.2-160100.3.1 │ Security update for nginx │
+│              ├──────────────────────┼──────────┤        │                   │                   │                           │
+│              │ SUSE-SU-2026:24956-1 │ HIGH     │        │                   │                   │                           │
+└──────────────┴──────────────────────┴──────────┴────────┴───────────────────┴───────────────────┴───────────────────────────┘
+```
+
+## Scan Results: `registry.rancher.com/rancher/hardened-cloud-provider-vsphere:v1.35.1-build20261020`
+
+```text
+
+vsphere-cloud-controller-manager (gobinary)
+===========================================
+Total: 2 (UNKNOWN: 0, LOW: 0, MEDIUM: 0, HIGH: 2, CRITICAL: 0)
+
+┌───────────────────┬────────────────┬──────────┬────────┬───────────────────┬─────────────────┬─────────────────────────────────────────────────────────────┐
+│      Library      │ Vulnerability  │ Severity │ Status │ Installed Version │  Fixed Version  │                            Title                            │
+├───────────────────┼────────────────┼──────────┼────────┼───────────────────┼─────────────────┼─────────────────────────────────────────────────────────────┤
+│ golang.org/x/text │ CVE-2026-56851 │ HIGH     │ fixed  │ v0.39.0           │ 0.41.0          │ golang.org/x/text: golang.org/x/text: Denial of Service via │
+│                   │                │          │        │                   │                 │ out-of-bounds slice error in Nickname profile...            │
+│                   │                │          │        │                   │                 │ https://avd.aquasec.com/nvd/cve-2026-56851                  │
+├───────────────────┼────────────────┤          │        ├───────────────────┼─────────────────┼─────────────────────────────────────────────────────────────┤
+│ stdlib            │ CVE-2026-97054 │          │        │ v1.26.10          │ 1.26.11, 1.27.4 │ net/http: golang: net/http: Denial of Service via race      │
+│                   │                │          │        │                   │                 │ condition when handling oversized...                        │
+│                   │                │          │        │                   │                 │ https://avd.aquasec.com/nvd/cve-2026-97054                  │
+└───────────────────┴────────────────┴──────────┴────────┴───────────────────┴─────────────────┴─────────────────────────────────────────────────────────────┘
+```
+
+## Scan Results: `registry.rancher.com/rancher/hardened-vsphere-csi-driver:v3.8.0-build20261111`
+
+```text
+```
+
+## Scan Results: `registry.rancher.com/rancher/hardened-vsphere-csi-syncer:v3.8.0-build20261111`
+
+```text
+```
+
+## Scan Results: `registry.rancher.com/rancher/hardened-csi-node-driver-registrar:v2.14.0-build20261110`
+
+```text
+```
+
+## Scan Results: `registry.rancher.com/rancher/hardened-csi-resizer:v2.0.0-build20261110`
+
+```text
+```
+
+## Scan Results: `registry.rancher.com/rancher/hardened-livenessprobe:v2.17.0-build20261110`
+
+```text
+```
+
+## Scan Results: `registry.rancher.com/rancher/hardened-csi-attacher:v4.10.0-build20261110`
+
+```text
+```
+
+## Scan Results: `registry.rancher.com/rancher/hardened-csi-provisioner:v4.0.1-build20261110`
+
+```text
+```
+
+## Scan Results: `registry.rancher.com/rancher/hardened-csi-snapshotter:v8.6.0-build20261026`
+
+```text
+
+csi-snapshotter (gobinary)
+==========================
+Total: 1 (UNKNOWN: 0, LOW: 0, MEDIUM: 0, HIGH: 1, CRITICAL: 0)
+
+┌─────────┬────────────────┬──────────┬────────┬───────────────────┬─────────────────┬────────────────────────────────────────────────────────┐
+│ Library │ Vulnerability  │ Severity │ Status │ Installed Version │  Fixed Version  │                         Title                          │
+├─────────┼────────────────┼──────────┼────────┼───────────────────┼─────────────────┼────────────────────────────────────────────────────────┤
+│ stdlib  │ CVE-2026-97054 │ HIGH     │ fixed  │ v1.26.10          │ 1.26.11, 1.27.4 │ net/http: golang: net/http: Denial of Service via race │
+│         │                │          │        │                   │                 │ condition when handling oversized...                   │
+│         │                │          │        │                   │                 │ https://avd.aquasec.com/nvd/cve-2026-97054             │
+└─────────┴────────────────┴──────────┴────────┴───────────────────┴─────────────────┴────────────────────────────────────────────────────────┘
+```
+
+## Scan Results: `registry.rancher.com/rancher/hardened-multus-cni:v4.3.2-build20261110`
+
+```text
+```
+
+## Scan Results: `registry.rancher.com/rancher/hardened-multus-thick:v4.3.2-build20261110`
+
+```text
+```
+
+## Scan Results: `registry.rancher.com/rancher/hardened-multus-dynamic-networks-controller:v0.3.9-build20261120`
+
+```text
+```
+
+## Scan Results: `registry.rancher.com/rancher/hardened-whereabouts:v0.9.4-build20261119`
+
+```text
+```
+
+## Scan Results: `registry.rancher.com/rancher/mirrored-library-busybox:1.38.0`
+
+```text
+```
+
+## Scan Results: `registry.rancher.com/rancher/harvester-cloud-provider:v0.2.10`
+
+```text
+
+registry.rancher.com/rancher/harvester-cloud-provider:v0.2.10 (sles 16.1)
+=========================================================================
+Total: 1 (UNKNOWN: 0, LOW: 0, MEDIUM: 0, HIGH: 1, CRITICAL: 0)
+
+┌─────────┬──────────────────────┬──────────┬────────┬───────────────────┬─────────────────┬───────────────────────────┐
+│ Library │    Vulnerability     │ Severity │ Status │ Installed Version │  Fixed Version  │           Title           │
+├─────────┼──────────────────────┼──────────┼────────┼───────────────────┼─────────────────┼───────────────────────────┤
+│ glibc   │ SUSE-SU-2026:24741-1 │ HIGH     │ fixed  │ 2.40-160100.3.1   │ 2.40-160100.4.1 │ Security update for glibc │
+└─────────┴──────────────────────┴──────────┴────────┴───────────────────┴─────────────────┴───────────────────────────┘
+
+usr/bin/harvester-cloud-provider (gobinary)
+===========================================
+Total: 1 (UNKNOWN: 0, LOW: 0, MEDIUM: 0, HIGH: 1, CRITICAL: 0)
+
+┌─────────┬────────────────┬──────────┬────────┬───────────────────┬─────────────────┬────────────────────────────────────────────────────────┐
+│ Library │ Vulnerability  │ Severity │ Status │ Installed Version │  Fixed Version  │                         Title                          │
+├─────────┼────────────────┼──────────┼────────┼───────────────────┼─────────────────┼────────────────────────────────────────────────────────┤
+│ stdlib  │ CVE-2026-97054 │ HIGH     │ fixed  │ v1.26.10          │ 1.26.11, 1.27.4 │ net/http: golang: net/http: Denial of Service via race │
+│         │                │          │        │                   │                 │ condition when handling oversized...                   │
+│         │                │          │        │                   │                 │ https://avd.aquasec.com/nvd/cve-2026-97054             │
+└─────────┴────────────────┴──────────┴────────┴───────────────────┴─────────────────┴────────────────────────────────────────────────────────┘
+```
+
+## Scan Results: `registry.rancher.com/rancher/mirrored-kube-vip-kube-vip-iptables:v1.2.4`
+
+```text
+
+kube-vip (gobinary)
+===================
+Total: 13 (UNKNOWN: 0, LOW: 0, MEDIUM: 0, HIGH: 13, CRITICAL: 0)
+
+┌─────────────────────┬─────────────────┬──────────┬────────┬───────────────────┬─────────────────┬─────────────────────────────────────────────────────────────┐
+│       Library       │  Vulnerability  │ Severity │ Status │ Installed Version │  Fixed Version  │                            Title                            │
+├─────────────────────┼─────────────────┼──────────┼────────┼───────────────────┼─────────────────┼─────────────────────────────────────────────────────────────┤
+│ golang.org/x/crypto │ CVE-2026-56855  │ HIGH     │ fixed  │ v0.55.0           │ 0.56.0          │ golang.org/x/crypto/ssh: golang.org/x/crypto/ssh: Denial of │
+│                     │                 │          │        │                   │                 │ Service via crafted messages                                │
+│                     │                 │          │        │                   │                 │ https://avd.aquasec.com/nvd/cve-2026-56855                  │
+│                     ├─────────────────┤          │        │                   │                 ├─────────────────────────────────────────────────────────────┤
+│                     │ CVE-2026-78662  │          │        │                   │                 │ golang.org/x/crypto/ssh: golang.org/x/crypto/ssh: Denial of │
+│                     │                 │          │        │                   │                 │ Service via channel request flooding                        │
+│                     │                 │          │        │                   │                 │ https://avd.aquasec.com/nvd/cve-2026-78662                  │
+├─────────────────────┼─────────────────┤          │        ├───────────────────┼─────────────────┼─────────────────────────────────────────────────────────────┤
+│ golang.org/x/net    │ CVE-2026-78659  │          │        │ v0.58.0           │ 0.60.0          │ net/http: golang.org/x/net/http2: golang: net/http: Denial  │
+│                     │                 │          │        │                   │                 │ of Service via HTTP/2 trailer header memory...              │
+│                     │                 │          │        │                   │                 │ https://avd.aquasec.com/nvd/cve-2026-78659                  │
+│                     ├─────────────────┤          │        │                   │                 ├─────────────────────────────────────────────────────────────┤
+│                     │ CVE-2026-78660  │          │        │                   │                 │ net/http: golang: golang.org/x/net/http2: net/http: HTTP    │
+│                     │                 │          │        │                   │                 │ response smuggling via malformed HTTP/2 framing headers...  │
+│                     │                 │          │        │                   │                 │ https://avd.aquasec.com/nvd/cve-2026-78660                  │
+│                     ├─────────────────┤          │        │                   │                 ├─────────────────────────────────────────────────────────────┤
+│                     │ CVE-2026-78669  │          │        │                   │                 │ net/http: net/http/internal/http2: golang.org/x/net/http2:  │
+│                     │                 │          │        │                   │                 │ net/http: Denial of Service via excessive HTTP/2 SETTINGS   │
+│                     │                 │          │        │                   │                 │ frames...                                                   │
+│                     │                 │          │        │                   │                 │ https://avd.aquasec.com/nvd/cve-2026-78669                  │
+├─────────────────────┼─────────────────┤          │        ├───────────────────┼─────────────────┼─────────────────────────────────────────────────────────────┤
+│ stdlib              │ CVE-2026-111943 │          │        │ v1.27.1           │ 1.26.10, 1.27.3 │ crypto/x509: golang: crypto/x509: Man-in-the-middle attacks │
+│                     │                 │          │        │                   │                 │ via untrusted intermediate certificates                     │
+│                     │                 │          │        │                   │                 │ https://avd.aquasec.com/nvd/cve-2026-111943                 │
+│                     ├─────────────────┤          │        │                   ├─────────────────┼─────────────────────────────────────────────────────────────┤
+│                     │ CVE-2026-56866  │          │        │                   │ 1.26.9, 1.27.2  │ net/http: golang: golang: Cross-user response poisoning via │
+│                     │                 │          │        │                   │                 │ desynchronized HTTP CONNECT connections                     │
+│                     │                 │          │        │                   │                 │ https://avd.aquasec.com/nvd/cve-2026-56866                  │
+│                     ├─────────────────┤          │        │                   │                 ├─────────────────────────────────────────────────────────────┤
+│                     │ CVE-2026-78659  │          │        │                   │                 │ net/http: golang.org/x/net/http2: golang: net/http: Denial  │
+│                     │                 │          │        │                   │                 │ of Service via HTTP/2 trailer header memory...              │
+│                     │                 │          │        │                   │                 │ https://avd.aquasec.com/nvd/cve-2026-78659                  │
+│                     ├─────────────────┤          │        │                   │                 ├─────────────────────────────────────────────────────────────┤
+│                     │ CVE-2026-78660  │          │        │                   │                 │ net/http: golang: golang.org/x/net/http2: net/http: HTTP    │
+│                     │                 │          │        │                   │                 │ response smuggling via malformed HTTP/2 framing headers...  │
+│                     │                 │          │        │                   │                 │ https://avd.aquasec.com/nvd/cve-2026-78660                  │
+│                     ├─────────────────┤          │        │                   │                 ├─────────────────────────────────────────────────────────────┤
+│                     │ CVE-2026-78669  │          │        │                   │                 │ net/http: net/http/internal/http2: golang.org/x/net/http2:  │
+│                     │                 │          │        │                   │                 │ net/http: Denial of Service via excessive HTTP/2 SETTINGS   │
+│                     │                 │          │        │                   │                 │ frames...                                                   │
+│                     │                 │          │        │                   │                 │ https://avd.aquasec.com/nvd/cve-2026-78669                  │
+│                     ├─────────────────┤          │        │                   │                 ├─────────────────────────────────────────────────────────────┤
+│                     │ CVE-2026-94440  │          │        │                   │                 │ net/textproto: mime/multipart: golang: golang: Denial of    │
+│                     │                 │          │        │                   │                 │ Service via memory limit bypass in...                       │
+│                     │                 │          │        │                   │                 │ https://avd.aquasec.com/nvd/cve-2026-94440                  │
+│                     ├─────────────────┤          │        │                   │                 ├─────────────────────────────────────────────────────────────┤
+│                     │ CVE-2026-97031  │          │        │                   │                 │ crypto/tls: golang: crypto/tls: Denial of Service via       │
+│                     │                 │          │        │                   │                 │ multiple ECH outer extension references...                  │
+│                     │                 │          │        │                   │                 │ https://avd.aquasec.com/nvd/cve-2026-97031                  │
+│                     ├─────────────────┤          │        │                   ├─────────────────┼─────────────────────────────────────────────────────────────┤
+│                     │ CVE-2026-97054  │          │        │                   │ 1.26.11, 1.27.4 │ net/http: golang: net/http: Denial of Service via race      │
+│                     │                 │          │        │                   │                 │ condition when handling oversized...                        │
+│                     │                 │          │        │                   │                 │ https://avd.aquasec.com/nvd/cve-2026-97054                  │
+└─────────────────────┴─────────────────┴──────────┴────────┴───────────────────┴─────────────────┴─────────────────────────────────────────────────────────────┘
+```
+
+## Scan Results: `registry.rancher.com/rancher/harvester-csi-driver:v0.2.12`
+
+```text
+```
+
+## Scan Results: `registry.rancher.com/rancher/mirrored-longhornio-csi-node-driver-registrar:v2.16.0-20260428`
+
+```text
+
+csi-node-driver-registrar (gobinary)
+====================================
+Total: 20 (UNKNOWN: 0, LOW: 0, MEDIUM: 0, HIGH: 20, CRITICAL: 0)
+
+┌──────────────────────────┬─────────────────────┬──────────┬────────┬───────────────────┬──────────────────────────────┬──────────────────────────────────────────────────────────────┐
+│         Library          │    Vulnerability    │ Severity │ Status │ Installed Version │        Fixed Version         │                            Title                             │
+├──────────────────────────┼─────────────────────┼──────────┼────────┼───────────────────┼──────────────────────────────┼──────────────────────────────────────────────────────────────┤
+│ go.opentelemetry.io/otel │ CVE-2026-29181      │ HIGH     │ fixed  │ v1.40.0           │ 1.41.0                       │ github.com/open-telemetry/opentelemetry-go:                  │
+│                          │                     │          │        │                   │                              │ OpenTelemetry-Go: Denial of Service via crafted multi-value  │
+│                          │                     │          │        │                   │                              │ baggage headers                                              │
+│                          │                     │          │        │                   │                              │ https://avd.aquasec.com/nvd/cve-2026-29181                   │
+├──────────────────────────┼─────────────────────┤          │        ├───────────────────┼──────────────────────────────┼──────────────────────────────────────────────────────────────┤
+│ golang.org/x/net         │ CVE-2026-78659      │          │        │ v0.49.0           │ 0.60.0                       │ net/http: golang.org/x/net/http2: golang: net/http: Denial   │
+│                          │                     │          │        │                   │                              │ of Service via HTTP/2 trailer header memory...               │
+│                          │                     │          │        │                   │                              │ https://avd.aquasec.com/nvd/cve-2026-78659                   │
+│                          ├─────────────────────┤          │        │                   │                              ├──────────────────────────────────────────────────────────────┤
+│                          │ CVE-2026-78660      │          │        │                   │                              │ net/http: golang: golang.org/x/net/http2: net/http: HTTP     │
+│                          │                     │          │        │                   │                              │ response smuggling via malformed HTTP/2 framing headers...   │
+│                          │                     │          │        │                   │                              │ https://avd.aquasec.com/nvd/cve-2026-78660                   │
+│                          ├─────────────────────┤          │        │                   │                              ├──────────────────────────────────────────────────────────────┤
+│                          │ CVE-2026-78669      │          │        │                   │                              │ net/http: net/http/internal/http2: golang.org/x/net/http2:   │
+│                          │                     │          │        │                   │                              │ net/http: Denial of Service via excessive HTTP/2 SETTINGS    │
+│                          │                     │          │        │                   │                              │ frames...                                                    │
+│                          │                     │          │        │                   │                              │ https://avd.aquasec.com/nvd/cve-2026-78669                   │
+├──────────────────────────┼─────────────────────┤          │        ├───────────────────┼──────────────────────────────┼──────────────────────────────────────────────────────────────┤
+│ google.golang.org/grpc   │ CVE-2026-84304      │          │        │ v1.79.3           │ 1.83.1                       │ google.golang.org/grpc: gRPC-Go: Denial of Service via       │
+│                          │                     │          │        │                   │                              │ HTTP/2 DATA Frame Fragmentation                              │
+│                          │                     │          │        │                   │                              │ https://avd.aquasec.com/nvd/cve-2026-84304                   │
+│                          ├─────────────────────┤          │        │                   ├──────────────────────────────┼──────────────────────────────────────────────────────────────┤
+│                          │ GHSA-hrxh-6v49-42gf │          │        │                   │ 1.82.1                       │ gRPC-Go: xDS RBAC and HTTP/2 Vulnerabilities                 │
+│                          │                     │          │        │                   │                              │ https://github.com/advisories/GHSA-hrxh-6v49-42gf            │
+├──────────────────────────┼─────────────────────┤          │        ├───────────────────┼──────────────────────────────┼──────────────────────────────────────────────────────────────┤
+│ stdlib                   │ CVE-2026-111943     │          │        │ v1.25.9           │ 1.26.10, 1.27.3              │ crypto/x509: golang: crypto/x509: Man-in-the-middle attacks  │
+│                          │                     │          │        │                   │                              │ via untrusted intermediate certificates                      │
+│                          │                     │          │        │                   │                              │ https://avd.aquasec.com/nvd/cve-2026-111943                  │
+│                          ├─────────────────────┤          │        │                   ├──────────────────────────────┼──────────────────────────────────────────────────────────────┤
+│                          │ CVE-2026-33814      │          │        │                   │ 1.25.10, 1.26.3              │ net/http/internal/http2: golang: golang.org/x/net: Go        │
+│                          │                     │          │        │                   │                              │ HTTP/2: Denial of Service via malformed                      │
+│                          │                     │          │        │                   │                              │ SETTINGS_MAX_FRAME_SIZE frame...                             │
+│                          │                     │          │        │                   │                              │ https://avd.aquasec.com/nvd/cve-2026-33814                   │
+│                          ├─────────────────────┤          │        │                   ├──────────────────────────────┼──────────────────────────────────────────────────────────────┤
+│                          │ CVE-2026-33818      │          │        │                   │ 1.25.13, 1.26.6, 1.27.0-rc.3 │ encoding/asn1: golang: Go encoding/asn1: Denial of Service   │
+│                          │                     │          │        │                   │                              │ via excessive recursion in Unmarshal...                      │
+│                          │                     │          │        │                   │                              │ https://avd.aquasec.com/nvd/cve-2026-33818                   │
+│                          ├─────────────────────┤          │        │                   │                              ├──────────────────────────────────────────────────────────────┤
+│                          │ CVE-2026-39821      │          │        │                   │                              │ golang.org/x/net/idna: golang: net/http:                     │
+│                          │                     │          │        │                   │                              │ golang.org/x/net/idna: Privilege escalation via incorrect    │
+│                          │                     │          │        │                   │                              │ Punycode label processing                                    │
+│                          │                     │          │        │                   │                              │ https://avd.aquasec.com/nvd/cve-2026-39821                   │
+│                          ├─────────────────────┤          │        │                   ├──────────────────────────────┼──────────────────────────────────────────────────────────────┤
+│                          │ CVE-2026-39836      │          │        │                   │ 1.25.10, 1.26.3              │ net: golang: Go net package: Denial of Service via NUL byte  │
+│                          │                     │          │        │                   │                              │ in...                                                        │
+│                          │                     │          │        │                   │                              │ https://avd.aquasec.com/nvd/cve-2026-39836                   │
+│                          ├─────────────────────┤          │        │                   ├──────────────────────────────┼──────────────────────────────────────────────────────────────┤
+│                          │ CVE-2026-56853      │          │        │                   │ 1.25.13, 1.26.6, 1.27.0-rc.3 │ net/http: golang: Go net/http: Unencrypted HTTP/2            │
+│                          │                     │          │        │                   │                              │ connections vulnerable to Denial of Service...               │
+│                          │                     │          │        │                   │                              │ https://avd.aquasec.com/nvd/cve-2026-56853                   │
+│                          ├─────────────────────┤          │        │                   │                              ├──────────────────────────────────────────────────────────────┤
+│                          │ CVE-2026-56862      │          │        │                   │                              │ crypto/tls: golang: Golang crypto/tls: Denial of Service via │
+│                          │                     │          │        │                   │                              │ indefinite KeyUpdate messages                                │
+│                          │                     │          │        │                   │                              │ https://avd.aquasec.com/nvd/cve-2026-56862                   │
+│                          ├─────────────────────┤          │        │                   ├──────────────────────────────┼──────────────────────────────────────────────────────────────┤
+│                          │ CVE-2026-56866      │          │        │                   │ 1.26.9, 1.27.2               │ net/http: golang: golang: Cross-user response poisoning via  │
+│                          │                     │          │        │                   │                              │ desynchronized HTTP CONNECT connections                      │
+│                          │                     │          │        │                   │                              │ https://avd.aquasec.com/nvd/cve-2026-56866                   │
+│                          ├─────────────────────┤          │        │                   │                              ├──────────────────────────────────────────────────────────────┤
+│                          │ CVE-2026-78659      │          │        │                   │                              │ net/http: golang.org/x/net/http2: golang: net/http: Denial   │
+│                          │                     │          │        │                   │                              │ of Service via HTTP/2 trailer header memory...               │
+│                          │                     │          │        │                   │                              │ https://avd.aquasec.com/nvd/cve-2026-78659                   │
+│                          ├─────────────────────┤          │        │                   │                              ├──────────────────────────────────────────────────────────────┤
+│                          │ CVE-2026-78660      │          │        │                   │                              │ net/http: golang: golang.org/x/net/http2: net/http: HTTP     │
+│                          │                     │          │        │                   │                              │ response smuggling via malformed HTTP/2 framing headers...   │
+│                          │                     │          │        │                   │                              │ https://avd.aquasec.com/nvd/cve-2026-78660                   │
+│                          ├─────────────────────┤          │        │                   │                              ├──────────────────────────────────────────────────────────────┤
+│                          │ CVE-2026-78669      │          │        │                   │                              │ net/http: net/http/internal/http2: golang.org/x/net/http2:   │
+│                          │                     │          │        │                   │                              │ net/http: Denial of Service via excessive HTTP/2 SETTINGS    │
+│                          │                     │          │        │                   │                              │ frames...                                                    │
+│                          │                     │          │        │                   │                              │ https://avd.aquasec.com/nvd/cve-2026-78669                   │
+│                          ├─────────────────────┤          │        │                   │                              ├──────────────────────────────────────────────────────────────┤
+│                          │ CVE-2026-94440      │          │        │                   │                              │ net/textproto: mime/multipart: golang: golang: Denial of     │
+│                          │                     │          │        │                   │                              │ Service via memory limit bypass in...                        │
+│                          │                     │          │        │                   │                              │ https://avd.aquasec.com/nvd/cve-2026-94440                   │
+│                          ├─────────────────────┤          │        │                   │                              ├──────────────────────────────────────────────────────────────┤
+│                          │ CVE-2026-97031      │          │        │                   │                              │ crypto/tls: golang: crypto/tls: Denial of Service via        │
+│                          │                     │          │        │                   │                              │ multiple ECH outer extension references...                   │
+│                          │                     │          │        │                   │                              │ https://avd.aquasec.com/nvd/cve-2026-97031                   │
+│                          ├─────────────────────┤          │        │                   ├──────────────────────────────┼──────────────────────────────────────────────────────────────┤
+│                          │ CVE-2026-97054      │          │        │                   │ 1.26.11, 1.27.4              │ net/http: golang: net/http: Denial of Service via race       │
+│                          │                     │          │        │                   │                              │ condition when handling oversized...                         │
+│                          │                     │          │        │                   │                              │ https://avd.aquasec.com/nvd/cve-2026-97054                   │
+└──────────────────────────┴─────────────────────┴──────────┴────────┴───────────────────┴──────────────────────────────┴──────────────────────────────────────────────────────────────┘
+```
+
+## Scan Results: `registry.rancher.com/rancher/mirrored-longhornio-csi-resizer:v2.1.0-20260428`
+
+```text
+
+csi-resizer (gobinary)
+======================
+Total: 22 (UNKNOWN: 0, LOW: 0, MEDIUM: 0, HIGH: 22, CRITICAL: 0)
+
+┌────────────────────────┬─────────────────────┬──────────┬────────┬───────────────────┬──────────────────────────────┬──────────────────────────────────────────────────────────────┐
+│        Library         │    Vulnerability    │ Severity │ Status │ Installed Version │        Fixed Version         │                            Title                             │
+├────────────────────────┼─────────────────────┼──────────┼────────┼───────────────────┼──────────────────────────────┼──────────────────────────────────────────────────────────────┤
+│ golang.org/x/net       │ CVE-2026-33814      │ HIGH     │ fixed  │ v0.48.0           │ 0.53.0                       │ net/http/internal/http2: golang: golang.org/x/net: Go        │
+│                        │                     │          │        │                   │                              │ HTTP/2: Denial of Service via malformed                      │
+│                        │                     │          │        │                   │                              │ SETTINGS_MAX_FRAME_SIZE frame...                             │
+│                        │                     │          │        │                   │                              │ https://avd.aquasec.com/nvd/cve-2026-33814                   │
+│                        ├─────────────────────┤          │        │                   ├──────────────────────────────┼──────────────────────────────────────────────────────────────┤
+│                        │ CVE-2026-39821      │          │        │                   │ 0.57.0                       │ golang.org/x/net/idna: golang: net/http:                     │
+│                        │                     │          │        │                   │                              │ golang.org/x/net/idna: Privilege escalation via incorrect    │
+│                        │                     │          │        │                   │                              │ Punycode label processing                                    │
+│                        │                     │          │        │                   │                              │ https://avd.aquasec.com/nvd/cve-2026-39821                   │
+│                        ├─────────────────────┤          │        │                   ├──────────────────────────────┼──────────────────────────────────────────────────────────────┤
+│                        │ CVE-2026-78659      │          │        │                   │ 0.60.0                       │ net/http: golang.org/x/net/http2: golang: net/http: Denial   │
+│                        │                     │          │        │                   │                              │ of Service via HTTP/2 trailer header memory...               │
+│                        │                     │          │        │                   │                              │ https://avd.aquasec.com/nvd/cve-2026-78659                   │
+│                        ├─────────────────────┤          │        │                   │                              ├──────────────────────────────────────────────────────────────┤
+│                        │ CVE-2026-78660      │          │        │                   │                              │ net/http: golang: golang.org/x/net/http2: net/http: HTTP     │
+│                        │                     │          │        │                   │                              │ response smuggling via malformed HTTP/2 framing headers...   │
+│                        │                     │          │        │                   │                              │ https://avd.aquasec.com/nvd/cve-2026-78660                   │
+│                        ├─────────────────────┤          │        │                   │                              ├──────────────────────────────────────────────────────────────┤
+│                        │ CVE-2026-78669      │          │        │                   │                              │ net/http: net/http/internal/http2: golang.org/x/net/http2:   │
+│                        │                     │          │        │                   │                              │ net/http: Denial of Service via excessive HTTP/2 SETTINGS    │
+│                        │                     │          │        │                   │                              │ frames...                                                    │
+│                        │                     │          │        │                   │                              │ https://avd.aquasec.com/nvd/cve-2026-78669                   │
+├────────────────────────┼─────────────────────┤          │        ├───────────────────┼──────────────────────────────┼──────────────────────────────────────────────────────────────┤
+│ google.golang.org/grpc │ CVE-2026-84304      │          │        │ v1.79.3           │ 1.83.1                       │ google.golang.org/grpc: gRPC-Go: Denial of Service via       │
+│                        │                     │          │        │                   │                              │ HTTP/2 DATA Frame Fragmentation                              │
+│                        │                     │          │        │                   │                              │ https://avd.aquasec.com/nvd/cve-2026-84304                   │
+│                        ├─────────────────────┤          │        │                   ├──────────────────────────────┼──────────────────────────────────────────────────────────────┤
+│                        │ GHSA-hrxh-6v49-42gf │          │        │                   │ 1.82.1                       │ gRPC-Go: xDS RBAC and HTTP/2 Vulnerabilities                 │
+│                        │                     │          │        │                   │                              │ https://github.com/advisories/GHSA-hrxh-6v49-42gf            │
+├────────────────────────┼─────────────────────┤          │        ├───────────────────┼──────────────────────────────┼──────────────────────────────────────────────────────────────┤
+│ stdlib                 │ CVE-2026-111943     │          │        │ v1.25.9           │ 1.26.10, 1.27.3              │ crypto/x509: golang: crypto/x509: Man-in-the-middle attacks  │
+│                        │                     │          │        │                   │                              │ via untrusted intermediate certificates                      │
+│                        │                     │          │        │                   │                              │ https://avd.aquasec.com/nvd/cve-2026-111943                  │
+│                        ├─────────────────────┤          │        │                   ├──────────────────────────────┼──────────────────────────────────────────────────────────────┤
+│                        │ CVE-2026-33814      │          │        │                   │ 1.25.10, 1.26.3              │ net/http/internal/http2: golang: golang.org/x/net: Go        │
+│                        │                     │          │        │                   │                              │ HTTP/2: Denial of Service via malformed                      │
+│                        │                     │          │        │                   │                              │ SETTINGS_MAX_FRAME_SIZE frame...                             │
+│                        │                     │          │        │                   │                              │ https://avd.aquasec.com/nvd/cve-2026-33814                   │
+│                        ├─────────────────────┤          │        │                   ├──────────────────────────────┼──────────────────────────────────────────────────────────────┤
+│                        │ CVE-2026-33818      │          │        │                   │ 1.25.13, 1.26.6, 1.27.0-rc.3 │ encoding/asn1: golang: Go encoding/asn1: Denial of Service   │
+│                        │                     │          │        │                   │                              │ via excessive recursion in Unmarshal...                      │
+│                        │                     │          │        │                   │                              │ https://avd.aquasec.com/nvd/cve-2026-33818                   │
+│                        ├─────────────────────┤          │        │                   │                              ├──────────────────────────────────────────────────────────────┤
+│                        │ CVE-2026-39821      │          │        │                   │                              │ golang.org/x/net/idna: golang: net/http:                     │
+│                        │                     │          │        │                   │                              │ golang.org/x/net/idna: Privilege escalation via incorrect    │
+│                        │                     │          │        │                   │                              │ Punycode label processing                                    │
+│                        │                     │          │        │                   │                              │ https://avd.aquasec.com/nvd/cve-2026-39821                   │
+│                        ├─────────────────────┤          │        │                   ├──────────────────────────────┼──────────────────────────────────────────────────────────────┤
+│                        │ CVE-2026-42499      │          │        │                   │ 1.25.10, 1.26.3              │ net/mail: golang: net/mail: Denial of Service via            │
+│                        │                     │          │        │                   │                              │ pathological email address parsing                           │
+│                        │                     │          │        │                   │                              │ https://avd.aquasec.com/nvd/cve-2026-42499                   │
+│                        ├─────────────────────┤          │        │                   ├──────────────────────────────┼──────────────────────────────────────────────────────────────┤
+│                        │ CVE-2026-56853      │          │        │                   │ 1.25.13, 1.26.6, 1.27.0-rc.3 │ net/http: golang: Go net/http: Unencrypted HTTP/2            │
+│                        │                     │          │        │                   │                              │ connections vulnerable to Denial of Service...               │
+│                        │                     │          │        │                   │                              │ https://avd.aquasec.com/nvd/cve-2026-56853                   │
+│                        ├─────────────────────┤          │        │                   │                              ├──────────────────────────────────────────────────────────────┤
+│                        │ CVE-2026-56859      │          │        │                   │                              │ encoding/xml: golang: Go: Denial of Service via XML decoding │
+│                        │                     │          │        │                   │                              │ recursion depth issue...                                     │
+│                        │                     │          │        │                   │                              │ https://avd.aquasec.com/nvd/cve-2026-56859                   │
+│                        ├─────────────────────┤          │        │                   │                              ├──────────────────────────────────────────────────────────────┤
+│                        │ CVE-2026-56862      │          │        │                   │                              │ crypto/tls: golang: Golang crypto/tls: Denial of Service via │
+│                        │                     │          │        │                   │                              │ indefinite KeyUpdate messages                                │
+│                        │                     │          │        │                   │                              │ https://avd.aquasec.com/nvd/cve-2026-56862                   │
+│                        ├─────────────────────┤          │        │                   ├──────────────────────────────┼──────────────────────────────────────────────────────────────┤
+│                        │ CVE-2026-56866      │          │        │                   │ 1.26.9, 1.27.2               │ net/http: golang: golang: Cross-user response poisoning via  │
+│                        │                     │          │        │                   │                              │ desynchronized HTTP CONNECT connections                      │
+│                        │                     │          │        │                   │                              │ https://avd.aquasec.com/nvd/cve-2026-56866                   │
+│                        ├─────────────────────┤          │        │                   │                              ├──────────────────────────────────────────────────────────────┤
+│                        │ CVE-2026-78659      │          │        │                   │                              │ net/http: golang.org/x/net/http2: golang: net/http: Denial   │
+│                        │                     │          │        │                   │                              │ of Service via HTTP/2 trailer header memory...               │
+│                        │                     │          │        │                   │                              │ https://avd.aquasec.com/nvd/cve-2026-78659                   │
+│                        ├─────────────────────┤          │        │                   │                              ├──────────────────────────────────────────────────────────────┤
+│                        │ CVE-2026-78660      │          │        │                   │                              │ net/http: golang: golang.org/x/net/http2: net/http: HTTP     │
+│                        │                     │          │        │                   │                              │ response smuggling via malformed HTTP/2 framing headers...   │
+│                        │                     │          │        │                   │                              │ https://avd.aquasec.com/nvd/cve-2026-78660                   │
+│                        ├─────────────────────┤          │        │                   │                              ├──────────────────────────────────────────────────────────────┤
+│                        │ CVE-2026-78669      │          │        │                   │                              │ net/http: net/http/internal/http2: golang.org/x/net/http2:   │
+│                        │                     │          │        │                   │                              │ net/http: Denial of Service via excessive HTTP/2 SETTINGS    │
+│                        │                     │          │        │                   │                              │ frames...                                                    │
+│                        │                     │          │        │                   │                              │ https://avd.aquasec.com/nvd/cve-2026-78669                   │
+│                        ├─────────────────────┤          │        │                   │                              ├──────────────────────────────────────────────────────────────┤
+│                        │ CVE-2026-94440      │          │        │                   │                              │ net/textproto: mime/multipart: golang: golang: Denial of     │
+│                        │                     │          │        │                   │                              │ Service via memory limit bypass in...                        │
+│                        │                     │          │        │                   │                              │ https://avd.aquasec.com/nvd/cve-2026-94440                   │
+│                        ├─────────────────────┤          │        │                   │                              ├──────────────────────────────────────────────────────────────┤
+│                        │ CVE-2026-97031      │          │        │                   │                              │ crypto/tls: golang: crypto/tls: Denial of Service via        │
+│                        │                     │          │        │                   │                              │ multiple ECH outer extension references...                   │
+│                        │                     │          │        │                   │                              │ https://avd.aquasec.com/nvd/cve-2026-97031                   │
+│                        ├─────────────────────┤          │        │                   ├──────────────────────────────┼──────────────────────────────────────────────────────────────┤
+│                        │ CVE-2026-97054      │          │        │                   │ 1.26.11, 1.27.4              │ net/http: golang: net/http: Denial of Service via race       │
+│                        │                     │          │        │                   │                              │ condition when handling oversized...                         │
+│                        │                     │          │        │                   │                              │ https://avd.aquasec.com/nvd/cve-2026-97054                   │
+└────────────────────────┴─────────────────────┴──────────┴────────┴───────────────────┴──────────────────────────────┴──────────────────────────────────────────────────────────────┘
+```
+
+## Scan Results: `registry.rancher.com/rancher/mirrored-longhornio-csi-provisioner:v5.3.0-20260428`
+
+```text
+
+csi-provisioner (gobinary)
+==========================
+Total: 22 (UNKNOWN: 0, LOW: 0, MEDIUM: 0, HIGH: 22, CRITICAL: 0)
+
+┌──────────────────────────┬─────────────────────┬──────────┬────────┬───────────────────┬──────────────────────────────┬──────────────────────────────────────────────────────────────┐
+│         Library          │    Vulnerability    │ Severity │ Status │ Installed Version │        Fixed Version         │                            Title                             │
+├──────────────────────────┼─────────────────────┼──────────┼────────┼───────────────────┼──────────────────────────────┼──────────────────────────────────────────────────────────────┤
+│ go.opentelemetry.io/otel │ CVE-2026-29181      │ HIGH     │ fixed  │ v1.39.0           │ 1.41.0                       │ github.com/open-telemetry/opentelemetry-go:                  │
+│                          │                     │          │        │                   │                              │ OpenTelemetry-Go: Denial of Service via crafted multi-value  │
+│                          │                     │          │        │                   │                              │ baggage headers                                              │
+│                          │                     │          │        │                   │                              │ https://avd.aquasec.com/nvd/cve-2026-29181                   │
+├──────────────────────────┼─────────────────────┤          │        ├───────────────────┼──────────────────────────────┼──────────────────────────────────────────────────────────────┤
+│ golang.org/x/net         │ CVE-2026-33814      │          │        │ v0.48.0           │ 0.53.0                       │ net/http/internal/http2: golang: golang.org/x/net: Go        │
+│                          │                     │          │        │                   │                              │ HTTP/2: Denial of Service via malformed                      │
+│                          │                     │          │        │                   │                              │ SETTINGS_MAX_FRAME_SIZE frame...                             │
+│                          │                     │          │        │                   │                              │ https://avd.aquasec.com/nvd/cve-2026-33814                   │
+│                          ├─────────────────────┤          │        │                   ├──────────────────────────────┼──────────────────────────────────────────────────────────────┤
+│                          │ CVE-2026-39821      │          │        │                   │ 0.57.0                       │ golang.org/x/net/idna: golang: net/http:                     │
+│                          │                     │          │        │                   │                              │ golang.org/x/net/idna: Privilege escalation via incorrect    │
+│                          │                     │          │        │                   │                              │ Punycode label processing                                    │
+│                          │                     │          │        │                   │                              │ https://avd.aquasec.com/nvd/cve-2026-39821                   │
+│                          ├─────────────────────┤          │        │                   ├──────────────────────────────┼──────────────────────────────────────────────────────────────┤
+│                          │ CVE-2026-78659      │          │        │                   │ 0.60.0                       │ net/http: golang.org/x/net/http2: golang: net/http: Denial   │
+│                          │                     │          │        │                   │                              │ of Service via HTTP/2 trailer header memory...               │
+│                          │                     │          │        │                   │                              │ https://avd.aquasec.com/nvd/cve-2026-78659                   │
+│                          ├─────────────────────┤          │        │                   │                              ├──────────────────────────────────────────────────────────────┤
+│                          │ CVE-2026-78660      │          │        │                   │                              │ net/http: golang: golang.org/x/net/http2: net/http: HTTP     │
+│                          │                     │          │        │                   │                              │ response smuggling via malformed HTTP/2 framing headers...   │
+│                          │                     │          │        │                   │                              │ https://avd.aquasec.com/nvd/cve-2026-78660                   │
+│                          ├─────────────────────┤          │        │                   │                              ├──────────────────────────────────────────────────────────────┤
+│                          │ CVE-2026-78669      │          │        │                   │                              │ net/http: net/http/internal/http2: golang.org/x/net/http2:   │
+│                          │                     │          │        │                   │                              │ net/http: Denial of Service via excessive HTTP/2 SETTINGS    │
+│                          │                     │          │        │                   │                              │ frames...                                                    │
+│                          │                     │          │        │                   │                              │ https://avd.aquasec.com/nvd/cve-2026-78669                   │
+├──────────────────────────┼─────────────────────┤          │        ├───────────────────┼──────────────────────────────┼──────────────────────────────────────────────────────────────┤
+│ google.golang.org/grpc   │ CVE-2026-84304      │          │        │ v1.79.3           │ 1.83.1                       │ google.golang.org/grpc: gRPC-Go: Denial of Service via       │
+│                          │                     │          │        │                   │                              │ HTTP/2 DATA Frame Fragmentation                              │
+│                          │                     │          │        │                   │                              │ https://avd.aquasec.com/nvd/cve-2026-84304                   │
+│                          ├─────────────────────┤          │        │                   ├──────────────────────────────┼──────────────────────────────────────────────────────────────┤
+│                          │ GHSA-hrxh-6v49-42gf │          │        │                   │ 1.82.1                       │ gRPC-Go: xDS RBAC and HTTP/2 Vulnerabilities                 │
+│                          │                     │          │        │                   │                              │ https://github.com/advisories/GHSA-hrxh-6v49-42gf            │
+├──────────────────────────┼─────────────────────┤          │        ├───────────────────┼──────────────────────────────┼──────────────────────────────────────────────────────────────┤
+│ stdlib                   │ CVE-2026-111943     │          │        │ v1.25.9           │ 1.26.10, 1.27.3              │ crypto/x509: golang: crypto/x509: Man-in-the-middle attacks  │
+│                          │                     │          │        │                   │                              │ via untrusted intermediate certificates                      │
+│                          │                     │          │        │                   │                              │ https://avd.aquasec.com/nvd/cve-2026-111943                  │
+│                          ├─────────────────────┤          │        │                   ├──────────────────────────────┼──────────────────────────────────────────────────────────────┤
+│                          │ CVE-2026-33814      │          │        │                   │ 1.25.10, 1.26.3              │ net/http/internal/http2: golang: golang.org/x/net: Go        │
+│                          │                     │          │        │                   │                              │ HTTP/2: Denial of Service via malformed                      │
+│                          │                     │          │        │                   │                              │ SETTINGS_MAX_FRAME_SIZE frame...                             │
+│                          │                     │          │        │                   │                              │ https://avd.aquasec.com/nvd/cve-2026-33814                   │
+│                          ├─────────────────────┤          │        │                   ├──────────────────────────────┼──────────────────────────────────────────────────────────────┤
+│                          │ CVE-2026-33818      │          │        │                   │ 1.25.13, 1.26.6, 1.27.0-rc.3 │ encoding/asn1: golang: Go encoding/asn1: Denial of Service   │
+│                          │                     │          │        │                   │                              │ via excessive recursion in Unmarshal...                      │
+│                          │                     │          │        │                   │                              │ https://avd.aquasec.com/nvd/cve-2026-33818                   │
+│                          ├─────────────────────┤          │        │                   │                              ├──────────────────────────────────────────────────────────────┤
+│                          │ CVE-2026-39821      │          │        │                   │                              │ golang.org/x/net/idna: golang: net/http:                     │
+│                          │                     │          │        │                   │                              │ golang.org/x/net/idna: Privilege escalation via incorrect    │
+│                          │                     │          │        │                   │                              │ Punycode label processing                                    │
+│                          │                     │          │        │                   │                              │ https://avd.aquasec.com/nvd/cve-2026-39821                   │
+│                          ├─────────────────────┤          │        │                   │                              ├──────────────────────────────────────────────────────────────┤
+│                          │ CVE-2026-56853      │          │        │                   │                              │ net/http: golang: Go net/http: Unencrypted HTTP/2            │
+│                          │                     │          │        │                   │                              │ connections vulnerable to Denial of Service...               │
+│                          │                     │          │        │                   │                              │ https://avd.aquasec.com/nvd/cve-2026-56853                   │
+│                          ├─────────────────────┤          │        │                   │                              ├──────────────────────────────────────────────────────────────┤
+│                          │ CVE-2026-56859      │          │        │                   │                              │ encoding/xml: golang: Go: Denial of Service via XML decoding │
+│                          │                     │          │        │                   │                              │ recursion depth issue...                                     │
+│                          │                     │          │        │                   │                              │ https://avd.aquasec.com/nvd/cve-2026-56859                   │
+│                          ├─────────────────────┤          │        │                   │                              ├──────────────────────────────────────────────────────────────┤
+│                          │ CVE-2026-56862      │          │        │                   │                              │ crypto/tls: golang: Golang crypto/tls: Denial of Service via │
+│                          │                     │          │        │                   │                              │ indefinite KeyUpdate messages                                │
+│                          │                     │          │        │                   │                              │ https://avd.aquasec.com/nvd/cve-2026-56862                   │
+│                          ├─────────────────────┤          │        │                   ├──────────────────────────────┼──────────────────────────────────────────────────────────────┤
+│                          │ CVE-2026-56866      │          │        │                   │ 1.26.9, 1.27.2               │ net/http: golang: golang: Cross-user response poisoning via  │
+│                          │                     │          │        │                   │                              │ desynchronized HTTP CONNECT connections                      │
+│                          │                     │          │        │                   │                              │ https://avd.aquasec.com/nvd/cve-2026-56866                   │
+│                          ├─────────────────────┤          │        │                   │                              ├──────────────────────────────────────────────────────────────┤
+│                          │ CVE-2026-78659      │          │        │                   │                              │ net/http: golang.org/x/net/http2: golang: net/http: Denial   │
+│                          │                     │          │        │                   │                              │ of Service via HTTP/2 trailer header memory...               │
+│                          │                     │          │        │                   │                              │ https://avd.aquasec.com/nvd/cve-2026-78659                   │
+│                          ├─────────────────────┤          │        │                   │                              ├──────────────────────────────────────────────────────────────┤
+│                          │ CVE-2026-78660      │          │        │                   │                              │ net/http: golang: golang.org/x/net/http2: net/http: HTTP     │
+│                          │                     │          │        │                   │                              │ response smuggling via malformed HTTP/2 framing headers...   │
+│                          │                     │          │        │                   │                              │ https://avd.aquasec.com/nvd/cve-2026-78660                   │
+│                          ├─────────────────────┤          │        │                   │                              ├──────────────────────────────────────────────────────────────┤
+│                          │ CVE-2026-78669      │          │        │                   │                              │ net/http: net/http/internal/http2: golang.org/x/net/http2:   │
+│                          │                     │          │        │                   │                              │ net/http: Denial of Service via excessive HTTP/2 SETTINGS    │
+│                          │                     │          │        │                   │                              │ frames...                                                    │
+│                          │                     │          │        │                   │                              │ https://avd.aquasec.com/nvd/cve-2026-78669                   │
+│                          ├─────────────────────┤          │        │                   │                              ├──────────────────────────────────────────────────────────────┤
+│                          │ CVE-2026-94440      │          │        │                   │                              │ net/textproto: mime/multipart: golang: golang: Denial of     │
+│                          │                     │          │        │                   │                              │ Service via memory limit bypass in...                        │
+│                          │                     │          │        │                   │                              │ https://avd.aquasec.com/nvd/cve-2026-94440                   │
+│                          ├─────────────────────┤          │        │                   │                              ├──────────────────────────────────────────────────────────────┤
+│                          │ CVE-2026-97031      │          │        │                   │                              │ crypto/tls: golang: crypto/tls: Denial of Service via        │
+│                          │                     │          │        │                   │                              │ multiple ECH outer extension references...                   │
+│                          │                     │          │        │                   │                              │ https://avd.aquasec.com/nvd/cve-2026-97031                   │
+│                          ├─────────────────────┤          │        │                   ├──────────────────────────────┼──────────────────────────────────────────────────────────────┤
+│                          │ CVE-2026-97054      │          │        │                   │ 1.26.11, 1.27.4              │ net/http: golang: net/http: Denial of Service via race       │
+│                          │                     │          │        │                   │                              │ condition when handling oversized...                         │
+│                          │                     │          │        │                   │                              │ https://avd.aquasec.com/nvd/cve-2026-97054                   │
+└──────────────────────────┴─────────────────────┴──────────┴────────┴───────────────────┴──────────────────────────────┴──────────────────────────────────────────────────────────────┘
+```
+
+## Scan Results: `registry.rancher.com/rancher/mirrored-longhornio-csi-attacher:v4.11.0-20260428`
+
+```text
+
+csi-attacher (gobinary)
+=======================
+Total: 22 (UNKNOWN: 0, LOW: 0, MEDIUM: 0, HIGH: 22, CRITICAL: 0)
+
+┌────────────────────────┬─────────────────────┬──────────┬────────┬───────────────────┬──────────────────────────────┬──────────────────────────────────────────────────────────────┐
+│        Library         │    Vulnerability    │ Severity │ Status │ Installed Version │        Fixed Version         │                            Title                             │
+├────────────────────────┼─────────────────────┼──────────┼────────┼───────────────────┼──────────────────────────────┼──────────────────────────────────────────────────────────────┤
+│ golang.org/x/net       │ CVE-2026-33814      │ HIGH     │ fixed  │ v0.48.0           │ 0.53.0                       │ net/http/internal/http2: golang: golang.org/x/net: Go        │
+│                        │                     │          │        │                   │                              │ HTTP/2: Denial of Service via malformed                      │
+│                        │                     │          │        │                   │                              │ SETTINGS_MAX_FRAME_SIZE frame...                             │
+│                        │                     │          │        │                   │                              │ https://avd.aquasec.com/nvd/cve-2026-33814                   │
+│                        ├─────────────────────┤          │        │                   ├──────────────────────────────┼──────────────────────────────────────────────────────────────┤
+│                        │ CVE-2026-39821      │          │        │                   │ 0.57.0                       │ golang.org/x/net/idna: golang: net/http:                     │
+│                        │                     │          │        │                   │                              │ golang.org/x/net/idna: Privilege escalation via incorrect    │
+│                        │                     │          │        │                   │                              │ Punycode label processing                                    │
+│                        │                     │          │        │                   │                              │ https://avd.aquasec.com/nvd/cve-2026-39821                   │
+│                        ├─────────────────────┤          │        │                   ├──────────────────────────────┼──────────────────────────────────────────────────────────────┤
+│                        │ CVE-2026-78659      │          │        │                   │ 0.60.0                       │ net/http: golang.org/x/net/http2: golang: net/http: Denial   │
+│                        │                     │          │        │                   │                              │ of Service via HTTP/2 trailer header memory...               │
+│                        │                     │          │        │                   │                              │ https://avd.aquasec.com/nvd/cve-2026-78659                   │
+│                        ├─────────────────────┤          │        │                   │                              ├──────────────────────────────────────────────────────────────┤
+│                        │ CVE-2026-78660      │          │        │                   │                              │ net/http: golang: golang.org/x/net/http2: net/http: HTTP     │
+│                        │                     │          │        │                   │                              │ response smuggling via malformed HTTP/2 framing headers...   │
+│                        │                     │          │        │                   │                              │ https://avd.aquasec.com/nvd/cve-2026-78660                   │
+│                        ├─────────────────────┤          │        │                   │                              ├──────────────────────────────────────────────────────────────┤
+│                        │ CVE-2026-78669      │          │        │                   │                              │ net/http: net/http/internal/http2: golang.org/x/net/http2:   │
+│                        │                     │          │        │                   │                              │ net/http: Denial of Service via excessive HTTP/2 SETTINGS    │
+│                        │                     │          │        │                   │                              │ frames...                                                    │
+│                        │                     │          │        │                   │                              │ https://avd.aquasec.com/nvd/cve-2026-78669                   │
+├────────────────────────┼─────────────────────┤          │        ├───────────────────┼──────────────────────────────┼──────────────────────────────────────────────────────────────┤
+│ google.golang.org/grpc │ CVE-2026-84304      │          │        │ v1.79.3           │ 1.83.1                       │ google.golang.org/grpc: gRPC-Go: Denial of Service via       │
+│                        │                     │          │        │                   │                              │ HTTP/2 DATA Frame Fragmentation                              │
+│                        │                     │          │        │                   │                              │ https://avd.aquasec.com/nvd/cve-2026-84304                   │
+│                        ├─────────────────────┤          │        │                   ├──────────────────────────────┼──────────────────────────────────────────────────────────────┤
+│                        │ GHSA-hrxh-6v49-42gf │          │        │                   │ 1.82.1                       │ gRPC-Go: xDS RBAC and HTTP/2 Vulnerabilities                 │
+│                        │                     │          │        │                   │                              │ https://github.com/advisories/GHSA-hrxh-6v49-42gf            │
+├────────────────────────┼─────────────────────┤          │        ├───────────────────┼──────────────────────────────┼──────────────────────────────────────────────────────────────┤
+│ stdlib                 │ CVE-2026-111943     │          │        │ v1.25.9           │ 1.26.10, 1.27.3              │ crypto/x509: golang: crypto/x509: Man-in-the-middle attacks  │
+│                        │                     │          │        │                   │                              │ via untrusted intermediate certificates                      │
+│                        │                     │          │        │                   │                              │ https://avd.aquasec.com/nvd/cve-2026-111943                  │
+│                        ├─────────────────────┤          │        │                   ├──────────────────────────────┼──────────────────────────────────────────────────────────────┤
+│                        │ CVE-2026-33814      │          │        │                   │ 1.25.10, 1.26.3              │ net/http/internal/http2: golang: golang.org/x/net: Go        │
+│                        │                     │          │        │                   │                              │ HTTP/2: Denial of Service via malformed                      │
+│                        │                     │          │        │                   │                              │ SETTINGS_MAX_FRAME_SIZE frame...                             │
+│                        │                     │          │        │                   │                              │ https://avd.aquasec.com/nvd/cve-2026-33814                   │
+│                        ├─────────────────────┤          │        │                   ├──────────────────────────────┼──────────────────────────────────────────────────────────────┤
+│                        │ CVE-2026-33818      │          │        │                   │ 1.25.13, 1.26.6, 1.27.0-rc.3 │ encoding/asn1: golang: Go encoding/asn1: Denial of Service   │
+│                        │                     │          │        │                   │                              │ via excessive recursion in Unmarshal...                      │
+│                        │                     │          │        │                   │                              │ https://avd.aquasec.com/nvd/cve-2026-33818                   │
+│                        ├─────────────────────┤          │        │                   │                              ├──────────────────────────────────────────────────────────────┤
+│                        │ CVE-2026-39821      │          │        │                   │                              │ golang.org/x/net/idna: golang: net/http:                     │
+│                        │                     │          │        │                   │                              │ golang.org/x/net/idna: Privilege escalation via incorrect    │
+│                        │                     │          │        │                   │                              │ Punycode label processing                                    │
+│                        │                     │          │        │                   │                              │ https://avd.aquasec.com/nvd/cve-2026-39821                   │
+│                        ├─────────────────────┤          │        │                   ├──────────────────────────────┼──────────────────────────────────────────────────────────────┤
+│                        │ CVE-2026-42499      │          │        │                   │ 1.25.10, 1.26.3              │ net/mail: golang: net/mail: Denial of Service via            │
+│                        │                     │          │        │                   │                              │ pathological email address parsing                           │
+│                        │                     │          │        │                   │                              │ https://avd.aquasec.com/nvd/cve-2026-42499                   │
+│                        ├─────────────────────┤          │        │                   ├──────────────────────────────┼──────────────────────────────────────────────────────────────┤
+│                        │ CVE-2026-56853      │          │        │                   │ 1.25.13, 1.26.6, 1.27.0-rc.3 │ net/http: golang: Go net/http: Unencrypted HTTP/2            │
+│                        │                     │          │        │                   │                              │ connections vulnerable to Denial of Service...               │
+│                        │                     │          │        │                   │                              │ https://avd.aquasec.com/nvd/cve-2026-56853                   │
+│                        ├─────────────────────┤          │        │                   │                              ├──────────────────────────────────────────────────────────────┤
+│                        │ CVE-2026-56859      │          │        │                   │                              │ encoding/xml: golang: Go: Denial of Service via XML decoding │
+│                        │                     │          │        │                   │                              │ recursion depth issue...                                     │
+│                        │                     │          │        │                   │                              │ https://avd.aquasec.com/nvd/cve-2026-56859                   │
+│                        ├─────────────────────┤          │        │                   │                              ├──────────────────────────────────────────────────────────────┤
+│                        │ CVE-2026-56862      │          │        │                   │                              │ crypto/tls: golang: Golang crypto/tls: Denial of Service via │
+│                        │                     │          │        │                   │                              │ indefinite KeyUpdate messages                                │
+│                        │                     │          │        │                   │                              │ https://avd.aquasec.com/nvd/cve-2026-56862                   │
+│                        ├─────────────────────┤          │        │                   ├──────────────────────────────┼──────────────────────────────────────────────────────────────┤
+│                        │ CVE-2026-56866      │          │        │                   │ 1.26.9, 1.27.2               │ net/http: golang: golang: Cross-user response poisoning via  │
+│                        │                     │          │        │                   │                              │ desynchronized HTTP CONNECT connections                      │
+│                        │                     │          │        │                   │                              │ https://avd.aquasec.com/nvd/cve-2026-56866                   │
+│                        ├─────────────────────┤          │        │                   │                              ├──────────────────────────────────────────────────────────────┤
+│                        │ CVE-2026-78659      │          │        │                   │                              │ net/http: golang.org/x/net/http2: golang: net/http: Denial   │
+│                        │                     │          │        │                   │                              │ of Service via HTTP/2 trailer header memory...               │
+│                        │                     │          │        │                   │                              │ https://avd.aquasec.com/nvd/cve-2026-78659                   │
+│                        ├─────────────────────┤          │        │                   │                              ├──────────────────────────────────────────────────────────────┤
+│                        │ CVE-2026-78660      │          │        │                   │                              │ net/http: golang: golang.org/x/net/http2: net/http: HTTP     │
+│                        │                     │          │        │                   │                              │ response smuggling via malformed HTTP/2 framing headers...   │
+│                        │                     │          │        │                   │                              │ https://avd.aquasec.com/nvd/cve-2026-78660                   │
+│                        ├─────────────────────┤          │        │                   │                              ├──────────────────────────────────────────────────────────────┤
+│                        │ CVE-2026-78669      │          │        │                   │                              │ net/http: net/http/internal/http2: golang.org/x/net/http2:   │
+│                        │                     │          │        │                   │                              │ net/http: Denial of Service via excessive HTTP/2 SETTINGS    │
+│                        │                     │          │        │                   │                              │ frames...                                                    │
+│                        │                     │          │        │                   │                              │ https://avd.aquasec.com/nvd/cve-2026-78669                   │
+│                        ├─────────────────────┤          │        │                   │                              ├──────────────────────────────────────────────────────────────┤
+│                        │ CVE-2026-94440      │          │        │                   │                              │ net/textproto: mime/multipart: golang: golang: Denial of     │
+│                        │                     │          │        │                   │                              │ Service via memory limit bypass in...                        │
+│                        │                     │          │        │                   │                              │ https://avd.aquasec.com/nvd/cve-2026-94440                   │
+│                        ├─────────────────────┤          │        │                   │                              ├──────────────────────────────────────────────────────────────┤
+│                        │ CVE-2026-97031      │          │        │                   │                              │ crypto/tls: golang: crypto/tls: Denial of Service via        │
+│                        │                     │          │        │                   │                              │ multiple ECH outer extension references...                   │
+│                        │                     │          │        │                   │                              │ https://avd.aquasec.com/nvd/cve-2026-97031                   │
+│                        ├─────────────────────┤          │        │                   ├──────────────────────────────┼──────────────────────────────────────────────────────────────┤
+│                        │ CVE-2026-97054      │          │        │                   │ 1.26.11, 1.27.4              │ net/http: golang: net/http: Denial of Service via race       │
+│                        │                     │          │        │                   │                              │ condition when handling oversized...                         │
+│                        │                     │          │        │                   │                              │ https://avd.aquasec.com/nvd/cve-2026-97054                   │
+└────────────────────────┴─────────────────────┴──────────┴────────┴───────────────────┴──────────────────────────────┴──────────────────────────────────────────────────────────────┘
+```
+
+## Scan Results: `registry.rancher.com/rancher/mirrored-longhornio-csi-snapshotter:v8.5.0-20260428`
+
+```text
+
+csi-snapshotter (gobinary)
+==========================
+Total: 22 (UNKNOWN: 0, LOW: 0, MEDIUM: 0, HIGH: 22, CRITICAL: 0)
+
+┌────────────────────────┬─────────────────────┬──────────┬────────┬───────────────────┬──────────────────────────────┬──────────────────────────────────────────────────────────────┐
+│        Library         │    Vulnerability    │ Severity │ Status │ Installed Version │        Fixed Version         │                            Title                             │
+├────────────────────────┼─────────────────────┼──────────┼────────┼───────────────────┼──────────────────────────────┼──────────────────────────────────────────────────────────────┤
+│ golang.org/x/net       │ CVE-2026-33814      │ HIGH     │ fixed  │ v0.49.0           │ 0.53.0                       │ net/http/internal/http2: golang: golang.org/x/net: Go        │
+│                        │                     │          │        │                   │                              │ HTTP/2: Denial of Service via malformed                      │
+│                        │                     │          │        │                   │                              │ SETTINGS_MAX_FRAME_SIZE frame...                             │
+│                        │                     │          │        │                   │                              │ https://avd.aquasec.com/nvd/cve-2026-33814                   │
+│                        ├─────────────────────┤          │        │                   ├──────────────────────────────┼──────────────────────────────────────────────────────────────┤
+│                        │ CVE-2026-39821      │          │        │                   │ 0.57.0                       │ golang.org/x/net/idna: golang: net/http:                     │
+│                        │                     │          │        │                   │                              │ golang.org/x/net/idna: Privilege escalation via incorrect    │
+│                        │                     │          │        │                   │                              │ Punycode label processing                                    │
+│                        │                     │          │        │                   │                              │ https://avd.aquasec.com/nvd/cve-2026-39821                   │
+│                        ├─────────────────────┤          │        │                   ├──────────────────────────────┼──────────────────────────────────────────────────────────────┤
+│                        │ CVE-2026-78659      │          │        │                   │ 0.60.0                       │ net/http: golang.org/x/net/http2: golang: net/http: Denial   │
+│                        │                     │          │        │                   │                              │ of Service via HTTP/2 trailer header memory...               │
+│                        │                     │          │        │                   │                              │ https://avd.aquasec.com/nvd/cve-2026-78659                   │
+│                        ├─────────────────────┤          │        │                   │                              ├──────────────────────────────────────────────────────────────┤
+│                        │ CVE-2026-78660      │          │        │                   │                              │ net/http: golang: golang.org/x/net/http2: net/http: HTTP     │
+│                        │                     │          │        │                   │                              │ response smuggling via malformed HTTP/2 framing headers...   │
+│                        │                     │          │        │                   │                              │ https://avd.aquasec.com/nvd/cve-2026-78660                   │
+│                        ├─────────────────────┤          │        │                   │                              ├──────────────────────────────────────────────────────────────┤
+│                        │ CVE-2026-78669      │          │        │                   │                              │ net/http: net/http/internal/http2: golang.org/x/net/http2:   │
+│                        │                     │          │        │                   │                              │ net/http: Denial of Service via excessive HTTP/2 SETTINGS    │
+│                        │                     │          │        │                   │                              │ frames...                                                    │
+│                        │                     │          │        │                   │                              │ https://avd.aquasec.com/nvd/cve-2026-78669                   │
+├────────────────────────┼─────────────────────┤          │        ├───────────────────┼──────────────────────────────┼──────────────────────────────────────────────────────────────┤
+│ google.golang.org/grpc │ CVE-2026-84304      │          │        │ v1.79.3           │ 1.83.1                       │ google.golang.org/grpc: gRPC-Go: Denial of Service via       │
+│                        │                     │          │        │                   │                              │ HTTP/2 DATA Frame Fragmentation                              │
+│                        │                     │          │        │                   │                              │ https://avd.aquasec.com/nvd/cve-2026-84304                   │
+│                        ├─────────────────────┤          │        │                   ├──────────────────────────────┼──────────────────────────────────────────────────────────────┤
+│                        │ GHSA-hrxh-6v49-42gf │          │        │                   │ 1.82.1                       │ gRPC-Go: xDS RBAC and HTTP/2 Vulnerabilities                 │
+│                        │                     │          │        │                   │                              │ https://github.com/advisories/GHSA-hrxh-6v49-42gf            │
+├────────────────────────┼─────────────────────┤          │        ├───────────────────┼──────────────────────────────┼──────────────────────────────────────────────────────────────┤
+│ stdlib                 │ CVE-2026-111943     │          │        │ v1.25.9           │ 1.26.10, 1.27.3              │ crypto/x509: golang: crypto/x509: Man-in-the-middle attacks  │
+│                        │                     │          │        │                   │                              │ via untrusted intermediate certificates                      │
+│                        │                     │          │        │                   │                              │ https://avd.aquasec.com/nvd/cve-2026-111943                  │
+│                        ├─────────────────────┤          │        │                   ├──────────────────────────────┼──────────────────────────────────────────────────────────────┤
+│                        │ CVE-2026-33818      │          │        │                   │ 1.25.13, 1.26.6, 1.27.0-rc.3 │ encoding/asn1: golang: Go encoding/asn1: Denial of Service   │
+│                        │                     │          │        │                   │                              │ via excessive recursion in Unmarshal...                      │
+│                        │                     │          │        │                   │                              │ https://avd.aquasec.com/nvd/cve-2026-33818                   │
+│                        ├─────────────────────┤          │        │                   ├──────────────────────────────┼──────────────────────────────────────────────────────────────┤
+│                        │ CVE-2026-39820      │          │        │                   │ 1.25.10, 1.26.3              │ net/mail: golang: Go net/mail: Denial of Service via crafted │
+│                        │                     │          │        │                   │                              │ email inputs                                                 │
+│                        │                     │          │        │                   │                              │ https://avd.aquasec.com/nvd/cve-2026-39820                   │
+│                        ├─────────────────────┤          │        │                   ├──────────────────────────────┼──────────────────────────────────────────────────────────────┤
+│                        │ CVE-2026-39821      │          │        │                   │ 1.25.13, 1.26.6, 1.27.0-rc.3 │ golang.org/x/net/idna: golang: net/http:                     │
+│                        │                     │          │        │                   │                              │ golang.org/x/net/idna: Privilege escalation via incorrect    │
+│                        │                     │          │        │                   │                              │ Punycode label processing                                    │
+│                        │                     │          │        │                   │                              │ https://avd.aquasec.com/nvd/cve-2026-39821                   │
+│                        ├─────────────────────┤          │        │                   ├──────────────────────────────┼──────────────────────────────────────────────────────────────┤
+│                        │ CVE-2026-42499      │          │        │                   │ 1.25.10, 1.26.3              │ net/mail: golang: net/mail: Denial of Service via            │
+│                        │                     │          │        │                   │                              │ pathological email address parsing                           │
+│                        │                     │          │        │                   │                              │ https://avd.aquasec.com/nvd/cve-2026-42499                   │
+│                        ├─────────────────────┤          │        │                   ├──────────────────────────────┼──────────────────────────────────────────────────────────────┤
+│                        │ CVE-2026-56853      │          │        │                   │ 1.25.13, 1.26.6, 1.27.0-rc.3 │ net/http: golang: Go net/http: Unencrypted HTTP/2            │
+│                        │                     │          │        │                   │                              │ connections vulnerable to Denial of Service...               │
+│                        │                     │          │        │                   │                              │ https://avd.aquasec.com/nvd/cve-2026-56853                   │
+│                        ├─────────────────────┤          │        │                   │                              ├──────────────────────────────────────────────────────────────┤
+│                        │ CVE-2026-56859      │          │        │                   │                              │ encoding/xml: golang: Go: Denial of Service via XML decoding │
+│                        │                     │          │        │                   │                              │ recursion depth issue...                                     │
+│                        │                     │          │        │                   │                              │ https://avd.aquasec.com/nvd/cve-2026-56859                   │
+│                        ├─────────────────────┤          │        │                   │                              ├──────────────────────────────────────────────────────────────┤
+│                        │ CVE-2026-56862      │          │        │                   │                              │ crypto/tls: golang: Golang crypto/tls: Denial of Service via │
+│                        │                     │          │        │                   │                              │ indefinite KeyUpdate messages                                │
+│                        │                     │          │        │                   │                              │ https://avd.aquasec.com/nvd/cve-2026-56862                   │
+│                        ├─────────────────────┤          │        │                   ├──────────────────────────────┼──────────────────────────────────────────────────────────────┤
+│                        │ CVE-2026-56866      │          │        │                   │ 1.26.9, 1.27.2               │ net/http: golang: golang: Cross-user response poisoning via  │
+│                        │                     │          │        │                   │                              │ desynchronized HTTP CONNECT connections                      │
+│                        │                     │          │        │                   │                              │ https://avd.aquasec.com/nvd/cve-2026-56866                   │
+│                        ├─────────────────────┤          │        │                   │                              ├──────────────────────────────────────────────────────────────┤
+│                        │ CVE-2026-78659      │          │        │                   │                              │ net/http: golang.org/x/net/http2: golang: net/http: Denial   │
+│                        │                     │          │        │                   │                              │ of Service via HTTP/2 trailer header memory...               │
+│                        │                     │          │        │                   │                              │ https://avd.aquasec.com/nvd/cve-2026-78659                   │
+│                        ├─────────────────────┤          │        │                   │                              ├──────────────────────────────────────────────────────────────┤
+│                        │ CVE-2026-78660      │          │        │                   │                              │ net/http: golang: golang.org/x/net/http2: net/http: HTTP     │
+│                        │                     │          │        │                   │                              │ response smuggling via malformed HTTP/2 framing headers...   │
+│                        │                     │          │        │                   │                              │ https://avd.aquasec.com/nvd/cve-2026-78660                   │
+│                        ├─────────────────────┤          │        │                   │                              ├──────────────────────────────────────────────────────────────┤
+│                        │ CVE-2026-78669      │          │        │                   │                              │ net/http: net/http/internal/http2: golang.org/x/net/http2:   │
+│                        │                     │          │        │                   │                              │ net/http: Denial of Service via excessive HTTP/2 SETTINGS    │
+│                        │                     │          │        │                   │                              │ frames...                                                    │
+│                        │                     │          │        │                   │                              │ https://avd.aquasec.com/nvd/cve-2026-78669                   │
+│                        ├─────────────────────┤          │        │                   │                              ├──────────────────────────────────────────────────────────────┤
+│                        │ CVE-2026-94440      │          │        │                   │                              │ net/textproto: mime/multipart: golang: golang: Denial of     │
+│                        │                     │          │        │                   │                              │ Service via memory limit bypass in...                        │
+│                        │                     │          │        │                   │                              │ https://avd.aquasec.com/nvd/cve-2026-94440                   │
+│                        ├─────────────────────┤          │        │                   │                              ├──────────────────────────────────────────────────────────────┤
+│                        │ CVE-2026-97031      │          │        │                   │                              │ crypto/tls: golang: crypto/tls: Denial of Service via        │
+│                        │                     │          │        │                   │                              │ multiple ECH outer extension references...                   │
+│                        │                     │          │        │                   │                              │ https://avd.aquasec.com/nvd/cve-2026-97031                   │
+│                        ├─────────────────────┤          │        │                   ├──────────────────────────────┼──────────────────────────────────────────────────────────────┤
+│                        │ CVE-2026-97054      │          │        │                   │ 1.26.11, 1.27.4              │ net/http: golang: net/http: Denial of Service via race       │
+│                        │                     │          │        │                   │                              │ condition when handling oversized...                         │
+│                        │                     │          │        │                   │                              │ https://avd.aquasec.com/nvd/cve-2026-97054                   │
+└────────────────────────┴─────────────────────┴──────────┴────────┴───────────────────┴──────────────────────────────┴──────────────────────────────────────────────────────────────┘
+```
+
+<!--OPTIONAL-END-->
+
+## Summary
+
+### CVEs by Severity
+
+| Severity | Count |
+| --- | ---: |
+| CRITICAL | 0 |
+| HIGH | 24 |
+| **Total** | **24** |
+
+### Images with CVEs (3)
+
+| Image | CRITICAL | HIGH |
+| --- | ---: | ---: |
+| `registry.rancher.com/rancher/rke2-cloud-provider:v1.35-r2-build20261116` | 0 | 14 |
+| `registry.rancher.com/rancher/hardened-calico:v3.33.1-build20261120` | 0 | 8 |
+| `Runtime Image Tarball: rke2-images.linux-amd64.tar` | 0 | 2 |
+
+### CVE-free Images (16)
+
+- `registry.rancher.com/rancher/hardened-kubernetes:v1.35.11-rke2r1-build20261125`
+- `registry.rancher.com/rancher/hardened-coredns:v1.14.7-build20261110`
+- `registry.rancher.com/rancher/hardened-cluster-autoscaler:v1.11.0-build20261110`
+- `registry.rancher.com/rancher/hardened-dns-node-cache:1.27.2-r1-build20261110`
+- `registry.rancher.com/rancher/hardened-etcd:v3.6.14-k3s3-build20261127`
+- `registry.rancher.com/rancher/hardened-k8s-metrics-server:v0.9.1-build20261119`
+- `registry.rancher.com/rancher/hardened-addon-resizer:1.8.24-build20261110`
+- `registry.rancher.com/rancher/klipper-helm:v0.14.0-build20261117`
+- `registry.rancher.com/rancher/klipper-lb:v0.4.18`
+- `registry.rancher.com/rancher/kube-webhook-certgen:v1.15.2-prime7`
+- `registry.rancher.com/rancher/nginx-ingress-controller:v1.15.2-prime7`
+- `registry.rancher.com/rancher/hardened-snapshot-controller:v8.7.0-build20261126`
+- `registry.rancher.com/rancher/hardened-traefik:v3.7.20-build20261125`
+- `registry.rancher.com/rancher/hardened-flannel:v0.28.11-build20261120`
+- `registry.rancher.com/rancher/hardened-cni-plugins:v1.10.0-build20261120`
+- `registry.rancher.com/rancher/hardened-cni-plugins:v1.10.0-build20261110`
+
